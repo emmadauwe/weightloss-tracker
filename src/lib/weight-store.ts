@@ -1,7 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 
 export type Entry = { date: string; weight: number; note?: string };
-export type Settings = { startWeight?: number; goalWeight?: number; unit: "kg" | "lb" };
+export type Settings = {
+  startWeight?: number;
+  goalWeight?: number;
+  unit: "kg" | "lb";
+  heightCm?: number;
+  startDate?: string;
+  endDate?: string;
+};
 
 const ENTRIES_KEY = "weight-entries-v1";
 const SETTINGS_KEY = "weight-settings-v1";
