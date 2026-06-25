@@ -24,7 +24,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Trash2, Plus, Target, TrendingDown, Scale, Settings as SettingsIcon } from "lucide-react";
+import { Trash2, Plus, Target, TrendingDown, Scale, Settings as SettingsIcon, Ruler, CalendarDays } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 
 export const Route = createFileRoute("/")({
