@@ -399,6 +399,9 @@ function SettingsDialog({
   const [open, setOpen] = useState(false);
   const [startW, setStartW] = useState(settings.startWeight?.toString() ?? "");
   const [goalW, setGoalW] = useState(settings.goalWeight?.toString() ?? "");
+  const [height, setHeight] = useState(settings.heightCm?.toString() ?? "");
+  const [startDate, setStartDate] = useState(settings.startDate ?? "");
+  const [endDate, setEndDate] = useState(settings.endDate ?? "");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -406,6 +409,9 @@ function SettingsDialog({
       ...settings,
       startWeight: startW ? parseFloat(startW.replace(",", ".")) : undefined,
       goalWeight: goalW ? parseFloat(goalW.replace(",", ".")) : undefined,
+      heightCm: height ? parseFloat(height.replace(",", ".")) : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
     });
     setOpen(false);
   };
@@ -418,6 +424,9 @@ function SettingsDialog({
         if (o) {
           setStartW(settings.startWeight?.toString() ?? "");
           setGoalW(settings.goalWeight?.toString() ?? "");
+          setHeight(settings.heightCm?.toString() ?? "");
+          setStartDate(settings.startDate ?? "");
+          setEndDate(settings.endDate ?? "");
         }
       }}
     >
@@ -426,34 +435,37 @@ function SettingsDialog({
           <SettingsIcon className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Doel & startgewicht</DialogTitle>
+          <DialogTitle>Jouw doel</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="start">Startgewicht ({settings.unit})</Label>
-            <Input
-              id="start"
-              type="number"
-              step="0.1"
-              inputMode="decimal"
-              placeholder="bv. 85"
-              value={startW}
-              onChange={(e) => setStartW(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="start">Start ({settings.unit})</Label>
+              <Input id="start" type="number" step="0.1" inputMode="decimal" placeholder="85"
+                value={startW} onChange={(e) => setStartW(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="goal">Doel ({settings.unit})</Label>
+              <Input id="goal" type="number" step="0.1" inputMode="decimal" placeholder="72"
+                value={goalW} onChange={(e) => setGoalW(e.target.value)} />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="goal">Doelgewicht ({settings.unit})</Label>
-            <Input
-              id="goal"
-              type="number"
-              step="0.1"
-              inputMode="decimal"
-              placeholder="bv. 72"
-              value={goalW}
-              onChange={(e) => setGoalW(e.target.value)}
-            />
+            <Label htmlFor="height">Lengte (cm)</Label>
+            <Input id="height" type="number" step="1" inputMode="decimal" placeholder="bv. 175"
+              value={height} onChange={(e) => setHeight(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="sdate">Startdag</Label>
+              <Input id="sdate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edate">Einddag</Label>
+              <Input id="edate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
@@ -461,5 +473,128 @@ function SettingsDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function bmiCategory(bmi: number): { label: string; color: string } {
+  if (bmi < 18.5) return { label: "Ondergewicht", color: "var(--accent)" };
+  if (bmi < 25) return { label: "Gezond", color: "var(--success)" };
+  if (bmi < 30) return { label: "Overgewicht", color: "var(--accent)" };
+  return { label: "Obesitas", color: "var(--destructive)" };
+}
+
+function BMICard({ heightCm, weight, unit }: { heightCm: number; weight: number; unit: string }) {
+  const kg = unit === "lb" ? weight * 0.453592 : weight;
+  const m = heightCm / 100;
+  const bmi = kg / (m * m);
+  // Scale from 15 to 35
+  const min = 15, max = 35;
+  const pct = Math.max(0, Math.min(100, ((bmi - min) / (max - min)) * 100));
+  const cat = bmiCategory(bmi);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <Ruler className="h-4 w-4" /> BMI
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-baseline justify-between mb-3">
+          <div className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
+            {bmi.toFixed(1)}
+          </div>
+          <div className="text-sm font-medium" style={{ color: cat.color }}>{cat.label}</div>
+        </div>
+        <div className="relative h-3 w-full overflow-hidden rounded-full"
+          style={{
+            background:
+              "linear-gradient(to right, var(--accent) 0%, var(--accent) 17.5%, var(--success) 17.5%, var(--success) 50%, var(--accent) 50%, var(--accent) 75%, var(--destructive) 75%, var(--destructive) 100%)",
+          }}
+        >
+          <div
+            className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow"
+            style={{ left: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground tabular-nums">
+          <span>15</span><span>18.5</span><span>25</span><span>30</span><span>35</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DeadlineCard({
+  startDate, endDate, start, goal, currentWeight, unit,
+}: {
+  startDate: string; endDate: string; start: number; goal: number; currentWeight: number; unit: string;
+}) {
+  const today = new Date();
+  const end = parseISO(endDate);
+  const begin = parseISO(startDate);
+  const totalDays = Math.max(1, differenceInDays(end, begin));
+  const daysLeft = differenceInDays(end, today);
+  const daysPassed = Math.max(0, differenceInDays(today, begin));
+  const toLose = currentWeight - goal;
+  const totalToLose = start - goal;
+
+  // Recommended: 0.5 kg / week
+  const recPerWeek = 0.5;
+  const requiredPerWeek = daysLeft > 0 ? (toLose / daysLeft) * 7 : Infinity;
+  const isHealthy = requiredPerWeek <= recPerWeek && requiredPerWeek >= 0;
+  const recommendedDays = totalToLose > 0 ? Math.ceil((totalToLose / recPerWeek) * 7) : 0;
+
+  let status: { label: string; color: string; msg: string };
+  if (toLose <= 0) {
+    status = { label: "Doel bereikt", color: "var(--success)", msg: "Geweldig! Je hebt je doel gehaald." };
+  } else if (daysLeft <= 0) {
+    status = { label: "Deadline verstreken", color: "var(--destructive)", msg: "Stel een nieuwe einddag in." };
+  } else if (isHealthy) {
+    status = {
+      label: "Gezond tempo",
+      color: "var(--success)",
+      msg: `Je hoeft maar ${requiredPerWeek.toFixed(2)} ${unit}/week te verliezen.`,
+    };
+  } else {
+    status = {
+      label: "Te ambitieus",
+      color: "var(--destructive)",
+      msg: `Dat vraagt ${requiredPerWeek.toFixed(2)} ${unit}/week. Aanbevolen: max 0,5 ${unit}/week (≈ ${recommendedDays} dagen totaal).`,
+    };
+  }
+
+  const progressPct = Math.max(0, Math.min(100, (daysPassed / totalDays) * 100));
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" /> Deadline
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <div className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
+              {Math.max(0, daysLeft)}
+            </div>
+            <div className="text-xs text-muted-foreground">dagen te gaan</div>
+          </div>
+          <div className="text-sm font-medium text-right" style={{ color: status.color }}>
+            {status.label}
+          </div>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${progressPct}%` }} />
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{format(begin, "d MMM", { locale: nl })}</span>
+          <span>{format(end, "d MMM yyyy", { locale: nl })}</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{status.msg}</p>
+      </CardContent>
+    </Card>
   );
 }
