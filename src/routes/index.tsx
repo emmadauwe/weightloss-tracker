@@ -136,6 +136,21 @@ function Index() {
           </Card>
         )}
 
+        {settings.heightCm && latest && (
+          <BMICard heightCm={settings.heightCm} weight={latest.weight} unit={unit} />
+        )}
+
+        {settings.startDate && settings.endDate && start && goal && (
+          <DeadlineCard
+            startDate={settings.startDate}
+            endDate={settings.endDate}
+            start={start}
+            goal={goal}
+            currentWeight={latest?.weight ?? start}
+            unit={unit}
+          />
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-semibold">Verloop</CardTitle>
