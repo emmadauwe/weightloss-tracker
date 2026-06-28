@@ -249,8 +249,15 @@ function Index() {
                         {goal && (
                           <ReferenceLine
                             y={goal}
-                            stroke="var(--accent)"
-                            strokeDasharray="4 4"
+                            stroke="#97b185"
+                            strokeOpacity={0.45}
+                            strokeDasharray="5 5"
+                            label={{
+                              value: `Doel ${goal}`,
+                              position: "insideTopRight",
+                              fill: "var(--muted-foreground)",
+                              fontSize: 10,
+                            }}
                           />
                         )}
                         <Line
