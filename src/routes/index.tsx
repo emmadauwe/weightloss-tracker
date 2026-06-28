@@ -32,6 +32,8 @@ import {
   History,
   LayoutDashboard,
   TrendingDown,
+  Pencil,
+  AlertTriangle,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 
