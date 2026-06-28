@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { format, parseISO, differenceInDays, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import {
   LineChart,
@@ -12,7 +12,7 @@ import {
   ReferenceLine,
   CartesianGrid,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,15 +24,23 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Trash2, Plus, Target, TrendingDown, Scale, Settings as SettingsIcon, Ruler, CalendarDays } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Scale,
+  Settings as SettingsIcon,
+  History,
+  LayoutDashboard,
+  TrendingDown,
+} from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Gewichtsverlies tracker" },
+      { title: "Gewichtstracker" },
       { name: "description", content: "Houd je gewicht en voortgang naar je doel bij." },
-      { property: "og:title", content: "Gewichtsverlies tracker" },
+      { property: "og:title", content: "Gewichtstracker" },
       { property: "og:description", content: "Houd je gewicht en voortgang naar je doel bij." },
     ],
   }),
@@ -42,19 +50,42 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { entries, addEntry, removeEntry } = useEntries();
   const { settings, setSettings } = useSettings();
+  const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
 
   const sorted = entries;
   const latest = sorted[sorted.length - 1];
   const first = sorted[0];
   const start = settings.startWeight ?? first?.weight;
   const goal = settings.goalWeight;
+  const unit = settings.unit;
 
   const totalLost = start && latest ? start - latest.weight : 0;
-  const toGoal = goal && latest ? latest.weight - goal : 0;
+  const toGoal = goal && latest ? Math.max(0, latest.weight - goal) : 0;
   const progressPct =
     start && goal && latest && start !== goal
       ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100))
       : 0;
+
+  // BMI
+  const bmi = settings.heightCm && latest
+    ? (unit === "lb" ? latest.weight * 0.453592 : latest.weight) /
+      Math.pow(settings.heightCm / 100, 2)
+    : null;
+  const bmiCat = bmi ? bmiCategory(bmi) : null;
+
+  // Dagen over
+  const daysLeft = settings.endDate
+    ? Math.max(0, differenceInDays(parseISO(settings.endDate), new Date()))
+    : null;
+
+  // Deze week verschil
+  const thisWeekDiff = useMemo(() => {
+    if (sorted.length < 2) return null;
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const before = [...sorted].reverse().find((e) => parseISO(e.date) < weekStart);
+    if (!before || !latest) return null;
+    return latest.weight - before.weight;
+  }, [sorted, latest]);
 
   const chartData = useMemo(
     () =>
@@ -66,259 +97,319 @@ function Index() {
     [sorted],
   );
 
-  const unit = settings.unit;
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/40 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
+    <div className="min-h-screen bg-background pb-28">
+      {/* Header */}
+      <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Scale className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold leading-none">Lichter</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Jouw gewichtsreis</p>
-            </div>
+            <Scale className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              Gewichtstracker
+            </h1>
           </div>
-          <div className="flex gap-2">
-            <SettingsDialog settings={settings} setSettings={setSettings} />
-            <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
-          </div>
+          <SettingsDialog settings={settings} setSettings={setSettings} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8 space-y-8">
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            icon={<Scale className="h-4 w-4" />}
-            label="Huidig"
-            value={latest ? `${latest.weight.toFixed(1)} ${unit}` : "—"}
-            sub={latest ? format(parseISO(latest.date), "d MMM yyyy", { locale: nl }) : "Nog geen meting"}
-          />
-          <StatCard
-            icon={<TrendingDown className="h-4 w-4" />}
-            label="Verloren"
-            value={start && latest ? `${totalLost.toFixed(1)} ${unit}` : "—"}
-            sub={
-              start && latest && first
-                ? `In ${Math.max(1, differenceInDays(parseISO(latest.date), parseISO(first.date)))} dagen`
-                : "Voeg metingen toe"
-            }
-            positive={totalLost > 0}
-          />
-          <StatCard
-            icon={<Target className="h-4 w-4" />}
-            label="Tot doel"
-            value={goal && latest ? `${Math.max(0, toGoal).toFixed(1)} ${unit}` : "—"}
-            sub={goal ? `Doel: ${goal} ${unit}` : "Stel een doel in"}
-          />
-        </section>
-
-        {goal && start && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="font-medium">Voortgang</span>
-                <span className="text-muted-foreground">{progressPct.toFixed(0)}%</span>
+      <main className="mx-auto max-w-2xl px-4 pt-5">
+        {tab === "dashboard" ? (
+          <div className="space-y-3">
+            {/* Hero */}
+            <div className="rounded-2xl bg-secondary px-5 py-5 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground">Huidig gewicht</div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span
+                      className="text-5xl font-semibold tabular-nums text-primary"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {latest ? latest.weight.toFixed(1) : "—"}
+                    </span>
+                    <span className="text-base text-muted-foreground">{unit}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-medium text-muted-foreground">Afgevallen</div>
+                  <div className="mt-2 flex items-baseline justify-end gap-1.5">
+                    <span
+                      className={`text-3xl font-semibold tabular-nums ${
+                        totalLost > 0 ? "text-success" : "text-foreground"
+                      }`}
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {totalLost > 0 ? "-" : ""}
+                      {Math.abs(totalLost).toFixed(1)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">{unit}</span>
+                  </div>
+                </div>
               </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                <span>{start} {unit}</span>
-                <span>{goal} {unit}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
 
-        {settings.heightCm && latest && (
-          <BMICard heightCm={settings.heightCm} weight={latest.weight} unit={unit} />
-        )}
-
-        {settings.startDate && settings.endDate && start && goal && (
-          <DeadlineCard
-            startDate={settings.startDate}
-            endDate={settings.endDate}
-            start={start}
-            goal={goal}
-            currentWeight={latest?.weight ?? start}
-            unit={unit}
-          />
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Verloop</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {chartData.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis
-                      dataKey="label"
-                      stroke="var(--muted-foreground)"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
+            {/* Voortgang naar doel */}
+            {start && goal && (
+              <Card>
+                <CardContent className="px-5 py-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Voortgang naar doel</span>
+                    <span className="text-sm font-medium text-primary tabular-nums">
+                      {progressPct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${progressPct}%` }}
                     />
-                    <YAxis
-                      stroke="var(--muted-foreground)"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      domain={["dataMin - 1", "dataMax + 1"]}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--popover)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        fontSize: 13,
-                      }}
-                      formatter={(v: number) => [`${v} ${unit}`, "Gewicht"]}
-                    />
-                    {goal && (
-                      <ReferenceLine
-                        y={goal}
-                        stroke="var(--accent)"
-                        strokeDasharray="4 4"
-                        label={{ value: `Doel ${goal}`, fontSize: 11, fill: "var(--muted-foreground)", position: "insideTopRight" }}
-                      />
-                    )}
-                    <Line
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="var(--primary)"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: "var(--primary)" }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+                  </div>
+                  <div className="mt-2 flex justify-between text-xs text-muted-foreground tabular-nums">
+                    <span>{start} {unit}</span>
+                    <span>{goal} {unit} doel</span>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Metingen</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {sorted.length === 0 ? (
-              <p className="px-6 pb-6 text-sm text-muted-foreground">Nog geen metingen.</p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {[...sorted].reverse().map((e, i, arr) => {
-                  const prev = arr[i + 1];
-                  const diff = prev ? e.weight - prev.weight : 0;
-                  return (
-                    <li key={e.date} className="flex items-center gap-4 px-6 py-3.5">
-                      <div className="flex-1">
-                        <div className="font-medium tabular-nums">
-                          {e.weight.toFixed(1)} <span className="text-sm text-muted-foreground">{unit}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
-                          {e.note && ` · ${e.note}`}
-                        </div>
-                      </div>
-                      {prev && (
-                        <span
-                          className={`text-xs tabular-nums font-medium ${
-                            diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
-                          }`}
-                        >
-                          {diff > 0 ? "+" : ""}
-                          {diff.toFixed(1)}
-                        </span>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeEntry(e.date)}
-                        aria-label="Verwijderen"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
+            {/* 2x2 grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <MiniStat
+                label="Nog te gaan"
+                value={goal && latest ? `${toGoal.toFixed(1)} ${unit}` : "—"}
+              />
+              <MiniStat
+                label="Dagen over"
+                value={daysLeft !== null ? `${daysLeft} d` : "—"}
+              />
+              <MiniStat
+                label="BMI"
+                value={bmi ? bmi.toFixed(1) : "—"}
+                sub={bmiCat?.label}
+                subColor={bmiCat?.color}
+              />
+              <MiniStat
+                label="Deze week"
+                value={
+                  thisWeekDiff === null
+                    ? "—"
+                    : `${thisWeekDiff > 0 ? "+" : ""}${thisWeekDiff.toFixed(1)} ${unit}`
+                }
+                valueColor={
+                  thisWeekDiff === null
+                    ? undefined
+                    : thisWeekDiff < 0
+                      ? "var(--success)"
+                      : thisWeekDiff > 0
+                        ? "var(--destructive)"
+                        : undefined
+                }
+              />
+            </div>
+
+            {/* Gewichtsverloop */}
+            <Card>
+              <CardContent className="px-5 py-4">
+                <div className="mb-3 text-sm font-medium">Gewichtsverloop</div>
+                {chartData.length < 2 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <TrendingDown className="mb-2 h-7 w-7 text-muted-foreground/60" />
+                    <p className="text-sm text-muted-foreground">
+                      Voeg 2+ metingen toe voor de grafiek
+                    </p>
+                  </div>
+                ) : (
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis
+                          dataKey="label"
+                          stroke="var(--muted-foreground)"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="var(--muted-foreground)"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          domain={["dataMin - 1", "dataMax + 1"]}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: "var(--popover)",
+                            border: "1px solid var(--border)",
+                            borderRadius: 12,
+                            fontSize: 13,
+                          }}
+                          formatter={(v: number) => [`${v} ${unit}`, "Gewicht"]}
+                        />
+                        {goal && (
+                          <ReferenceLine
+                            y={goal}
+                            stroke="var(--accent)"
+                            strokeDasharray="4 4"
+                          />
+                        )}
+                        <Line
+                          type="monotone"
+                          dataKey="weight"
+                          stroke="var(--primary)"
+                          strokeWidth={2.5}
+                          dot={{ r: 3.5, fill: "var(--primary)" }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Deadline status (kept) */}
+            {settings.startDate && settings.endDate && start && goal && latest && (
+              <DeadlineCard
+                startDate={settings.startDate}
+                endDate={settings.endDate}
+                start={start}
+                goal={goal}
+                currentWeight={latest.weight}
+                unit={unit}
+              />
             )}
-          </CardContent>
-        </Card>
+          </div>
+        ) : (
+          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} />
+        )}
       </main>
+
+      {/* Floating add button */}
+      <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
+
+      {/* Bottom tab bar */}
+      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-around px-6 py-2.5">
+          <TabButton
+            active={tab === "dashboard"}
+            onClick={() => setTab("dashboard")}
+            icon={<LayoutDashboard className="h-5 w-5" />}
+            label="Dashboard"
+          />
+          <TabButton
+            active={tab === "history"}
+            onClick={() => setTab("history")}
+            icon={<History className="h-5 w-5" />}
+            label="Geschiedenis"
+          />
+        </div>
+      </nav>
     </div>
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  positive,
+function TabButton({
+  active, onClick, icon, label,
+}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1 px-4 py-1 text-xs transition-colors ${
+        active ? "text-primary" : "text-muted-foreground"
+      }`}
+    >
+      {icon}
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+}
+
+function MiniStat({
+  label, value, sub, subColor, valueColor,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-  positive?: boolean;
+  label: string; value: string; sub?: string; subColor?: string; valueColor?: string;
 }) {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-          {icon}
-          {label}
-        </div>
+      <CardContent className="px-4 py-3.5">
+        <div className="text-xs text-muted-foreground">{label}</div>
         <div
-          className={`mt-2 text-3xl font-semibold tabular-nums ${
-            positive ? "text-success" : ""
-          }`}
-          style={{ fontFamily: "var(--font-display)" }}
+          className="mt-1.5 text-2xl font-semibold tabular-nums"
+          style={{ fontFamily: "var(--font-display)", color: valueColor }}
         >
           {value}
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">{sub}</div>
+        {sub && (
+          <div className="mt-0.5 text-xs font-medium" style={{ color: subColor }}>
+            {sub}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function EmptyState() {
+function HistoryView({
+  sorted, unit, onRemove,
+}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void }) {
+  if (sorted.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <Scale className="mb-3 h-8 w-8 text-muted-foreground/60" />
+          <p className="text-sm font-medium">Nog geen metingen</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tik op + om je eerste meting toe te voegen.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <Scale className="h-6 w-6 text-muted-foreground" />
-      </div>
-      <p className="text-sm font-medium">Nog geen metingen</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Voeg je eerste meting toe om je voortgang te zien.
-      </p>
-    </div>
+    <Card>
+      <CardContent className="p-0">
+        <ul className="divide-y divide-border">
+          {[...sorted].reverse().map((e, i, arr) => {
+            const prev = arr[i + 1];
+            const diff = prev ? e.weight - prev.weight : 0;
+            return (
+              <li key={e.date} className="flex items-center gap-3 px-5 py-3.5">
+                <div className="flex-1">
+                  <div className="font-medium tabular-nums">
+                    {e.weight.toFixed(1)}{" "}
+                    <span className="text-sm text-muted-foreground">{unit}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
+                    {e.note && ` · ${e.note}`}
+                  </div>
+                </div>
+                {prev && (
+                  <span
+                    className={`text-xs tabular-nums font-medium ${
+                      diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
+                    }`}
+                  >
+                    {diff > 0 ? "+" : ""}
+                    {diff.toFixed(1)}
+                  </span>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
 function AddEntryDialog({
-  onAdd,
-  unit,
-  latest,
-}: {
-  onAdd: (e: Entry) => void;
-  unit: string;
-  latest?: number;
-}) {
+  onAdd, unit, latest,
+}: { onAdd: (e: Entry) => void; unit: string; latest?: number }) {
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [weight, setWeight] = useState("");
@@ -338,9 +429,12 @@ function AddEntryDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-1 h-4 w-4" /> Meting
-        </Button>
+        <button
+          aria-label="Nieuwe meting"
+          className="fixed bottom-20 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -349,13 +443,7 @@ function AddEntryDialog({
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="date">Datum</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
+            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="weight">Gewicht ({unit})</Label>
@@ -373,12 +461,7 @@ function AddEntryDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="note">Notitie (optioneel)</Label>
-            <Input
-              id="note"
-              placeholder="bv. na sport"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
+            <Input id="note" placeholder="bv. na sport" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
@@ -390,8 +473,7 @@ function AddEntryDialog({
 }
 
 function SettingsDialog({
-  settings,
-  setSettings,
+  settings, setSettings,
 }: {
   settings: ReturnType<typeof useSettings>["settings"];
   setSettings: ReturnType<typeof useSettings>["setSettings"];
@@ -431,8 +513,8 @@ function SettingsDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Instellingen">
-          <SettingsIcon className="h-4 w-4" />
+        <Button variant="ghost" size="icon" aria-label="Instellingen">
+          <SettingsIcon className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -483,48 +565,6 @@ function bmiCategory(bmi: number): { label: string; color: string } {
   return { label: "Obesitas", color: "var(--destructive)" };
 }
 
-function BMICard({ heightCm, weight, unit }: { heightCm: number; weight: number; unit: string }) {
-  const kg = unit === "lb" ? weight * 0.453592 : weight;
-  const m = heightCm / 100;
-  const bmi = kg / (m * m);
-  // Scale from 15 to 35
-  const min = 15, max = 35;
-  const pct = Math.max(0, Math.min(100, ((bmi - min) / (max - min)) * 100));
-  const cat = bmiCategory(bmi);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Ruler className="h-4 w-4" /> BMI
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-baseline justify-between mb-3">
-          <div className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
-            {bmi.toFixed(1)}
-          </div>
-          <div className="text-sm font-medium" style={{ color: cat.color }}>{cat.label}</div>
-        </div>
-        <div className="relative h-3 w-full overflow-hidden rounded-full"
-          style={{
-            background:
-              "linear-gradient(to right, var(--accent) 0%, var(--accent) 17.5%, var(--success) 17.5%, var(--success) 50%, var(--accent) 50%, var(--accent) 75%, var(--destructive) 75%, var(--destructive) 100%)",
-          }}
-        >
-          <div
-            className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow"
-            style={{ left: `${pct}%` }}
-          />
-        </div>
-        <div className="mt-2 flex justify-between text-[10px] text-muted-foreground tabular-nums">
-          <span>15</span><span>18.5</span><span>25</span><span>30</span><span>35</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function DeadlineCard({
   startDate, endDate, start, goal, currentWeight, unit,
 }: {
@@ -539,7 +579,6 @@ function DeadlineCard({
   const toLose = currentWeight - goal;
   const totalToLose = start - goal;
 
-  // Recommended: 0.5 kg / week
   const recPerWeek = 0.5;
   const requiredPerWeek = daysLeft > 0 ? (toLose / daysLeft) * 7 : Infinity;
   const isHealthy = requiredPerWeek <= recPerWeek && requiredPerWeek >= 0;
@@ -568,22 +607,12 @@ function DeadlineCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <CalendarDays className="h-4 w-4" /> Deadline
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <div>
-            <div className="text-3xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
-              {Math.max(0, daysLeft)}
-            </div>
-            <div className="text-xs text-muted-foreground">dagen te gaan</div>
-          </div>
-          <div className="text-sm font-medium text-right" style={{ color: status.color }}>
+      <CardContent className="space-y-3 px-5 py-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Tijdlijn</span>
+          <span className="text-sm font-medium" style={{ color: status.color }}>
             {status.label}
-          </div>
+          </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div className="h-full rounded-full bg-primary transition-all duration-500"
