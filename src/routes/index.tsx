@@ -686,3 +686,36 @@ function DeadlineCard({
   );
 }
 
+
+function PaceHint({
+  startW, goalW, startDate, endDate, unit,
+}: { startW: string; goalW: string; startDate: string; endDate: string; unit: string }) {
+  const s = parseFloat(startW.replace(",", "."));
+  const g = parseFloat(goalW.replace(",", "."));
+  if (!s || !g || !startDate || !endDate || s <= g) return null;
+  const days = differenceInDays(parseISO(endDate), parseISO(startDate));
+  if (days <= 0) return null;
+  const perWeek = ((s - g) / days) * 7;
+  const healthy = perWeek <= 0.5;
+  return (
+    <div
+      className="rounded-lg border px-3 py-2.5 text-xs"
+      style={{
+        borderColor: healthy ? "var(--primary)" : "var(--destructive)",
+        background: healthy
+          ? "color-mix(in oklab, var(--primary) 10%, transparent)"
+          : "color-mix(in oklab, var(--destructive) 10%, transparent)",
+        color: healthy ? "var(--primary)" : "var(--destructive)",
+      }}
+    >
+      <div className="font-medium">
+        {perWeek.toFixed(2)} {unit}/week nodig
+      </div>
+      <div className="mt-0.5 opacity-80">
+        {healthy
+          ? "Gezond tempo (≤ 0,5 kg/week)."
+          : "Te ambitieus — aanbevolen is max 0,5 kg/week."}
+      </div>
+    </div>
+  );
+}
