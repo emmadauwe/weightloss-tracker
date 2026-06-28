@@ -647,58 +647,35 @@ function DeadlineCard({
 }) {
   const today = new Date();
   const end = parseISO(endDate);
-  const begin = parseISO(startDate);
-  const totalDays = Math.max(1, differenceInDays(end, begin));
   const daysLeft = differenceInDays(end, today);
-  const daysPassed = Math.max(0, differenceInDays(today, begin));
   const toLose = currentWeight - goal;
   const totalToLose = start - goal;
 
   const recPerWeek = 0.5;
   const requiredPerWeek = daysLeft > 0 ? (toLose / daysLeft) * 7 : Infinity;
-  const isHealthy = requiredPerWeek <= recPerWeek && requiredPerWeek >= 0;
+  const isHealthy = requiredPerWeek <= recPerWeek;
   const recommendedDays = totalToLose > 0 ? Math.ceil((totalToLose / recPerWeek) * 7) : 0;
 
-  let status: { label: string; color: string; msg: string };
-  if (toLose <= 0) {
-    status = { label: "Doel bereikt", color: "var(--success)", msg: "Geweldig! Je hebt je doel gehaald." };
-  } else if (daysLeft <= 0) {
-    status = { label: "Deadline verstreken", color: "var(--destructive)", msg: "Stel een nieuwe einddag in." };
-  } else if (isHealthy) {
-    status = {
-      label: "Gezond tempo",
-      color: "var(--success)",
-      msg: `Je hoeft maar ${requiredPerWeek.toFixed(2)} ${unit}/week te verliezen.`,
-    };
-  } else {
-    status = {
-      label: "Te ambitieus",
-      color: "var(--destructive)",
-      msg: `Dat vraagt ${requiredPerWeek.toFixed(2)} ${unit}/week. Aanbevolen: max 0,5 ${unit}/week (≈ ${recommendedDays} dagen totaal).`,
-    };
-  }
+  // Only show as a warning when deadline-tempo is unhealthy or verstreken.
+  if (toLose <= 0) return null;
+  if (daysLeft > 0 && isHealthy) return null;
 
-  const progressPct = Math.max(0, Math.min(100, (daysPassed / totalDays) * 100));
+  const isExpired = daysLeft <= 0;
+  const title = isExpired ? "Deadline verstreken" : "Te ambitieus tempo";
+  const msg = isExpired
+    ? "Je einddag is voorbij. Stel een nieuwe deadline in."
+    : `Om je doel te halen moet je ${requiredPerWeek.toFixed(2)} ${unit} per week verliezen. Aanbevolen is max 0,5 ${unit}/week (≈ ${recommendedDays} dagen totaal).`;
 
   return (
-    <Card>
-      <CardContent className="space-y-3 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Tijdlijn</span>
-          <span className="text-sm font-medium" style={{ color: status.color }}>
-            {status.label}
-          </span>
+    <Card className="border-destructive/40 bg-destructive/5">
+      <CardContent className="flex gap-3 px-5 py-4">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+        <div className="space-y-1">
+          <div className="text-sm font-medium text-destructive">{title}</div>
+          <p className="text-sm text-muted-foreground">{msg}</p>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-all duration-500"
-            style={{ width: `${progressPct}%` }} />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{format(begin, "d MMM", { locale: nl })}</span>
-          <span>{format(end, "d MMM yyyy", { locale: nl })}</span>
-        </div>
-        <p className="text-sm text-muted-foreground">{status.msg}</p>
       </CardContent>
     </Card>
   );
 }
+
