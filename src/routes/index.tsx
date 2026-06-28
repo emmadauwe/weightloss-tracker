@@ -288,7 +288,7 @@ function Index() {
             )}
           </div>
         ) : (
-          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} />
+          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} />
         )}
       </main>
 
