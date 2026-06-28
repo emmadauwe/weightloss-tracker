@@ -32,6 +32,8 @@ import {
   History,
   LayoutDashboard,
   TrendingDown,
+  Pencil,
+  AlertTriangle,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 
@@ -48,7 +50,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { entries, addEntry, removeEntry } = useEntries();
+  const { entries, addEntry, removeEntry, updateEntry } = useEntries();
   const { settings, setSettings } = useSettings();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
 
@@ -249,8 +251,15 @@ function Index() {
                         {goal && (
                           <ReferenceLine
                             y={goal}
-                            stroke="var(--accent)"
-                            strokeDasharray="4 4"
+                            stroke="#97b185"
+                            strokeOpacity={0.45}
+                            strokeDasharray="5 5"
+                            label={{
+                              value: `Doel ${goal}`,
+                              position: "insideTopRight",
+                              fill: "var(--muted-foreground)",
+                              fontSize: 10,
+                            }}
                           />
                         )}
                         <Line
@@ -258,8 +267,8 @@ function Index() {
                           dataKey="weight"
                           stroke="var(--primary)"
                           strokeWidth={2.5}
-                          dot={{ r: 3.5, fill: "var(--primary)" }}
-                          activeDot={{ r: 6 }}
+                          dot={false}
+                          activeDot={{ r: 5 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -281,7 +290,7 @@ function Index() {
             )}
           </div>
         ) : (
-          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} />
+          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} />
         )}
       </main>
 
@@ -351,8 +360,10 @@ function MiniStat({
 }
 
 function HistoryView({
-  sorted, unit, onRemove,
-}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void }) {
+  sorted, unit, onRemove, onUpdate,
+}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void; onUpdate: (originalDate: string, e: Entry) => void }) {
+  const [editing, setEditing] = useState<Entry | null>(null);
+
   if (sorted.length === 0) {
     return (
       <Card>
@@ -367,45 +378,109 @@ function HistoryView({
     );
   }
   return (
-    <Card>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {[...sorted].reverse().map((e, i, arr) => {
-            const prev = arr[i + 1];
-            const diff = prev ? e.weight - prev.weight : 0;
-            return (
-              <li key={e.date} className="flex items-center gap-3 px-5 py-3.5">
-                <div className="flex-1">
-                  <div className="font-medium tabular-nums">
-                    {e.weight.toFixed(1)}{" "}
-                    <span className="text-sm text-muted-foreground">{unit}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
-                    {e.note && ` · ${e.note}`}
-                  </div>
-                </div>
-                {prev && (
-                  <span
-                    className={`text-xs tabular-nums font-medium ${
-                      diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
-                    }`}
+    <>
+      <Card>
+        <CardContent className="p-0">
+          <ul className="divide-y divide-border">
+            {[...sorted].reverse().map((e, i, arr) => {
+              const prev = arr[i + 1];
+              const diff = prev ? e.weight - prev.weight : 0;
+              return (
+                <li key={e.date} className="flex items-center gap-2 px-5 py-3.5">
+                  <button
+                    onClick={() => setEditing(e)}
+                    className="flex-1 text-left"
+                    aria-label="Bewerken"
                   >
-                    {diff > 0 ? "+" : ""}
-                    {diff.toFixed(1)}
-                  </span>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+                    <div className="font-medium tabular-nums">
+                      {e.weight.toFixed(1)}{" "}
+                      <span className="text-sm text-muted-foreground">{unit}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
+                      {e.note && ` · ${e.note}`}
+                    </div>
+                  </button>
+                  {prev && (
+                    <span
+                      className={`text-xs tabular-nums font-medium ${
+                        diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                    >
+                      {diff > 0 ? "+" : ""}
+                      {diff.toFixed(1)}
+                    </span>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => setEditing(e)} aria-label="Bewerken">
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+      {editing && (
+        <EditEntryDialog
+          entry={editing}
+          unit={unit}
+          onClose={() => setEditing(null)}
+          onSave={(updated) => {
+            onUpdate(editing.date, updated);
+            setEditing(null);
+          }}
+        />
+      )}
+    </>
   );
 }
+
+function EditEntryDialog({
+  entry, unit, onClose, onSave,
+}: { entry: Entry; unit: string; onClose: () => void; onSave: (e: Entry) => void }) {
+  const [date, setDate] = useState(entry.date);
+  const [weight, setWeight] = useState(entry.weight.toString());
+  const [note, setNote] = useState(entry.note ?? "");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const w = parseFloat(weight.replace(",", "."));
+    if (!w || !date) return;
+    onSave({ date, weight: w, note: note.trim() || undefined });
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Meting aanpassen</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edate">Datum</Label>
+            <Input id="edate" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="eweight">Gewicht ({unit})</Label>
+            <Input id="eweight" type="number" step="0.1" inputMode="decimal"
+              value={weight} onChange={(e) => setWeight(e.target.value)} required autoFocus />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="enote">Notitie (optioneel)</Label>
+            <Input id="enote" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="w-full">Opslaan</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function AddEntryDialog({
   onAdd, unit, latest,
@@ -549,6 +624,13 @@ function SettingsDialog({
               <Input id="edate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
+          <PaceHint
+            startW={startW}
+            goalW={goalW}
+            startDate={startDate}
+            endDate={endDate}
+            unit={settings.unit}
+          />
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
@@ -572,58 +654,68 @@ function DeadlineCard({
 }) {
   const today = new Date();
   const end = parseISO(endDate);
-  const begin = parseISO(startDate);
-  const totalDays = Math.max(1, differenceInDays(end, begin));
   const daysLeft = differenceInDays(end, today);
-  const daysPassed = Math.max(0, differenceInDays(today, begin));
   const toLose = currentWeight - goal;
   const totalToLose = start - goal;
 
   const recPerWeek = 0.5;
   const requiredPerWeek = daysLeft > 0 ? (toLose / daysLeft) * 7 : Infinity;
-  const isHealthy = requiredPerWeek <= recPerWeek && requiredPerWeek >= 0;
+  const isHealthy = requiredPerWeek <= recPerWeek;
   const recommendedDays = totalToLose > 0 ? Math.ceil((totalToLose / recPerWeek) * 7) : 0;
 
-  let status: { label: string; color: string; msg: string };
-  if (toLose <= 0) {
-    status = { label: "Doel bereikt", color: "var(--success)", msg: "Geweldig! Je hebt je doel gehaald." };
-  } else if (daysLeft <= 0) {
-    status = { label: "Deadline verstreken", color: "var(--destructive)", msg: "Stel een nieuwe einddag in." };
-  } else if (isHealthy) {
-    status = {
-      label: "Gezond tempo",
-      color: "var(--success)",
-      msg: `Je hoeft maar ${requiredPerWeek.toFixed(2)} ${unit}/week te verliezen.`,
-    };
-  } else {
-    status = {
-      label: "Te ambitieus",
-      color: "var(--destructive)",
-      msg: `Dat vraagt ${requiredPerWeek.toFixed(2)} ${unit}/week. Aanbevolen: max 0,5 ${unit}/week (≈ ${recommendedDays} dagen totaal).`,
-    };
-  }
+  // Only show as a warning when deadline-tempo is unhealthy or verstreken.
+  if (toLose <= 0) return null;
+  if (daysLeft > 0 && isHealthy) return null;
 
-  const progressPct = Math.max(0, Math.min(100, (daysPassed / totalDays) * 100));
+  const isExpired = daysLeft <= 0;
+  const title = isExpired ? "Deadline verstreken" : "Te ambitieus tempo";
+  const msg = isExpired
+    ? "Je einddag is voorbij. Stel een nieuwe deadline in."
+    : `Om je doel te halen moet je ${requiredPerWeek.toFixed(2)} ${unit} per week verliezen. Aanbevolen is max 0,5 ${unit}/week (≈ ${recommendedDays} dagen totaal).`;
 
   return (
-    <Card>
-      <CardContent className="space-y-3 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Tijdlijn</span>
-          <span className="text-sm font-medium" style={{ color: status.color }}>
-            {status.label}
-          </span>
+    <Card className="border-destructive/40 bg-destructive/5">
+      <CardContent className="flex gap-3 px-5 py-4">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+        <div className="space-y-1">
+          <div className="text-sm font-medium text-destructive">{title}</div>
+          <p className="text-sm text-muted-foreground">{msg}</p>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-all duration-500"
-            style={{ width: `${progressPct}%` }} />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{format(begin, "d MMM", { locale: nl })}</span>
-          <span>{format(end, "d MMM yyyy", { locale: nl })}</span>
-        </div>
-        <p className="text-sm text-muted-foreground">{status.msg}</p>
       </CardContent>
     </Card>
+  );
+}
+
+
+function PaceHint({
+  startW, goalW, startDate, endDate, unit,
+}: { startW: string; goalW: string; startDate: string; endDate: string; unit: string }) {
+  const s = parseFloat(startW.replace(",", "."));
+  const g = parseFloat(goalW.replace(",", "."));
+  if (!s || !g || !startDate || !endDate || s <= g) return null;
+  const days = differenceInDays(parseISO(endDate), parseISO(startDate));
+  if (days <= 0) return null;
+  const perWeek = ((s - g) / days) * 7;
+  const healthy = perWeek <= 0.5;
+  return (
+    <div
+      className="rounded-lg border px-3 py-2.5 text-xs"
+      style={{
+        borderColor: healthy ? "var(--primary)" : "var(--destructive)",
+        background: healthy
+          ? "color-mix(in oklab, var(--primary) 10%, transparent)"
+          : "color-mix(in oklab, var(--destructive) 10%, transparent)",
+        color: healthy ? "var(--primary)" : "var(--destructive)",
+      }}
+    >
+      <div className="font-medium">
+        {perWeek.toFixed(2)} {unit}/week nodig
+      </div>
+      <div className="mt-0.5 opacity-80">
+        {healthy
+          ? "Gezond tempo (≤ 0,5 kg/week)."
+          : "Te ambitieus — aanbevolen is max 0,5 kg/week."}
+      </div>
+    </div>
   );
 }
