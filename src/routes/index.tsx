@@ -258,8 +258,8 @@ function Index() {
                           dataKey="weight"
                           stroke="var(--primary)"
                           strokeWidth={2.5}
-                          dot={{ r: 3.5, fill: "var(--primary)" }}
-                          activeDot={{ r: 6 }}
+                          dot={false}
+                          activeDot={{ r: 5 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
