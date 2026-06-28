@@ -47,7 +47,14 @@ export function useEntries() {
     setEntries((prev) => prev.filter((x) => x.date !== date));
   }, []);
 
-  return { entries, addEntry, removeEntry, loaded };
+  const updateEntry = useCallback((originalDate: string, e: Entry) => {
+    setEntries((prev) => {
+      const without = prev.filter((x) => x.date !== originalDate && x.date !== e.date);
+      return [...without, e].sort((a, b) => a.date.localeCompare(b.date));
+    });
+  }, []);
+
+  return { entries, addEntry, removeEntry, updateEntry, loaded };
 }
 
 export function useSettings() {
