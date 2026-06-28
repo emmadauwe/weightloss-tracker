@@ -624,6 +624,13 @@ function SettingsDialog({
               <Input id="edate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
+          <PaceHint
+            startW={startW}
+            goalW={goalW}
+            startDate={startDate}
+            endDate={endDate}
+            unit={settings.unit}
+          />
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
