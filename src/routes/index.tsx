@@ -358,8 +358,10 @@ function MiniStat({
 }
 
 function HistoryView({
-  sorted, unit, onRemove,
-}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void }) {
+  sorted, unit, onRemove, onUpdate,
+}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void; onUpdate: (originalDate: string, e: Entry) => void }) {
+  const [editing, setEditing] = useState<Entry | null>(null);
+
   if (sorted.length === 0) {
     return (
       <Card>
@@ -374,45 +376,109 @@ function HistoryView({
     );
   }
   return (
-    <Card>
-      <CardContent className="p-0">
-        <ul className="divide-y divide-border">
-          {[...sorted].reverse().map((e, i, arr) => {
-            const prev = arr[i + 1];
-            const diff = prev ? e.weight - prev.weight : 0;
-            return (
-              <li key={e.date} className="flex items-center gap-3 px-5 py-3.5">
-                <div className="flex-1">
-                  <div className="font-medium tabular-nums">
-                    {e.weight.toFixed(1)}{" "}
-                    <span className="text-sm text-muted-foreground">{unit}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
-                    {e.note && ` · ${e.note}`}
-                  </div>
-                </div>
-                {prev && (
-                  <span
-                    className={`text-xs tabular-nums font-medium ${
-                      diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
-                    }`}
+    <>
+      <Card>
+        <CardContent className="p-0">
+          <ul className="divide-y divide-border">
+            {[...sorted].reverse().map((e, i, arr) => {
+              const prev = arr[i + 1];
+              const diff = prev ? e.weight - prev.weight : 0;
+              return (
+                <li key={e.date} className="flex items-center gap-2 px-5 py-3.5">
+                  <button
+                    onClick={() => setEditing(e)}
+                    className="flex-1 text-left"
+                    aria-label="Bewerken"
                   >
-                    {diff > 0 ? "+" : ""}
-                    {diff.toFixed(1)}
-                  </span>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+                    <div className="font-medium tabular-nums">
+                      {e.weight.toFixed(1)}{" "}
+                      <span className="text-sm text-muted-foreground">{unit}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(parseISO(e.date), "EEEE d MMMM yyyy", { locale: nl })}
+                      {e.note && ` · ${e.note}`}
+                    </div>
+                  </button>
+                  {prev && (
+                    <span
+                      className={`text-xs tabular-nums font-medium ${
+                        diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
+                      }`}
+                    >
+                      {diff > 0 ? "+" : ""}
+                      {diff.toFixed(1)}
+                    </span>
+                  )}
+                  <Button variant="ghost" size="icon" onClick={() => setEditing(e)} aria-label="Bewerken">
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+      {editing && (
+        <EditEntryDialog
+          entry={editing}
+          unit={unit}
+          onClose={() => setEditing(null)}
+          onSave={(updated) => {
+            onUpdate(editing.date, updated);
+            setEditing(null);
+          }}
+        />
+      )}
+    </>
   );
 }
+
+function EditEntryDialog({
+  entry, unit, onClose, onSave,
+}: { entry: Entry; unit: string; onClose: () => void; onSave: (e: Entry) => void }) {
+  const [date, setDate] = useState(entry.date);
+  const [weight, setWeight] = useState(entry.weight.toString());
+  const [note, setNote] = useState(entry.note ?? "");
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const w = parseFloat(weight.replace(",", "."));
+    if (!w || !date) return;
+    onSave({ date, weight: w, note: note.trim() || undefined });
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Meting aanpassen</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edate">Datum</Label>
+            <Input id="edate" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="eweight">Gewicht ({unit})</Label>
+            <Input id="eweight" type="number" step="0.1" inputMode="decimal"
+              value={weight} onChange={(e) => setWeight(e.target.value)} required autoFocus />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="enote">Notitie (optioneel)</Label>
+            <Input id="enote" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="w-full">Opslaan</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function AddEntryDialog({
   onAdd, unit, latest,
