@@ -95,6 +95,31 @@ function Index() {
     return latest.weight - before.weight;
   }, [sorted, latest]);
 
+  // Energie-balans vandaag (slimme koppeling)
+  const { items: ingredients } = useIngredients();
+  const { items: dishes } = useDishes();
+  const { items: meals } = useMeals();
+  const { goal: goalCfg } = useGoal();
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const todayKcal = Math.round(dayMacros(todayKey, meals, ingredients, dishes).kcal);
+  const kcalTarget = useMemo(() => {
+    if (goalCfg.overrideKcal) return goalCfg.overrideKcal;
+    if (!latest || !settings.heightCm || !goalCfg.age) return null;
+    const c = computeGoal({
+      type: goalCfg.type,
+      weightKg: unit === "lb" ? latest.weight * 0.453592 : latest.weight,
+      goalKg: goal,
+      heightCm: settings.heightCm,
+      age: goalCfg.age,
+      sex: goalCfg.sex,
+      activity: goalCfg.activity,
+      startDate: settings.startDate,
+      endDate: settings.endDate,
+    });
+    return c?.kcal ?? null;
+  }, [latest, settings, goal, unit, goalCfg]);
+
+
   const chartData = useMemo(
     () =>
       sorted.map((e) => ({
