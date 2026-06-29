@@ -240,6 +240,31 @@ function Index() {
               />
             </div>
 
+            {/* Slimme koppeling: kcal vandaag */}
+            <Link to="/vandaag" className="block">
+              <Card className="transition-colors hover:bg-accent/40">
+                <CardContent className="flex items-center gap-3 px-5 py-3.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
+                    <UtensilsCrossed className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground">Vandaag gegeten</div>
+                    <div className="text-sm font-medium tabular-nums">
+                      {todayKcal} kcal{kcalTarget && <span className="text-muted-foreground"> / {kcalTarget}</span>}
+                    </div>
+                  </div>
+                  {kcalTarget && (
+                    <div className={`text-xs font-medium tabular-nums ${todayKcal > kcalTarget * 1.05 ? "text-destructive" : "text-success"}`}>
+                      {kcalTarget - todayKcal >= 0 ? `${kcalTarget - todayKcal} over` : `+${todayKcal - kcalTarget}`}
+                    </div>
+                  )}
+                  <ChevronRight className="h-4 w-4 text-primary" />
+                </CardContent>
+              </Card>
+            </Link>
+
+
+
             {/* Gewichtsverloop */}
             <Card>
               <CardContent className="px-5 py-4">
