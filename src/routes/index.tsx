@@ -309,21 +309,22 @@ function Index() {
   );
 }
 
-function TabButton({
+function SubTab({
   active, onClick, icon, label,
 }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-4 py-1 text-xs transition-colors ${
-        active ? "text-primary" : "text-muted-foreground"
+      className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+        active ? "bg-primary text-primary-foreground" : "text-foreground/70 hover:text-foreground"
       }`}
     >
       {icon}
-      <span className="font-medium">{label}</span>
+      <span>{label}</span>
     </button>
   );
 }
+
 
 function MiniStat({
   label, value, sub, subColor, valueColor,
