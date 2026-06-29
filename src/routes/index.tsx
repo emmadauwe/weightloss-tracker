@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays, startOfWeek } from "date-fns";
+
 import { nl } from "date-fns/locale";
 import {
   LineChart,
@@ -36,6 +37,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
+import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
+import { useGoal } from "@/lib/goal-store";
+import { computeGoal, dayMacros } from "@/lib/nutrition-math";
+import { UtensilsCrossed, ChevronRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,6 +95,31 @@ function Index() {
     return latest.weight - before.weight;
   }, [sorted, latest]);
 
+  // Energie-balans vandaag (slimme koppeling)
+  const { items: ingredients } = useIngredients();
+  const { items: dishes } = useDishes();
+  const { items: meals } = useMeals();
+  const { goal: goalCfg } = useGoal();
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const todayKcal = Math.round(dayMacros(todayKey, meals, ingredients, dishes).kcal);
+  const kcalTarget = useMemo(() => {
+    if (goalCfg.overrideKcal) return goalCfg.overrideKcal;
+    if (!latest || !settings.heightCm || !goalCfg.age) return null;
+    const c = computeGoal({
+      type: goalCfg.type,
+      weightKg: unit === "lb" ? latest.weight * 0.453592 : latest.weight,
+      goalKg: goal,
+      heightCm: settings.heightCm,
+      age: goalCfg.age,
+      sex: goalCfg.sex,
+      activity: goalCfg.activity,
+      startDate: settings.startDate,
+      endDate: settings.endDate,
+    });
+    return c?.kcal ?? null;
+  }, [latest, settings, goal, unit, goalCfg]);
+
+
   const chartData = useMemo(
     () =>
       sorted.map((e) => ({
@@ -100,7 +131,7 @@ function Index() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-36">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
@@ -209,13 +240,38 @@ function Index() {
               />
             </div>
 
+            {/* Slimme koppeling: kcal vandaag */}
+            <Link to="/vandaag" className="block">
+              <Card className="transition-colors hover:bg-accent/40">
+                <CardContent className="flex items-center gap-3 px-5 py-3.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
+                    <UtensilsCrossed className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground">Vandaag gegeten</div>
+                    <div className="text-sm font-medium tabular-nums">
+                      {todayKcal} kcal{kcalTarget && <span className="text-muted-foreground"> / {kcalTarget}</span>}
+                    </div>
+                  </div>
+                  {kcalTarget && (
+                    <div className={`text-xs font-medium tabular-nums ${todayKcal > kcalTarget * 1.05 ? "text-destructive" : "text-success"}`}>
+                      {kcalTarget - todayKcal >= 0 ? `${kcalTarget - todayKcal} over` : `+${todayKcal - kcalTarget}`}
+                    </div>
+                  )}
+                  <ChevronRight className="h-4 w-4 text-primary" />
+                </CardContent>
+              </Card>
+            </Link>
+
+
+
             {/* Gewichtsverloop */}
             <Card>
               <CardContent className="px-5 py-4">
                 <div className="mb-3 text-sm font-medium">Gewichtsverloop</div>
                 {chartData.length < 2 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <TrendingDown className="mb-2 h-7 w-7 text-muted-foreground/60" />
+                    <TrendingDown className="mb-2 h-7 w-7 text-primary" />
                     <p className="text-sm text-muted-foreground">
                       Voeg 2+ metingen toe voor de grafiek
                     </p>
@@ -297,42 +353,34 @@ function Index() {
       {/* Floating add button */}
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
-      {/* Bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-around px-6 py-2.5">
-          <TabButton
-            active={tab === "dashboard"}
-            onClick={() => setTab("dashboard")}
-            icon={<LayoutDashboard className="h-5 w-5" />}
-            label="Dashboard"
-          />
-          <TabButton
-            active={tab === "history"}
-            onClick={() => setTab("history")}
-            icon={<History className="h-5 w-5" />}
-            label="Geschiedenis"
-          />
+      {/* In-page sub-tab toggle */}
+      <nav className="fixed inset-x-0 bottom-16 z-20 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto inline-flex rounded-full border border-border bg-card/95 p-1 shadow-sm backdrop-blur">
+          <SubTab active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
+          <SubTab active={tab === "history"} onClick={() => setTab("history")} icon={<History className="h-4 w-4" />} label="Geschiedenis" />
         </div>
       </nav>
+
     </div>
   );
 }
 
-function TabButton({
+function SubTab({
   active, onClick, icon, label,
 }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 px-4 py-1 text-xs transition-colors ${
-        active ? "text-primary" : "text-muted-foreground"
+      className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+        active ? "bg-primary text-primary-foreground" : "text-foreground/70 hover:text-foreground"
       }`}
     >
       {icon}
-      <span className="font-medium">{label}</span>
+      <span>{label}</span>
     </button>
   );
 }
+
 
 function MiniStat({
   label, value, sub, subColor, valueColor,
@@ -368,7 +416,7 @@ function HistoryView({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <Scale className="mb-3 h-8 w-8 text-muted-foreground/60" />
+          <Scale className="mb-3 h-8 w-8 text-primary" />
           <p className="text-sm font-medium">Nog geen metingen</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Tik op + om je eerste meting toe te voegen.
@@ -412,10 +460,10 @@ function HistoryView({
                     </span>
                   )}
                   <Button variant="ghost" size="icon" onClick={() => setEditing(e)} aria-label="Bewerken">
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                    <Pencil className="h-4 w-4 text-primary" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    <Trash2 className="h-4 w-4 text-primary" />
                   </Button>
                 </li>
               );
