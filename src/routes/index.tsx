@@ -106,7 +106,7 @@ function Index() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-36">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
