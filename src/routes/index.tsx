@@ -297,23 +297,14 @@ function Index() {
       {/* Floating add button */}
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
-      {/* Bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-around px-6 py-2.5">
-          <TabButton
-            active={tab === "dashboard"}
-            onClick={() => setTab("dashboard")}
-            icon={<LayoutDashboard className="h-5 w-5" />}
-            label="Dashboard"
-          />
-          <TabButton
-            active={tab === "history"}
-            onClick={() => setTab("history")}
-            icon={<History className="h-5 w-5" />}
-            label="Geschiedenis"
-          />
+      {/* In-page sub-tab toggle */}
+      <nav className="fixed inset-x-0 bottom-16 z-20 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto inline-flex rounded-full border border-border bg-card/95 p-1 shadow-sm backdrop-blur">
+          <SubTab active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
+          <SubTab active={tab === "history"} onClick={() => setTab("history")} icon={<History className="h-4 w-4" />} label="Geschiedenis" />
         </div>
       </nav>
+
     </div>
   );
 }
