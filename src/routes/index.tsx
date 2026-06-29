@@ -37,6 +37,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
+import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
+import { useGoal } from "@/lib/goal-store";
+import { computeGoal, dayMacros } from "@/lib/nutrition-math";
+import { UtensilsCrossed, ChevronRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
