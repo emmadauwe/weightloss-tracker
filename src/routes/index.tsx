@@ -215,7 +215,7 @@ function Index() {
                 <div className="mb-3 text-sm font-medium">Gewichtsverloop</div>
                 {chartData.length < 2 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <TrendingDown className="mb-2 h-7 w-7 text-muted-foreground/60" />
+                    <TrendingDown className="mb-2 h-7 w-7 text-primary" />
                     <p className="text-sm text-muted-foreground">
                       Voeg 2+ metingen toe voor de grafiek
                     </p>
@@ -360,7 +360,7 @@ function HistoryView({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <Scale className="mb-3 h-8 w-8 text-muted-foreground/60" />
+          <Scale className="mb-3 h-8 w-8 text-primary" />
           <p className="text-sm font-medium">Nog geen metingen</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Tik op + om je eerste meting toe te voegen.
@@ -404,10 +404,10 @@ function HistoryView({
                     </span>
                   )}
                   <Button variant="ghost" size="icon" onClick={() => setEditing(e)} aria-label="Bewerken">
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                    <Pencil className="h-4 w-4 text-primary" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    <Trash2 className="h-4 w-4 text-primary" />
                   </Button>
                 </li>
               );
