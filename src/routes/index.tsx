@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays, startOfWeek } from "date-fns";
+
 import { nl } from "date-fns/locale";
 import {
   LineChart,
