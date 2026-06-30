@@ -89,8 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Weightloss Tracker" },
       { name: "twitter:description", content: "Track your weight loss journey with this intuitive application." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d6f4e22d-d975-4281-a16f-f32df76bde53/id-preview-f7a9d6c1--5f6957a6-77d3-45e5-b5dd-2686c6233522.lovable.app-1782664697169.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d6f4e22d-d975-4281-a16f-f32df76bde53/id-preview-f7a9d6c1--5f6957a6-77d3-45e5-b5dd-2686c6233522.lovable.app-1782664697169.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/566be1ac-6803-448e-aa5c-4bc0716ec085" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/566be1ac-6803-448e-aa5c-4bc0716ec085" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
