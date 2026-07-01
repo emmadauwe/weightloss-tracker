@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
-  const { settings, setSettings } = useSettings();
+  const { settings } = useSettings();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
 
   const sorted = entries;
