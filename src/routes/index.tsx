@@ -29,7 +29,6 @@ import {
   Trash2,
   Plus,
   Scale,
-  Settings as SettingsIcon,
   History,
   LayoutDashboard,
   TrendingDown,
@@ -41,6 +40,7 @@ import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { computeGoal, dayMacros } from "@/lib/nutrition-math";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
+import { AppHeader } from "@/components/app-header";
 
 
 export const Route = createFileRoute("/")({
