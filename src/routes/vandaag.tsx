@@ -12,7 +12,7 @@ import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles } from "lucide
 import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
+import { computeGoal, dayMacros, dishMacrosPerServing, mealEntryMacros } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vandaag")({
