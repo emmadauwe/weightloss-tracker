@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Scale } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles } from "lucide-react";
 import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
+import { computeGoal, dayMacros, dishMacrosPerServing, mealEntryMacros } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vandaag")({
@@ -50,6 +50,10 @@ function VandaagPage() {
       age: goal.age,
       sex: goal.sex,
       activity: goal.activity,
+      lifestyle: goal.lifestyle,
+      sessionsPerWeek: goal.sessionsPerWeek,
+      minutesPerSession: goal.minutesPerSession,
+      intensity: goal.intensity,
       startDate: settings.startDate,
       endDate: settings.endDate,
     });
@@ -61,6 +65,34 @@ function VandaagPage() {
     carbs: goal.overrideCarbs ?? goalCalc?.carbs ?? 220,
     fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
   }), [goal, goalCalc]);
+
+  const generateDay = () => {
+    const existing = meals.filter((m) => m.date === date).map((m) => m.id);
+    existing.forEach((id) => remove(id));
+    const tryPick = () => {
+      const picks: { meal: Meal; dishId: string }[] = [];
+      for (const meal of MEAL_ORDER) {
+        const candidates = dishes.filter((d) => d.categories?.includes(meal));
+        if (candidates.length === 0) continue;
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        picks.push({ meal, dishId: pick.id });
+      }
+      return picks;
+    };
+    let best: { meal: Meal; dishId: string }[] = [];
+    let bestDelta = Infinity;
+    for (let i = 0; i < 30; i++) {
+      const p = tryPick();
+      const kcal = p.reduce((acc, x) => {
+        const d = dishes.find((dd) => dd.id === x.dishId);
+        return d ? acc + dishMacrosPerServing(d, ingredients).kcal : acc;
+      }, 0);
+      const delta = Math.abs(kcal - target.kcal);
+      if (delta < bestDelta) { bestDelta = delta; best = p; }
+    }
+    best.forEach((x) => add({ date, meal: x.meal, kind: "dish", refId: x.dishId, amount: 1, unit: "portie" }));
+  };
+
 
   const totals = dayMacros(date, meals, ingredients, dishes);
   const todayMeals = meals.filter((m) => m.date === date);
@@ -109,6 +141,9 @@ function VandaagPage() {
             <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
             <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
             <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={generateDay}>
+              <Sparkles className="mr-1.5 h-4 w-4 text-primary" /> Genereer dag
+            </Button>
           </CardContent>
         </Card>
 
@@ -226,8 +261,11 @@ function AddMealDialog({
   const [amount, setAmount] = useState("100");
   const [unit, setUnit] = useState<Unit>("g");
 
+  const dishList = dishes
+    .filter((d) => !d.categories || d.categories.length === 0 || d.categories.includes(meal))
+    .filter((d) => d.name.toLowerCase().includes(q.toLowerCase()));
   const list = tab === "dish"
-    ? dishes.filter((d) => d.name.toLowerCase().includes(q.toLowerCase()))
+    ? dishList
     : ingredients.filter((i) => i.name.toLowerCase().includes(q.toLowerCase()));
 
   const choose = (id: string) => {

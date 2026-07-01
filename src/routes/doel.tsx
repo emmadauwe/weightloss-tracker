@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { differenceInDays, parseISO } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, type Activity, type GoalType, type Sex } from "@/lib/nutrition-math";
+import { computeGoal, type GoalType, type Intensity, type Lifestyle, type Sex } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/doel")({
@@ -26,7 +27,7 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 function DoelPage() {
   const { goal, setGoal } = useGoal();
   const { entries } = useEntries();
-  const { settings } = useSettings();
+  const { settings, setSettings } = useSettings();
 
   const latest = entries[entries.length - 1]?.weight;
   const calc = useMemo(() => {
@@ -39,6 +40,10 @@ function DoelPage() {
       age: goal.age,
       sex: goal.sex,
       activity: goal.activity,
+      lifestyle: goal.lifestyle,
+      sessionsPerWeek: goal.sessionsPerWeek,
+      minutesPerSession: goal.minutesPerSession,
+      intensity: goal.intensity,
       startDate: settings.startDate,
       endDate: settings.endDate,
     });
@@ -55,6 +60,22 @@ function DoelPage() {
     const n = parseFloat(s.replace(",", "."));
     return isNaN(n) ? undefined : n;
   };
+
+  // Pace (kg/week) op basis van start/doel/datums
+  const pace = useMemo(() => {
+    const s = settings.startWeight;
+    const g = settings.goalWeight;
+    if (!s || !g || !settings.startDate || !settings.endDate) return null;
+    const days = differenceInDays(parseISO(settings.endDate), parseISO(settings.startDate));
+    if (days <= 0) return null;
+    const perWeek = ((g - s) / days) * 7; // negatief = afvallen
+    return { perWeek, days };
+  }, [settings]);
+
+  const paceUnhealthy = pace && (
+    (goal.type === "afvallen" && pace.perWeek < -0.5) ||
+    (goal.type === "bijkomen" && pace.perWeek > 0.5)
+  );
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -83,6 +104,63 @@ function DoelPage() {
           </CardContent>
         </Card>
 
+        {/* Gewicht + tijdlijn (verplaatst uit instellingen) */}
+        <Card>
+          <CardContent className="px-5 py-4 space-y-3">
+            <div className="text-sm font-medium">Gewicht &amp; tijdlijn</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="sw">Startgewicht ({settings.unit})</Label>
+                <Input id="sw" inputMode="decimal" value={settings.startWeight ?? ""}
+                  onChange={(e) => setSettings({ ...settings, startWeight: numOrUndef(e.target.value) })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gw">Doelgewicht ({settings.unit})</Label>
+                <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
+                  onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="h">Lengte (cm)</Label>
+              <Input id="h" inputMode="decimal" value={settings.heightCm ?? ""}
+                onChange={(e) => setSettings({ ...settings, heightCm: numOrUndef(e.target.value) })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="sd">Startdag</Label>
+                <Input id="sd" type="date" value={settings.startDate ?? ""}
+                  onChange={(e) => setSettings({ ...settings, startDate: e.target.value || undefined })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ed">Einddag</Label>
+                <Input id="ed" type="date" value={settings.endDate ?? ""}
+                  onChange={(e) => setSettings({ ...settings, endDate: e.target.value || undefined })} />
+              </div>
+            </div>
+            {pace && (
+              <div
+                className="rounded-lg border px-3 py-2.5 text-xs"
+                style={{
+                  borderColor: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                  background: paceUnhealthy
+                    ? "color-mix(in oklab, var(--destructive) 10%, transparent)"
+                    : "color-mix(in oklab, var(--primary) 10%, transparent)",
+                  color: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                }}
+              >
+                <div className="font-medium tabular-nums">
+                  {pace.perWeek > 0 ? "+" : ""}{pace.perWeek.toFixed(2)} {settings.unit}/week nodig
+                </div>
+                <div className="mt-0.5 opacity-80">
+                  {paceUnhealthy
+                    ? "Te ambitieus — aanbevolen is max 0,5 kg/week."
+                    : "Gezond tempo (≤ 0,5 kg/week)."}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Persoonsdata */}
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
@@ -104,20 +182,64 @@ function DoelPage() {
                 </Select>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Dagelijks leven */}
+        <Card>
+          <CardContent className="px-5 py-4 space-y-3">
+            <div className="text-sm font-medium">Dagelijks leven</div>
+            <p className="text-xs text-muted-foreground">
+              Hoe zit/sta/wandel je op een gemiddelde dag, buiten sport om?
+            </p>
+            <Select
+              value={goal.lifestyle ?? "zittend"}
+              onValueChange={(v) => setGoal({ ...goal, lifestyle: v as Lifestyle })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zittend">Zittend werk, weinig bewegen</SelectItem>
+                <SelectItem value="licht_actief">Zittend werk + wat wandelen</SelectItem>
+                <SelectItem value="actief">Veel op de been / staand werk</SelectItem>
+                <SelectItem value="zeer_actief">Zwaar fysiek werk</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Sport / beweging */}
+        <Card>
+          <CardContent className="px-5 py-4 space-y-3">
+            <div className="text-sm font-medium">Sport &amp; beweging</div>
+            <p className="text-xs text-muted-foreground">
+              Extra beweging naast je dagelijks leven (gym, hardlopen, yoga, …).
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="spw">Sessies per week</Label>
+                <Input id="spw" inputMode="numeric" value={goal.sessionsPerWeek ?? ""}
+                  onChange={(e) => setGoal({ ...goal, sessionsPerWeek: numOrUndef(e.target.value) })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mps">Minuten per sessie</Label>
+                <Input id="mps" inputMode="numeric" value={goal.minutesPerSession ?? ""}
+                  onChange={(e) => setGoal({ ...goal, minutesPerSession: numOrUndef(e.target.value) })} />
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label>Activiteit</Label>
-              <Select value={goal.activity} onValueChange={(v) => setGoal({ ...goal, activity: v as Activity })}>
+              <Label>Intensiteit</Label>
+              <Select
+                value={goal.intensity ?? "matig"}
+                onValueChange={(v) => setGoal({ ...goal, intensity: v as Intensity })}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="laag">Laag (zittend werk)</SelectItem>
-                  <SelectItem value="matig">Matig (3–5× sport/week)</SelectItem>
-                  <SelectItem value="hoog">Hoog (zwaar werk of dagelijks sport)</SelectItem>
+                  <SelectItem value="laag">Laag (yoga, rustig wandelen)</SelectItem>
+                  <SelectItem value="matig">Matig (fitness, fietsen, dansen)</SelectItem>
+                  <SelectItem value="hoog">Hoog (hardlopen, HIIT, voetbal)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Lengte, huidig gewicht, doelgewicht en datums komen uit de Gewicht-pagina.
-            </p>
           </CardContent>
         </Card>
 
@@ -142,7 +264,7 @@ function DoelPage() {
                   <div className="text-right text-xs text-muted-foreground">
                     TDEE: {calc.tdee} kcal
                     {calc.perWeekKg !== 0 && (
-                      <div className={Math.abs(calc.perWeekKg) > 1 ? "text-destructive" : "text-success"}>
+                      <div className={Math.abs(calc.perWeekKg) > 0.5 ? "text-destructive" : "text-success"}>
                         {calc.perWeekKg > 0 ? "+" : ""}{calc.perWeekKg.toFixed(2)} kg/week
                       </div>
                     )}

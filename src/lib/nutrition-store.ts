@@ -19,16 +19,17 @@ export type DishItem = {
   unit: Unit;
 };
 
+export type Meal = "ontbijt" | "lunch" | "diner" | "snack";
+
 export type Dish = {
   id: string;
   name: string;
   servings: number;
   recipeUrl?: string;
-  steps?: string;
+  steps?: string[];
+  categories?: Meal[];
   items: DishItem[];
 };
-
-export type Meal = "ontbijt" | "lunch" | "diner" | "snack";
 
 export type MealEntry = {
   id: string;

@@ -4,11 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X } from "lucide-react";
-import { useDishes, useIngredients, type Dish, type DishItem, type Unit } from "@/lib/nutrition-store";
+import { useDishes, useIngredients, type Dish, type DishItem, type Meal, type Unit } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
@@ -18,6 +17,12 @@ export const Route = createFileRoute("/gerechten")({
 });
 
 const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
+const MEALS: { id: Meal; label: string }[] = [
+  { id: "ontbijt", label: "Ontbijt" },
+  { id: "lunch", label: "Lunch" },
+  { id: "diner", label: "Diner" },
+  { id: "snack", label: "Snack" },
+];
 
 function GerechtenPage() {
   const { items, upsert, remove, newId } = useDishes();
@@ -58,6 +63,15 @@ function GerechtenPage() {
                         {Math.round(m.kcal)} kcal · {Math.round(m.protein)}P · {Math.round(m.carbs)}K · {Math.round(m.fat)}V
                         {" · "}per portie ({d.servings})
                       </div>
+                      {d.categories && d.categories.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {d.categories.map((c) => (
+                            <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                              {MEALS.find((m) => m.id === c)?.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </button>
                     {d.recipeUrl && (
                       <a href={d.recipeUrl} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent">
@@ -111,7 +125,10 @@ function DishDialog({
   const [name, setName] = useState(initial?.name ?? "");
   const [servings, setServings] = useState(initial?.servings.toString() ?? "1");
   const [recipeUrl, setRecipeUrl] = useState(initial?.recipeUrl ?? "");
-  const [steps, setSteps] = useState(initial?.steps ?? "");
+  const [steps, setSteps] = useState<string[]>(
+    initial?.steps && initial.steps.length > 0 ? initial.steps : [""],
+  );
+  const [categories, setCategories] = useState<Meal[]>(initial?.categories ?? []);
   const [items, setItems] = useState<DishItem[]>(initial?.items ?? []);
 
   const macros = useMemo(() => {
@@ -124,15 +141,24 @@ function DishDialog({
     setItems((p) => p.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const removeItem = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
 
+  const toggleCat = (c: Meal) =>
+    setCategories((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
+
+  const addStep = () => setSteps((p) => [...p, ""]);
+  const setStep = (i: number, v: string) => setSteps((p) => p.map((x, idx) => (idx === i ? v : x)));
+  const removeStep = (i: number) => setSteps((p) => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+    const cleanedSteps = steps.map((s) => s.trim()).filter(Boolean);
     onSave({
       id: initial?.id ?? newId(),
       name: name.trim(),
       servings: Math.max(1, parseInt(servings) || 1),
       recipeUrl: recipeUrl.trim() || undefined,
-      steps: steps.trim() || undefined,
+      steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
+      categories: categories.length > 0 ? categories : undefined,
       items,
     });
   };
@@ -150,6 +176,27 @@ function DishDialog({
             <div className="space-y-2">
               <Label htmlFor="dserv">Porties</Label>
               <Input id="dserv" type="number" min={1} value={servings} onChange={(e) => setServings(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Categorieën</Label>
+            <div className="flex flex-wrap gap-2">
+              {MEALS.map((m) => {
+                const on = categories.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggleCat(m.id)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-accent"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -194,9 +241,30 @@ function DishDialog({
             <Label htmlFor="durl">Recept-URL (optioneel)</Label>
             <Input id="durl" type="url" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)} placeholder="https://…" />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="dsteps">Bereiding (optioneel)</Label>
-            <Textarea id="dsteps" rows={4} value={steps} onChange={(e) => setSteps(e.target.value)} />
+            <Label>Bereiding</Label>
+            <div className="space-y-2">
+              {steps.map((s, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <div className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
+                    {i + 1}
+                  </div>
+                  <Input
+                    value={s}
+                    onChange={(e) => setStep(i, e.target.value)}
+                    placeholder={`Stap ${i + 1}`}
+                    className="flex-1"
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeStep(i)} disabled={steps.length <= 1}>
+                    <X className="h-4 w-4 text-primary" />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addStep} className="w-full">
+                <Plus className="mr-1 h-4 w-4" /> Stap toevoegen
+              </Button>
+            </div>
           </div>
 
           <DialogFooter>

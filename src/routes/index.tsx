@@ -29,7 +29,6 @@ import {
   Trash2,
   Plus,
   Scale,
-  Settings as SettingsIcon,
   History,
   LayoutDashboard,
   TrendingDown,
@@ -41,6 +40,7 @@ import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { computeGoal, dayMacros } from "@/lib/nutrition-math";
 import { UtensilsCrossed, ChevronRight } from "lucide-react";
+import { AppHeader } from "@/components/app-header";
 
 
 export const Route = createFileRoute("/")({
@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
-  const { settings, setSettings } = useSettings();
+  const { settings } = useSettings();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
 
   const sorted = entries;
@@ -113,6 +113,10 @@ function Index() {
       age: goalCfg.age,
       sex: goalCfg.sex,
       activity: goalCfg.activity,
+      lifestyle: goalCfg.lifestyle,
+      sessionsPerWeek: goalCfg.sessionsPerWeek,
+      minutesPerSession: goalCfg.minutesPerSession,
+      intensity: goalCfg.intensity,
       startDate: settings.startDate,
       endDate: settings.endDate,
     });
@@ -132,18 +136,8 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background pb-36">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <Scale className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              Gewichtstracker
-            </h1>
-          </div>
-          <SettingsDialog settings={settings} setSettings={setSettings} />
-        </div>
-      </header>
+      <AppHeader title="Gewichtstracker" subtitle="Metingen en voortgang" />
+
 
       <main className="mx-auto max-w-2xl px-4 pt-5">
         {tab === "dashboard" ? (
@@ -595,99 +589,6 @@ function AddEntryDialog({
   );
 }
 
-function SettingsDialog({
-  settings, setSettings,
-}: {
-  settings: ReturnType<typeof useSettings>["settings"];
-  setSettings: ReturnType<typeof useSettings>["setSettings"];
-}) {
-  const [open, setOpen] = useState(false);
-  const [startW, setStartW] = useState(settings.startWeight?.toString() ?? "");
-  const [goalW, setGoalW] = useState(settings.goalWeight?.toString() ?? "");
-  const [height, setHeight] = useState(settings.heightCm?.toString() ?? "");
-  const [startDate, setStartDate] = useState(settings.startDate ?? "");
-  const [endDate, setEndDate] = useState(settings.endDate ?? "");
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSettings({
-      ...settings,
-      startWeight: startW ? parseFloat(startW.replace(",", ".")) : undefined,
-      goalWeight: goalW ? parseFloat(goalW.replace(",", ".")) : undefined,
-      heightCm: height ? parseFloat(height.replace(",", ".")) : undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-    });
-    setOpen(false);
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) {
-          setStartW(settings.startWeight?.toString() ?? "");
-          setGoalW(settings.goalWeight?.toString() ?? "");
-          setHeight(settings.heightCm?.toString() ?? "");
-          setStartDate(settings.startDate ?? "");
-          setEndDate(settings.endDate ?? "");
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Instellingen">
-          <SettingsIcon className="h-5 w-5" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Jouw doel</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="start">Start ({settings.unit})</Label>
-              <Input id="start" type="number" step="0.1" inputMode="decimal" placeholder="85"
-                value={startW} onChange={(e) => setStartW(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="goal">Doel ({settings.unit})</Label>
-              <Input id="goal" type="number" step="0.1" inputMode="decimal" placeholder="72"
-                value={goalW} onChange={(e) => setGoalW(e.target.value)} />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="height">Lengte (cm)</Label>
-            <Input id="height" type="number" step="1" inputMode="decimal" placeholder="bv. 175"
-              value={height} onChange={(e) => setHeight(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="sdate">Startdag</Label>
-              <Input id="sdate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edate">Einddag</Label>
-              <Input id="edate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-          </div>
-          <PaceHint
-            startW={startW}
-            goalW={goalW}
-            startDate={startDate}
-            endDate={endDate}
-            unit={settings.unit}
-          />
-          <DialogFooter>
-            <Button type="submit" className="w-full">Opslaan</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function bmiCategory(bmi: number): { label: string; color: string } {
   if (bmi < 18.5) return { label: "Ondergewicht", color: "var(--accent)" };
   if (bmi < 25) return { label: "Gezond", color: "var(--success)" };
@@ -711,7 +612,6 @@ function DeadlineCard({
   const isHealthy = requiredPerWeek <= recPerWeek;
   const recommendedDays = totalToLose > 0 ? Math.ceil((totalToLose / recPerWeek) * 7) : 0;
 
-  // Only show as a warning when deadline-tempo is unhealthy or verstreken.
   if (toLose <= 0) return null;
   if (daysLeft > 0 && isHealthy) return null;
 
@@ -734,36 +634,3 @@ function DeadlineCard({
   );
 }
 
-
-function PaceHint({
-  startW, goalW, startDate, endDate, unit,
-}: { startW: string; goalW: string; startDate: string; endDate: string; unit: string }) {
-  const s = parseFloat(startW.replace(",", "."));
-  const g = parseFloat(goalW.replace(",", "."));
-  if (!s || !g || !startDate || !endDate || s <= g) return null;
-  const days = differenceInDays(parseISO(endDate), parseISO(startDate));
-  if (days <= 0) return null;
-  const perWeek = ((s - g) / days) * 7;
-  const healthy = perWeek <= 0.5;
-  return (
-    <div
-      className="rounded-lg border px-3 py-2.5 text-xs"
-      style={{
-        borderColor: healthy ? "var(--primary)" : "var(--destructive)",
-        background: healthy
-          ? "color-mix(in oklab, var(--primary) 10%, transparent)"
-          : "color-mix(in oklab, var(--destructive) 10%, transparent)",
-        color: healthy ? "var(--primary)" : "var(--destructive)",
-      }}
-    >
-      <div className="font-medium">
-        {perWeek.toFixed(2)} {unit}/week nodig
-      </div>
-      <div className="mt-0.5 opacity-80">
-        {healthy
-          ? "Gezond tempo (≤ 0,5 kg/week)."
-          : "Te ambitieus — aanbevolen is max 0,5 kg/week."}
-      </div>
-    </div>
-  );
-}
