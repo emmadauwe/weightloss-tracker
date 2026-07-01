@@ -132,18 +132,8 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background pb-36">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <Scale className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
-              Gewichtstracker
-            </h1>
-          </div>
-          <SettingsDialog settings={settings} setSettings={setSettings} />
-        </div>
-      </header>
+      <AppHeader title="Gewichtstracker" subtitle="Metingen en voortgang" />
+
 
       <main className="mx-auto max-w-2xl px-4 pt-5">
         {tab === "dashboard" ? (
