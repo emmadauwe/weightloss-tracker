@@ -141,6 +141,9 @@ function VandaagPage() {
             <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
             <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
             <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={generateDay}>
+              <Sparkles className="mr-1.5 h-4 w-4 text-primary" /> Genereer dag
+            </Button>
           </CardContent>
         </Card>
 
