@@ -39,10 +39,36 @@ function VandaagPage() {
   const { entries, addEntry } = useEntries();
   const [adding, setAdding] = useState<Meal | null>(null);
 
+  const latestWeight = entries[entries.length - 1]?.weight;
+  const goalCalc = useMemo(() => {
+    if (!latestWeight || !settings.heightCm || !goal.age) return null;
+    return computeGoal({
+      type: goal.type,
+      weightKg: settings.unit === "lb" ? latestWeight * 0.453592 : latestWeight,
+      goalKg: settings.goalWeight,
+      heightCm: settings.heightCm,
+      age: goal.age,
+      sex: goal.sex,
+      activity: goal.activity,
+      lifestyle: goal.lifestyle,
+      sessionsPerWeek: goal.sessionsPerWeek,
+      minutesPerSession: goal.minutesPerSession,
+      intensity: goal.intensity,
+      startDate: settings.startDate,
+      endDate: settings.endDate,
+    });
+  }, [latestWeight, settings, goal]);
+
+  const target = useMemo(() => ({
+    kcal: goal.overrideKcal ?? goalCalc?.kcal ?? 2000,
+    protein: goal.overrideProtein ?? goalCalc?.protein ?? 100,
+    carbs: goal.overrideCarbs ?? goalCalc?.carbs ?? 220,
+    fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
+  }), [goal, goalCalc]);
+
   const generateDay = () => {
     const existing = meals.filter((m) => m.date === date).map((m) => m.id);
     existing.forEach((id) => remove(id));
-    const chosen: { meal: Meal; dishId: string }[] = [];
     const tryPick = () => {
       const picks: { meal: Meal; dishId: string }[] = [];
       for (const meal of MEAL_ORDER) {
@@ -55,42 +81,18 @@ function VandaagPage() {
     };
     let best: { meal: Meal; dishId: string }[] = [];
     let bestDelta = Infinity;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
       const p = tryPick();
       const kcal = p.reduce((acc, x) => {
         const d = dishes.find((dd) => dd.id === x.dishId);
-        if (!d) return acc;
-        return acc + dishMacrosPerServing(d, ingredients).kcal;
+        return d ? acc + dishMacrosPerServing(d, ingredients).kcal : acc;
       }, 0);
       const delta = Math.abs(kcal - target.kcal);
       if (delta < bestDelta) { bestDelta = delta; best = p; }
     }
     best.forEach((x) => add({ date, meal: x.meal, kind: "dish", refId: x.dishId, amount: 1, unit: "portie" }));
-    void chosen;
   };
 
-  const latestWeight = entries[entries.length - 1]?.weight;
-  const goalCalc = useMemo(() => {
-    if (!latestWeight || !settings.heightCm || !goal.age) return null;
-    return computeGoal({
-      type: goal.type,
-      weightKg: settings.unit === "lb" ? latestWeight * 0.453592 : latestWeight,
-      goalKg: settings.goalWeight,
-      heightCm: settings.heightCm,
-      age: goal.age,
-      sex: goal.sex,
-      activity: goal.activity,
-      startDate: settings.startDate,
-      endDate: settings.endDate,
-    });
-  }, [latestWeight, settings, goal]);
-
-  const target = useMemo(() => ({
-    kcal: goal.overrideKcal ?? goalCalc?.kcal ?? 2000,
-    protein: goal.overrideProtein ?? goalCalc?.protein ?? 100,
-    carbs: goal.overrideCarbs ?? goalCalc?.carbs ?? 220,
-    fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
-  }), [goal, goalCalc]);
 
   const totals = dayMacros(date, meals, ingredients, dishes);
   const todayMeals = meals.filter((m) => m.date === date);
