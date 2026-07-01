@@ -261,8 +261,11 @@ function AddMealDialog({
   const [amount, setAmount] = useState("100");
   const [unit, setUnit] = useState<Unit>("g");
 
+  const dishList = dishes
+    .filter((d) => !d.categories || d.categories.length === 0 || d.categories.includes(meal))
+    .filter((d) => d.name.toLowerCase().includes(q.toLowerCase()));
   const list = tab === "dish"
-    ? dishes.filter((d) => d.name.toLowerCase().includes(q.toLowerCase()))
+    ? dishList
     : ingredients.filter((i) => i.name.toLowerCase().includes(q.toLowerCase()));
 
   const choose = (id: string) => {
