@@ -87,16 +87,45 @@ export type GoalType = "afvallen" | "behouden" | "bijkomen" | "spiermassa";
 export type Sex = "v" | "m";
 export type Activity = "laag" | "matig" | "hoog";
 
+export type Lifestyle = "zittend" | "licht_actief" | "actief" | "zeer_actief";
+export type Intensity = "laag" | "matig" | "hoog";
+
+const LIFESTYLE_FACTOR: Record<Lifestyle, number> = {
+  zittend: 1.35,
+  licht_actief: 1.5,
+  actief: 1.65,
+  zeer_actief: 1.8,
+};
+const INTENSITY_MET: Record<Intensity, number> = { laag: 3, matig: 6, hoog: 9 };
 const ACTIVITY_FACTOR: Record<Activity, number> = { laag: 1.3, matig: 1.55, hoog: 1.75 };
 
 export function bmr(weightKg: number, heightCm: number, age: number, sex: Sex): number {
-  // Mifflin-St Jeor
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
   return sex === "m" ? base + 5 : base - 161;
 }
 
-export function tdee(weightKg: number, heightCm: number, age: number, sex: Sex, act: Activity) {
-  return bmr(weightKg, heightCm, age, sex) * ACTIVITY_FACTOR[act];
+export function tdeeDetailed(opts: {
+  weightKg: number;
+  heightCm: number;
+  age: number;
+  sex: Sex;
+  lifestyle?: Lifestyle;
+  sessionsPerWeek?: number;
+  minutesPerSession?: number;
+  intensity?: Intensity;
+  activity?: Activity;
+}): number {
+  const b = bmr(opts.weightKg, opts.heightCm, opts.age, opts.sex);
+  if (opts.lifestyle) {
+    const base = b * LIFESTYLE_FACTOR[opts.lifestyle];
+    const sessions = opts.sessionsPerWeek ?? 0;
+    const minutes = opts.minutesPerSession ?? 0;
+    const met = INTENSITY_MET[opts.intensity ?? "matig"];
+    // MET-kcal per hour ≈ MET * kg
+    const weeklyKcal = met * opts.weightKg * ((sessions * minutes) / 60);
+    return base + weeklyKcal / 7;
+  }
+  return b * ACTIVITY_FACTOR[opts.activity ?? "matig"];
 }
 
 export type GoalCalc = {
@@ -104,7 +133,7 @@ export type GoalCalc = {
   protein: number;
   carbs: number;
   fat: number;
-  perWeekKg: number; // negative = afvallen
+  perWeekKg: number;
   tdee: number;
   warnings: string[];
 };
@@ -116,13 +145,17 @@ export function computeGoal(opts: {
   heightCm: number;
   age: number;
   sex: Sex;
-  activity: Activity;
+  activity?: Activity;
+  lifestyle?: Lifestyle;
+  sessionsPerWeek?: number;
+  minutesPerSession?: number;
+  intensity?: Intensity;
   startDate?: string;
   endDate?: string;
 }): GoalCalc | null {
-  const { type, weightKg, goalKg, heightCm, age, sex, activity, startDate, endDate } = opts;
+  const { type, weightKg, goalKg, heightCm, age, sex, startDate, endDate } = opts;
   if (!weightKg || !heightCm || !age) return null;
-  const t = tdee(weightKg, heightCm, age, sex, activity);
+  const t = tdeeDetailed(opts);
 
   let perWeekKg = 0;
   if (goalKg && startDate && endDate && (type === "afvallen" || type === "bijkomen")) {
@@ -135,7 +168,6 @@ export function computeGoal(opts: {
   else if (type === "bijkomen") kcal = t + (perWeekKg ? (perWeekKg * 7700) / 7 : 300);
   else if (type === "spiermassa") kcal = t + 300;
 
-  // Macros
   const proteinPerKg = type === "spiermassa" ? 2.0 : 1.8;
   const protein = Math.round(proteinPerKg * weightKg);
   const fatKcal = kcal * 0.28;
@@ -161,3 +193,4 @@ export function computeGoal(opts: {
     warnings,
   };
 }
+
