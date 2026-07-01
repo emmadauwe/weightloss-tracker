@@ -113,6 +113,10 @@ function Index() {
       age: goalCfg.age,
       sex: goalCfg.sex,
       activity: goalCfg.activity,
+      lifestyle: goalCfg.lifestyle,
+      sessionsPerWeek: goalCfg.sessionsPerWeek,
+      minutesPerSession: goalCfg.minutesPerSession,
+      intensity: goalCfg.intensity,
       startDate: settings.startDate,
       endDate: settings.endDate,
     });
