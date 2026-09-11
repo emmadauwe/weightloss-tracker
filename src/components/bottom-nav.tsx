@@ -18,7 +18,7 @@ export function BottomNav() {
             key={to}
             to={to}
             activeOptions={{ exact: true }}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] font-medium text-foreground/65 transition-colors data-[status=active]:text-primary"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors data-[status=active]:text-primary"
           >
             <Icon className="h-5 w-5" strokeWidth={2} />
             <span>{label}</span>
