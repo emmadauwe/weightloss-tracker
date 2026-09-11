@@ -25,7 +25,7 @@ export function AppHeader({
           onClick={() => void signOut()}
           className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent"
         >
-          <LogOut className="h-4.5 w-4.5 text-primary" />
+          <LogOut className="h-4 w-4 text-primary" />
         </button>
       </div>
     </header>
