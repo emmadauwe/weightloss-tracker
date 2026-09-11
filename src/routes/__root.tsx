@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/bottom-nav";
+import { AuthProvider, useAuth } from "../lib/auth";
+import { AuthScreen } from "../components/auth-screen";
 
 
 function NotFoundComponent() {
@@ -122,14 +124,29 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function Gate() {
+  const { user, ready } = useAuth();
+  if (!ready) {
+    return <div className="min-h-screen bg-background" />;
+  }
+  if (!user) return <AuthScreen />;
+  return (
+    <>
+      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <Outlet />
+      <BottomNav />
+    </>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <BottomNav />
+      <AuthProvider>
+        <Gate />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCloudDoc } from "./cloud-store";
 import type { Activity, GoalType, Intensity, Lifestyle, Sex } from "./nutrition-math";
 
 export type GoalSettings = {
@@ -17,8 +17,8 @@ export type GoalSettings = {
   overrideFat?: number;
 };
 
-const KEY = "goal-settings-v1";
-const DEFAULT: GoalSettings = {
+export const GOAL_KEY = "goal-settings-v1";
+export const DEFAULT_GOAL: GoalSettings = {
   type: "afvallen",
   sex: "v",
   activity: "matig",
@@ -29,23 +29,6 @@ const DEFAULT: GoalSettings = {
 };
 
 export function useGoal() {
-  const [goal, setGoal] = useState<GoalSettings>(DEFAULT);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setGoal({ ...DEFAULT, ...JSON.parse(raw) });
-    } catch {
-      /* ignore */
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) localStorage.setItem(KEY, JSON.stringify(goal));
-  }, [goal, loaded]);
-
-  return { goal, setGoal, loaded };
+  const { value, setValue, loaded } = useCloudDoc<GoalSettings>(GOAL_KEY, DEFAULT_GOAL);
+  return { goal: { ...DEFAULT_GOAL, ...value }, setGoal: setValue, loaded };
 }
