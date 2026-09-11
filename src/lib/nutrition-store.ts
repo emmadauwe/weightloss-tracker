@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useCloudDoc } from "./cloud-store";
 
 export type Unit = "g" | "ml" | "stuk" | "portie";
 
@@ -45,16 +46,6 @@ const ING_KEY = "nutrition-ingredients-v1";
 const DISH_KEY = "nutrition-dishes-v1";
 const MEAL_KEY = "nutrition-meals-v1";
 
-function read<T>(key: string, fb: T): T {
-  if (typeof window === "undefined") return fb;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fb;
-  } catch {
-    return fb;
-  }
-}
-
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -80,84 +71,72 @@ const SEED_INGREDIENTS: Ingredient[] = [
   { id: "zalm", name: "Zalm", baseUnit: "g", kcal: 208, protein: 20, carbs: 0, fat: 13 },
 ];
 
+const EMPTY_DISHES: Dish[] = [];
+const EMPTY_MEALS: MealEntry[] = [];
+
 export function useIngredients() {
-  const [items, setItems] = useState<Ingredient[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { value, setValue, loaded } = useCloudDoc<Ingredient[] | undefined>(ING_KEY, undefined);
 
   useEffect(() => {
-    const existing = read<Ingredient[] | null>(ING_KEY, null);
-    if (!existing) {
-      setItems(SEED_INGREDIENTS);
-      localStorage.setItem(ING_KEY, JSON.stringify(SEED_INGREDIENTS));
-    } else {
-      setItems(existing);
-    }
-    setLoaded(true);
-  }, []);
+    if (loaded && value === undefined) setValue(SEED_INGREDIENTS);
+  }, [loaded, value, setValue]);
 
-  useEffect(() => {
-    if (loaded) localStorage.setItem(ING_KEY, JSON.stringify(items));
-  }, [items, loaded]);
+  const items = value ?? SEED_INGREDIENTS;
 
-  const upsert = useCallback((ing: Ingredient) => {
-    setItems((p) => {
-      const i = p.findIndex((x) => x.id === ing.id);
-      if (i === -1) return [...p, ing];
-      const c = [...p];
-      c[i] = ing;
-      return c;
-    });
-  }, []);
-  const remove = useCallback((id: string) => setItems((p) => p.filter((x) => x.id !== id)), []);
+  const upsert = useCallback(
+    (ing: Ingredient) => {
+      setValue((prev) => {
+        const list = prev ?? SEED_INGREDIENTS;
+        const i = list.findIndex((x) => x.id === ing.id);
+        if (i === -1) return [...list, ing];
+        const c = [...list];
+        c[i] = ing;
+        return c;
+      });
+    },
+    [setValue],
+  );
+  const remove = useCallback(
+    (id: string) => setValue((prev) => (prev ?? SEED_INGREDIENTS).filter((x) => x.id !== id)),
+    [setValue],
+  );
 
   return { items, upsert, remove, loaded, newId: uid };
 }
 
 export function useDishes() {
-  const [items, setItems] = useState<Dish[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { value: items, setValue, loaded } = useCloudDoc<Dish[]>(DISH_KEY, EMPTY_DISHES);
 
-  useEffect(() => {
-    setItems(read<Dish[]>(DISH_KEY, []));
-    setLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (loaded) localStorage.setItem(DISH_KEY, JSON.stringify(items));
-  }, [items, loaded]);
-
-  const upsert = useCallback((d: Dish) => {
-    setItems((p) => {
-      const i = p.findIndex((x) => x.id === d.id);
-      if (i === -1) return [...p, d];
-      const c = [...p];
-      c[i] = d;
-      return c;
-    });
-  }, []);
-  const remove = useCallback((id: string) => setItems((p) => p.filter((x) => x.id !== id)), []);
+  const upsert = useCallback(
+    (d: Dish) => {
+      setValue((prev) => {
+        const i = prev.findIndex((x) => x.id === d.id);
+        if (i === -1) return [...prev, d];
+        const c = [...prev];
+        c[i] = d;
+        return c;
+      });
+    },
+    [setValue],
+  );
+  const remove = useCallback((id: string) => setValue((prev) => prev.filter((x) => x.id !== id)), [setValue]);
 
   return { items, upsert, remove, loaded, newId: uid };
 }
 
 export function useMeals() {
-  const [items, setItems] = useState<MealEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { value: items, setValue, loaded } = useCloudDoc<MealEntry[]>(MEAL_KEY, EMPTY_MEALS);
 
-  useEffect(() => {
-    setItems(read<MealEntry[]>(MEAL_KEY, []));
-    setLoaded(true);
-  }, []);
-  useEffect(() => {
-    if (loaded) localStorage.setItem(MEAL_KEY, JSON.stringify(items));
-  }, [items, loaded]);
-
-  const add = useCallback((m: Omit<MealEntry, "id">) => {
-    setItems((p) => [...p, { ...m, id: uid() }]);
-  }, []);
-  const remove = useCallback((id: string) => setItems((p) => p.filter((x) => x.id !== id)), []);
-  const update = useCallback((id: string, patch: Partial<MealEntry>) => {
-    setItems((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  }, []);
+  const add = useCallback(
+    (m: Omit<MealEntry, "id">) => setValue((prev) => [...prev, { ...m, id: uid() }]),
+    [setValue],
+  );
+  const remove = useCallback((id: string) => setValue((prev) => prev.filter((x) => x.id !== id)), [setValue]);
+  const update = useCallback(
+    (id: string, patch: Partial<MealEntry>) =>
+      setValue((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
+    [setValue],
+  );
 
   return { items, add, remove, update, loaded };
 }
