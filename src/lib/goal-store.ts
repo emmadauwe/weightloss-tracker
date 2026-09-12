@@ -1,5 +1,6 @@
 import { useCloudDoc } from "./cloud-store";
 import type { Activity, GoalType, Intensity, Lifestyle, Sex } from "./nutrition-math";
+import type { MacroPriority } from "./planner";
 
 export type GoalSettings = {
   type: GoalType;
@@ -15,6 +16,10 @@ export type GoalSettings = {
   overrideProtein?: number;
   overrideCarbs?: number;
   overrideFat?: number;
+  /** What the day generator should protect besides calories. */
+  macroPriority?: MacroPriority;
+  /** How many different cooked meals (lunch/diner) you want to make per week. */
+  cookPerWeek?: number;
 };
 
 export const GOAL_KEY = "goal-settings-v1";
@@ -26,6 +31,8 @@ export const DEFAULT_GOAL: GoalSettings = {
   sessionsPerWeek: 2,
   minutesPerSession: 45,
   intensity: "matig",
+  macroPriority: "balans",
+  cookPerWeek: 4,
 };
 
 export function useGoal() {
