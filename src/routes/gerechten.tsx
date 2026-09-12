@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X } from "lucide-react";
 import { useDishes, useIngredients, type Dish, type DishItem, type Meal, type Unit } from "@/lib/nutrition-store";
@@ -16,7 +15,7 @@ export const Route = createFileRoute("/gerechten")({
   component: GerechtenPage,
 });
 
-const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
+
 const MEALS: { id: Meal; label: string }[] = [
   { id: "ontbijt", label: "Ontbijt" },
   { id: "lunch", label: "Lunch" },
