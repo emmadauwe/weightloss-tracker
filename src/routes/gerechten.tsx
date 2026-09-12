@@ -4,10 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X } from "lucide-react";
-import { useDishes, useIngredients, type Dish, type DishItem, type Meal, type Unit } from "@/lib/nutrition-store";
+import { useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
@@ -16,7 +15,7 @@ export const Route = createFileRoute("/gerechten")({
   component: GerechtenPage,
 });
 
-const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
+
 const MEALS: { id: Meal; label: string }[] = [
   { id: "ontbijt", label: "Ontbijt" },
   { id: "lunch", label: "Lunch" },
@@ -136,7 +135,17 @@ function DishDialog({
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
   }, [items, servings, ingredients]);
 
-  const addItem = () => setItems((p) => [...p, { ingredientId: ingredients[0]?.id ?? "", amount: 100, unit: "g" }]);
+  const [picking, setPicking] = useState<number | "new" | null>(null);
+
+  const chooseIngredient = (target: number | "new", ingId: string) => {
+    const ing = ingredients.find((i) => i.id === ingId);
+    if (!ing) return;
+    const unit = ing.baseUnit;
+    const amount = unit === "g" || unit === "ml" ? 100 : 1;
+    if (target === "new") setItems((p) => [...p, { ingredientId: ingId, amount, unit }]);
+    else setItems((p) => p.map((x, idx) => (idx === target ? { ingredientId: ingId, amount, unit } : x)));
+    setPicking(null);
+  };
   const setItem = (i: number, patch: Partial<DishItem>) =>
     setItems((p) => p.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const removeItem = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
@@ -203,28 +212,27 @@ function DishDialog({
           <div className="space-y-2">
             <Label>Ingrediënten</Label>
             <div className="space-y-2">
-              {items.map((it, i) => (
-                <div key={i} className="flex gap-2">
-                  <Select value={it.ingredientId} onValueChange={(v) => setItem(i, { ingredientId: v })}>
-                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ingredients.map((ing) => <SelectItem key={ing.id} value={ing.id}>{ing.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Input className="w-20" inputMode="decimal" value={it.amount}
-                    onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                  <Select value={it.unit} onValueChange={(v) => setItem(i, { unit: v as Unit })}>
-                    <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
-                    <X className="h-4 w-4 text-primary" />
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addItem} className="w-full">
+              {items.map((it, i) => {
+                const ing = ingredients.find((x) => x.id === it.ingredientId);
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPicking(i)}
+                      className="flex-1 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
+                    >
+                      {ing?.name ?? "Kies ingrediënt…"}
+                    </button>
+                    <Input className="w-20" inputMode="decimal" value={it.amount}
+                      onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
+                    <span className="w-10 text-xs text-muted-foreground">{it.unit}</span>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
+                      <X className="h-4 w-4 text-primary" />
+                    </Button>
+                  </div>
+                );
+              })}
+              <Button type="button" variant="outline" size="sm" onClick={() => setPicking("new")} className="w-full">
                 <Plus className="mr-1 h-4 w-4" /> Ingrediënt toevoegen
               </Button>
             </div>
@@ -271,6 +279,61 @@ function DishDialog({
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+      {picking !== null && (
+        <IngredientPicker
+          ingredients={ingredients}
+          onClose={() => setPicking(null)}
+          onPick={(id) => chooseIngredient(picking, id)}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+export function IngredientPicker({
+  ingredients, onPick, onClose,
+}: {
+  ingredients: ReturnType<typeof useIngredients>["items"];
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [q, setQ] = useState("");
+  const list = useMemo(
+    () =>
+      [...ingredients]
+        .sort((a, b) => a.name.localeCompare(b.name, "nl"))
+        .filter((i) => i.name.toLowerCase().includes(q.trim().toLowerCase())),
+    [ingredients, q],
+  );
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] overflow-hidden">
+        <DialogHeader><DialogTitle>Ingrediënt kiezen</DialogTitle></DialogHeader>
+        <Input autoFocus placeholder="Zoek ingrediënt…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="max-h-[50vh] overflow-y-auto rounded-md border border-border">
+          {list.length === 0 ? (
+            <p className="px-3 py-4 text-center text-sm text-muted-foreground">Geen resultaten</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {list.map((ing) => (
+                <li key={ing.id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(ing.id)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
+                  >
+                    <span className="truncate">{ing.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      per {ing.baseUnit === "g" || ing.baseUnit === "ml" ? `100 ${ing.baseUnit}` : ing.baseUnit}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

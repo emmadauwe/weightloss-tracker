@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2 } from "lucide-react";
 import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, dayMacros, dishMacrosPerServing, mealEntryMacros } from "@/lib/nutrition-math";
+import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
+import { generatePlan, picksToEntries, type MacroPriority } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vandaag")({
@@ -29,12 +30,20 @@ const MEAL_LABEL: Record<Meal, string> = {
 const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
 
+const PRIORITY_LABEL: Record<MacroPriority, string> = {
+  balans: "In balans houden",
+  eiwit: "Eiwitdoel altijd halen",
+  vet: "Nooit over het vetdoel",
+};
+
 function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [view, setView] = useState<"dag" | "week">("dag");
+  const [showOptions, setShowOptions] = useState(false);
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove } = useMeals();
-  const { goal } = useGoal();
+  const { goal, setGoal } = useGoal();
   const { settings } = useSettings();
   const { entries, addEntry } = useEntries();
   const [adding, setAdding] = useState<Meal | null>(null);
@@ -66,134 +75,240 @@ function VandaagPage() {
     fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
   }), [goal, goalCalc]);
 
-  const generateDay = () => {
-    const existing = meals.filter((m) => m.date === date).map((m) => m.id);
-    existing.forEach((id) => remove(id));
-    const tryPick = () => {
-      const picks: { meal: Meal; dishId: string }[] = [];
-      for (const meal of MEAL_ORDER) {
-        const candidates = dishes.filter((d) => d.categories?.includes(meal));
-        if (candidates.length === 0) continue;
-        const pick = candidates[Math.floor(Math.random() * candidates.length)];
-        picks.push({ meal, dishId: pick.id });
-      }
-      return picks;
-    };
-    let best: { meal: Meal; dishId: string }[] = [];
-    let bestDelta = Infinity;
-    for (let i = 0; i < 30; i++) {
-      const p = tryPick();
-      const kcal = p.reduce((acc, x) => {
-        const d = dishes.find((dd) => dd.id === x.dishId);
-        return d ? acc + dishMacrosPerServing(d, ingredients).kcal : acc;
-      }, 0);
-      const delta = Math.abs(kcal - target.kcal);
-      if (delta < bestDelta) { bestDelta = delta; best = p; }
-    }
-    best.forEach((x) => add({ date, meal: x.meal, kind: "dish", refId: x.dishId, amount: 1, unit: "portie" }));
-  };
+  const priority: MacroPriority = goal.macroPriority ?? "balans";
+  const cookPerWeek = goal.cookPerWeek ?? 4;
 
+  const weekDates = useMemo(() => {
+    const monday = startOfWeek(parseISO(date), { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), "yyyy-MM-dd"));
+  }, [date]);
+
+  const generateFor = (dates: string[]) => {
+    meals.filter((m) => dates.includes(m.date)).forEach((m) => remove(m.id));
+    const picks = generatePlan({
+      dates,
+      dishes,
+      ingredients,
+      target,
+      priority,
+      cookCount: dates.length === 1 ? undefined : Math.round((cookPerWeek * dates.length) / 7),
+    });
+    picksToEntries(picks).forEach((e) => add(e));
+  };
 
   const totals = dayMacros(date, meals, ingredients, dishes);
   const todayMeals = meals.filter((m) => m.date === date);
   const weighedToday = entries.some((e) => e.date === date);
 
-  const shift = (delta: number) => setDate(format(addDays(parseISO(date), delta), "yyyy-MM-dd"));
+  const shift = (delta: number) =>
+    setDate(format(addDays(parseISO(date), view === "week" ? delta * 7 : delta), "yyyy-MM-dd"));
 
   return (
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title="Vandaag" subtitle="Dagplanning en macro's" />
 
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
+        {/* Dag / week schakelaar */}
+        <div className="flex gap-2">
+          {(["dag", "week"] as const).map((v) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={view === v ? "default" : "outline"}
+              className="flex-1"
+              onClick={() => setView(v)}
+            >
+              {v === "dag" ? "Dag" : "Week"}
+            </Button>
+          ))}
+        </div>
+
         {/* Datumkiezer */}
         <Card>
           <CardContent className="flex items-center justify-between px-4 py-2.5">
-            <Button variant="ghost" size="icon" onClick={() => shift(-1)} aria-label="Vorige dag">
+            <Button variant="ghost" size="icon" onClick={() => shift(-1)} aria-label="Vorige">
               <ChevronLeft className="h-5 w-5 text-primary" />
             </Button>
             <div className="text-sm font-medium capitalize">
-              {format(parseISO(date), "EEEE d MMMM", { locale: nl })}
+              {view === "dag"
+                ? format(parseISO(date), "EEEE d MMMM", { locale: nl })
+                : `${format(parseISO(weekDates[0]), "d MMM", { locale: nl })} – ${format(parseISO(weekDates[6]), "d MMM", { locale: nl })}`}
             </div>
-            <Button variant="ghost" size="icon" onClick={() => shift(1)} aria-label="Volgende dag">
+            <Button variant="ghost" size="icon" onClick={() => shift(1)} aria-label="Volgende">
               <ChevronRight className="h-5 w-5 text-primary" />
             </Button>
           </CardContent>
         </Card>
 
-        {/* Macro overzicht */}
+        {/* Generator-opties */}
         <Card>
-          <CardContent className="px-5 py-4 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-xs text-muted-foreground">Calorieën</div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-semibold tabular-nums text-primary"
-                    style={{ fontFamily: "var(--font-display)" }}>
-                    {Math.round(totals.kcal)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">/ {target.kcal} kcal</span>
+          <CardContent className="space-y-3 px-5 py-3.5">
+            <button
+              type="button"
+              onClick={() => setShowOptions((s) => !s)}
+              className="flex w-full items-center justify-between text-sm font-medium"
+            >
+              <span className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-primary" /> Generator-instellingen
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">{PRIORITY_LABEL[priority]}</span>
+            </button>
+            {showOptions && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Wat krijgt voorrang naast calorieën?</Label>
+                  <Select
+                    value={priority}
+                    onValueChange={(v) => setGoal({ ...goal, macroPriority: v as MacroPriority })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="balans">In balans houden</SelectItem>
+                      <SelectItem value="eiwit">Eiwitdoel halen (mag over koolhydraten/vet)</SelectItem>
+                      <SelectItem value="vet">Onder het vetdoel blijven (mag onder eiwit)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cook">Nieuwe warme maaltijden koken per week</Label>
+                  <Input
+                    id="cook"
+                    type="number"
+                    min={1}
+                    max={14}
+                    value={cookPerWeek}
+                    onChange={(e) =>
+                      setGoal({ ...goal, cookPerWeek: Math.max(1, Math.min(14, parseInt(e.target.value) || 1)) })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    De rest van de lunches en diners wordt gevuld met restjes van wat je kookt.
+                  </p>
                 </div>
               </div>
-              <div className={`text-sm font-medium tabular-nums ${totals.kcal > target.kcal * 1.05 ? "text-destructive" : "text-success"}`}>
-                {Math.round(target.kcal - totals.kcal)} resterend
-              </div>
-            </div>
-            <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
-            <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
-            <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
-            <Button type="button" variant="outline" size="sm" className="w-full" onClick={generateDay}>
-              <Sparkles className="mr-1.5 h-4 w-4 text-primary" /> Genereer dag
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => generateFor(view === "dag" ? [date] : weekDates)}
+            >
+              <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
+              {view === "dag" ? "Genereer dag" : "Genereer week"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Wegen-reminder */}
-        {!weighedToday && date === format(new Date(), "yyyy-MM-dd") && (
-          <QuickWeighCard unit={settings.unit} latest={latestWeight} onSave={(w) => addEntry({ date, weight: w })} />
-        )}
-
-        {/* Maaltijden */}
-        {MEAL_ORDER.map((meal) => {
-          const list = todayMeals.filter((m) => m.meal === meal);
-          const sum = list.reduce((acc, m) => acc + mealEntryMacros(m, ingredients, dishes).kcal, 0);
-          return (
-            <Card key={meal}>
-              <CardContent className="px-5 py-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{MEAL_LABEL[meal]}</div>
-                  <div className="text-xs text-muted-foreground tabular-nums">{Math.round(sum)} kcal</div>
+        {view === "week" ? (
+          <div className="space-y-2">
+            {weekDates.map((d) => {
+              const t = dayMacros(d, meals, ingredients, dishes);
+              const count = meals.filter((m) => m.date === d).length;
+              return (
+                <Card key={d}>
+                  <CardContent className="px-5 py-3.5">
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => { setDate(d); setView("dag"); }}
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-sm font-medium capitalize">
+                          {format(parseISO(d), "EEEE d MMM", { locale: nl })}
+                        </div>
+                        <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {Math.round(t.kcal)} / {target.kcal} kcal
+                        </div>
+                      </div>
+                      {count === 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">Nog niets gepland.</p>
+                      ) : (
+                        <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                          {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
+                        </div>
+                      )}
+                    </button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <>
+            {/* Macro overzicht */}
+            <Card>
+              <CardContent className="px-5 py-4 space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Calorieën</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-semibold tabular-nums text-primary"
+                        style={{ fontFamily: "var(--font-display)" }}>
+                        {Math.round(totals.kcal)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/ {target.kcal} kcal</span>
+                    </div>
+                  </div>
+                  <div className={`text-sm font-medium tabular-nums ${totals.kcal > target.kcal * 1.05 ? "text-destructive" : "text-success"}`}>
+                    {Math.round(target.kcal - totals.kcal)} resterend
+                  </div>
                 </div>
-                {list.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nog niets toegevoegd.</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {list.map((m) => {
-                      const ref = m.kind === "ingredient"
-                        ? ingredients.find((i) => i.id === m.refId)
-                        : dishes.find((d) => d.id === m.refId);
-                      const macros = mealEntryMacros(m, ingredients, dishes);
-                      return (
-                        <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
-                          <span className="flex-1 truncate">
-                            {ref?.name ?? "—"}
-                            <span className="text-muted-foreground"> · {m.amount} {m.unit}</span>
-                          </span>
-                          <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
-                            <Trash2 className="h-3.5 w-3.5 text-primary" />
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                <Button variant="outline" size="sm" className="w-full" onClick={() => setAdding(meal)}>
-                  <Plus className="mr-1 h-4 w-4" /> Toevoegen
-                </Button>
+                <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
+                <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
+                <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
               </CardContent>
             </Card>
-          );
-        })}
+
+            {/* Wegen-reminder */}
+            {!weighedToday && date === format(new Date(), "yyyy-MM-dd") && (
+              <QuickWeighCard unit={settings.unit} latest={latestWeight} onSave={(w) => addEntry({ date, weight: w })} />
+            )}
+
+            {/* Maaltijden */}
+            {MEAL_ORDER.map((meal) => {
+              const list = todayMeals.filter((m) => m.meal === meal);
+              const sum = list.reduce((acc, m) => acc + mealEntryMacros(m, ingredients, dishes).kcal, 0);
+              return (
+                <Card key={meal}>
+                  <CardContent className="px-5 py-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{MEAL_LABEL[meal]}</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">{Math.round(sum)} kcal</div>
+                    </div>
+                    {list.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nog niets toegevoegd.</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {list.map((m) => {
+                          const ref = m.kind === "ingredient"
+                            ? ingredients.find((i) => i.id === m.refId)
+                            : dishes.find((d) => d.id === m.refId);
+                          const macros = mealEntryMacros(m, ingredients, dishes);
+                          return (
+                            <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
+                              <span className="flex-1 truncate">
+                                {ref?.name ?? "—"}
+                                <span className="text-muted-foreground"> · {m.amount} {m.unit}</span>
+                              </span>
+                              <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
+                                <Trash2 className="h-3.5 w-3.5 text-primary" />
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setAdding(meal)}>
+                      <Plus className="mr-1 h-4 w-4" /> Toevoegen
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </>
+        )}
       </main>
 
       {adding && (
@@ -236,7 +351,7 @@ function QuickWeighCard({ unit, latest, onSave }: { unit: string; latest?: numbe
         <div className="flex-1 text-sm">
           <div className="font-medium">Nog niet gewogen vandaag</div>
         </div>
-        <Input className="w-20" inputMode="decimal" placeholder={latest ? String(latest) : "kg"}
+        <Input className="w-20" inputMode="decimal" placeholder={latest ? String(latest) : unit}
           value={v} onChange={(e) => setV(e.target.value)} />
         <Button size="sm" onClick={() => {
           const w = parseFloat(v.replace(",", "."));
@@ -261,12 +376,22 @@ function AddMealDialog({
   const [amount, setAmount] = useState("100");
   const [unit, setUnit] = useState<Unit>("g");
 
-  const dishList = dishes
-    .filter((d) => !d.categories || d.categories.length === 0 || d.categories.includes(meal))
-    .filter((d) => d.name.toLowerCase().includes(q.toLowerCase()));
-  const list = tab === "dish"
-    ? dishList
-    : ingredients.filter((i) => i.name.toLowerCase().includes(q.toLowerCase()));
+  const dishList = useMemo(
+    () =>
+      [...dishes]
+        .filter((d) => !d.categories || d.categories.length === 0 || d.categories.includes(meal))
+        .filter((d) => d.name.toLowerCase().includes(q.trim().toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name, "nl")),
+    [dishes, meal, q],
+  );
+  const ingredientList = useMemo(
+    () =>
+      [...ingredients]
+        .filter((i) => i.name.toLowerCase().includes(q.trim().toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name, "nl")),
+    [ingredients, q],
+  );
+  const list = tab === "dish" ? dishList : ingredientList;
 
   const choose = (id: string) => {
     setRefId(id);
@@ -322,12 +447,18 @@ function AddMealDialog({
               </div>
               <div className="space-y-2">
                 <Label>Eenheid</Label>
-                <Select value={unit} onValueChange={(v) => setUnit(v as Unit)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(tab === "dish" ? ["portie"] : UNITS).map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                {tab === "ingredient" ? (
+                  <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground">
+                    {unit}
+                  </div>
+                ) : (
+                  <Select value={unit} onValueChange={(v) => setUnit(v as Unit)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {UNITS.filter((u) => u === "portie").map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           )}
