@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X } from "lucide-react";
-import { useDishes, useIngredients, type Dish, type DishItem, type Meal, type Unit } from "@/lib/nutrition-store";
+import { useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
