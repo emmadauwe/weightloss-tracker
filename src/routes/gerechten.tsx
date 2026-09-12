@@ -136,7 +136,17 @@ function DishDialog({
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
   }, [items, servings, ingredients]);
 
-  const addItem = () => setItems((p) => [...p, { ingredientId: ingredients[0]?.id ?? "", amount: 100, unit: "g" }]);
+  const [picking, setPicking] = useState<number | "new" | null>(null);
+
+  const chooseIngredient = (target: number | "new", ingId: string) => {
+    const ing = ingredients.find((i) => i.id === ingId);
+    if (!ing) return;
+    const unit = ing.baseUnit;
+    const amount = unit === "g" || unit === "ml" ? 100 : 1;
+    if (target === "new") setItems((p) => [...p, { ingredientId: ingId, amount, unit }]);
+    else setItems((p) => p.map((x, idx) => (idx === target ? { ingredientId: ingId, amount, unit } : x)));
+    setPicking(null);
+  };
   const setItem = (i: number, patch: Partial<DishItem>) =>
     setItems((p) => p.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const removeItem = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
