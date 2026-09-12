@@ -213,28 +213,27 @@ function DishDialog({
           <div className="space-y-2">
             <Label>Ingrediënten</Label>
             <div className="space-y-2">
-              {items.map((it, i) => (
-                <div key={i} className="flex gap-2">
-                  <Select value={it.ingredientId} onValueChange={(v) => setItem(i, { ingredientId: v })}>
-                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ingredients.map((ing) => <SelectItem key={ing.id} value={ing.id}>{ing.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Input className="w-20" inputMode="decimal" value={it.amount}
-                    onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                  <Select value={it.unit} onValueChange={(v) => setItem(i, { unit: v as Unit })}>
-                    <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
-                    <X className="h-4 w-4 text-primary" />
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addItem} className="w-full">
+              {items.map((it, i) => {
+                const ing = ingredients.find((x) => x.id === it.ingredientId);
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPicking(i)}
+                      className="flex-1 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
+                    >
+                      {ing?.name ?? "Kies ingrediënt…"}
+                    </button>
+                    <Input className="w-20" inputMode="decimal" value={it.amount}
+                      onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
+                    <span className="w-10 text-xs text-muted-foreground">{it.unit}</span>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
+                      <X className="h-4 w-4 text-primary" />
+                    </Button>
+                  </div>
+                );
+              })}
+              <Button type="button" variant="outline" size="sm" onClick={() => setPicking("new")} className="w-full">
                 <Plus className="mr-1 h-4 w-4" /> Ingrediënt toevoegen
               </Button>
             </div>
