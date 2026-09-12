@@ -281,6 +281,61 @@ function DishDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      {picking !== null && (
+        <IngredientPicker
+          ingredients={ingredients}
+          onClose={() => setPicking(null)}
+          onPick={(id) => chooseIngredient(picking, id)}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+export function IngredientPicker({
+  ingredients, onPick, onClose,
+}: {
+  ingredients: ReturnType<typeof useIngredients>["items"];
+  onPick: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [q, setQ] = useState("");
+  const list = useMemo(
+    () =>
+      [...ingredients]
+        .sort((a, b) => a.name.localeCompare(b.name, "nl"))
+        .filter((i) => i.name.toLowerCase().includes(q.trim().toLowerCase())),
+    [ingredients, q],
+  );
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] overflow-hidden">
+        <DialogHeader><DialogTitle>Ingrediënt kiezen</DialogTitle></DialogHeader>
+        <Input autoFocus placeholder="Zoek ingrediënt…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="max-h-[50vh] overflow-y-auto rounded-md border border-border">
+          {list.length === 0 ? (
+            <p className="px-3 py-4 text-center text-sm text-muted-foreground">Geen resultaten</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {list.map((ing) => (
+                <li key={ing.id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(ing.id)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-accent"
+                  >
+                    <span className="truncate">{ing.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      per {ing.baseUnit === "g" || ing.baseUnit === "ml" ? `100 ${ing.baseUnit}` : ing.baseUnit}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
