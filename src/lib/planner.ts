@@ -18,9 +18,6 @@ function sum(a: Macros, b: Macros): Macros {
   };
 }
 
-function scaleMacros(m: Macros, f: number): Macros {
-  return { kcal: m.kcal * f, protein: m.protein * f, carbs: m.carbs * f, fat: m.fat * f };
-}
 
 /** Lower is better. Calories always weigh heaviest; the priority tunes the rest. */
 export function dayScore(day: Macros, target: Macros, priority: MacroPriority): number {
@@ -238,4 +235,3 @@ export function picksToEntries(picks: PlanPick[]): Omit<MealEntry, "id">[] {
   }));
 }
 
-export const __internal = { scaleMacros };
