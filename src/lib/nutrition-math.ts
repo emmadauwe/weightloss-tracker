@@ -141,6 +141,8 @@ export type GoalCalc = {
 export function computeGoal(opts: {
   type: GoalType;
   weightKg: number;
+  /** Startgewicht van het plan; wordt gebruikt voor het tempo (kg/week) zodat het overeenkomt met de tijdlijn. */
+  startWeightKg?: number;
   goalKg?: number;
   heightCm: number;
   age: number;
