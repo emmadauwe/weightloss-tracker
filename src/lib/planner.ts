@@ -120,8 +120,10 @@ export function generatePlan(opts: {
 
   const slots = dates.length * 2; // lunch + diner
   const cookCount = Math.max(1, Math.min(opts.cookCount ?? dates.length, slots));
-  // 2 of 3 porties per kookbeurt.
+  // Bij voorkeur 2 porties per kookbeurt; 3 wanneer er weinig kookbeurten zijn.
   const portions = Math.min(3, Math.max(2, Math.round(slots / cookCount)));
+  // Een lunch- of dinergerecht mag nooit vaker dan 3 keer per week voorkomen.
+  const MAX_PER_DISH = 3;
 
   const lunchOnly = candidatesFor("lunch", dishes);
   const dinnerCandidates = candidatesFor("diner", dishes);
@@ -151,6 +153,10 @@ export function generatePlan(opts: {
     // Lunch en diner met kook-/restjesritme.
     let leftoverDish: Dish | undefined;
     let leftoverCount = 0;
+    // Hoe vaak elk lunch-/dinergerecht deze week al gebruikt is (max. 3).
+    const useCount = new Map<string, number>();
+    const countOf = (id: string) => useCount.get(id) ?? 0;
+    const registerUse = (dish: Dish) => useCount.set(dish.id, countOf(dish.id) + 1);
 
     for (let i = 0; i < dates.length; i++) {
       const date = dates[i];
@@ -160,10 +166,13 @@ export function generatePlan(opts: {
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
         push(date, "lunch", leftoverDish);
         usedToday.add(leftoverDish.id);
+        registerUse(leftoverDish);
         leftoverCount -= 1;
       } else {
         const dish = pickForSlot({
-          candidates: (lunchOnly.length ? lunchOnly : dishes).filter((d) => !usedToday.has(d.id)),
+          candidates: (lunchOnly.length ? lunchOnly : dishes).filter(
+            (d) => !usedToday.has(d.id) && countOf(d.id) < MAX_PER_DISH,
+          ),
           existing: dayOf(date),
           ingredients,
           target,
@@ -173,6 +182,7 @@ export function generatePlan(opts: {
         if (dish) {
           push(date, "lunch", dish);
           usedToday.add(dish.id);
+          registerUse(dish);
         }
       }
 
@@ -180,10 +190,15 @@ export function generatePlan(opts: {
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
         push(date, "diner", leftoverDish);
         usedToday.add(leftoverDish.id);
+        registerUse(leftoverDish);
         leftoverCount -= 1;
       } else {
+        // Een nieuwe kookbeurt levert `portions` porties op; het gerecht mag
+        // daarmee nooit boven het weekmaximum van 3 uitkomen.
         const dish = pickForSlot({
-          candidates: (dinnerCandidates.length ? dinnerCandidates : dishes).filter((d) => !usedToday.has(d.id)),
+          candidates: (dinnerCandidates.length ? dinnerCandidates : dishes).filter(
+            (d) => !usedToday.has(d.id) && countOf(d.id) + portions <= MAX_PER_DISH,
+          ),
           existing: dayOf(date),
           ingredients,
           target,
@@ -193,6 +208,7 @@ export function generatePlan(opts: {
         if (dish) {
           push(date, "diner", dish);
           usedToday.add(dish.id);
+          registerUse(dish);
           leftoverDish = dish;
           leftoverCount = portions - 1;
         }
