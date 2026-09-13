@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCloudDoc } from "@/lib/cloud-store";
-import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import {
   buildShoppingList,
   formatShoppingAmount,

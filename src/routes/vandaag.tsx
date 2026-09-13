@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, ShoppingBasket } from "lucide-react";
-import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
