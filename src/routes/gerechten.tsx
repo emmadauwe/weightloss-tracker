@@ -230,18 +230,18 @@ function DishDialog({
               {items.map((it, i) => {
                 const ing = ingredients.find((x) => x.id === it.ingredientId);
                 return (
-                  <div key={i} className="flex min-w-0 items-center gap-2">
+                  <div key={i} className="grid grid-cols-[minmax(0,1fr)_64px_44px_36px] items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setPicking(i)}
-                      className="min-w-0 flex-1 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
+                      className="min-w-0 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
                     >
                       {ing?.name ?? "Kies ingrediënt…"}
                     </button>
-                    <Input className="w-16 shrink-0 px-2" inputMode="decimal" value={it.amount}
+                    <Input className="w-full min-w-0 px-2" inputMode="decimal" value={it.amount}
                       onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                    <span className="w-11 shrink-0 truncate text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
-                    <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => removeItem(i)}>
+                    <span className="truncate text-center text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(i)}>
                       <X className="h-4 w-4 text-primary" />
                     </Button>
                   </div>
