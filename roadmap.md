@@ -32,3 +32,5 @@
 - [x] Add profile photo/cartoon avatar, name and settings on Account.
 - [x] Move the goal into Account and put the shopping list in the bottom nav.
 - [x] Standardize all animal avatars as readable head-only cartoons and add dog, tiger, and fennec choices.
+- [x] Lighten every animal, use the app background, and keep each avatar safe for a circular crop.
+- [x] Remove personal photo uploads so profiles use only the cartoon avatars.
