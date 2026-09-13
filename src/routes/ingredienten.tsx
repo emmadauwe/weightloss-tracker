@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Apple } from "lucide-react";
-import { useIngredients, type Ingredient, type Unit } from "@/lib/nutrition-store";
+import { INGREDIENT_CATEGORIES, useIngredients, type Ingredient, type IngredientCategory, type Unit } from "@/lib/nutrition-store";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/ingredienten")({
@@ -54,6 +54,7 @@ function IngredientenPage() {
                         {" · "}
                         per {i.baseUnit === "g" || i.baseUnit === "ml" ? `100 ${i.baseUnit}` : i.baseUnit}
                       </div>
+                      <div className="mt-0.5 text-[11px] capitalize text-primary">{i.category ?? "Nog geen type"}</div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Bewerken">
                       <Pencil className="h-4 w-4 text-primary" />
@@ -110,6 +111,7 @@ function IngredientDialog({
   const [protein, setProtein] = useState(initial?.protein.toString() ?? "");
   const [carbs, setCarbs] = useState(initial?.carbs.toString() ?? "");
   const [fat, setFat] = useState(initial?.fat.toString() ?? "");
+  const [category, setCategory] = useState<IngredientCategory>(initial?.category ?? "groenten en fruit");
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
@@ -124,6 +126,7 @@ function IngredientDialog({
       protein: num(protein),
       carbs: num(carbs),
       fat: num(fat),
+      category,
     });
   };
 
@@ -149,6 +152,15 @@ function IngredientDialog({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">Waardes hieronder gelden {perLabel}.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as IngredientCategory)}>
+              <SelectTrigger className="capitalize"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INGREDIENT_CATEGORIES.map((item) => <SelectItem key={item} value={item} className="capitalize">{item}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
