@@ -192,7 +192,7 @@ function DishDialog({
           <>
           <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-[1fr_90px] gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_90px] gap-3">
             <div className="space-y-2">
               <Label htmlFor="dname">Naam</Label>
               <Input id="dname" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
@@ -277,7 +277,7 @@ function DishDialog({
                     value={s}
                     onChange={(e) => setStep(i, e.target.value)}
                     placeholder={`Stap ${i + 1}`}
-                    className="flex-1"
+                    className="min-w-0 flex-1"
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeStep(i)} disabled={steps.length <= 1}>
                     <X className="h-4 w-4 text-primary" />
