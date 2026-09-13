@@ -11,3 +11,7 @@
 - [x] Replace the dashboard/history switch with a tappable weekly-stat history entry.
 - [x] Match goal date fields to weight-field dimensions and styling.
 - [x] Verify build and mobile interactions.
+- [x] Move the weekly shopping list behind a button and add persistent check-offs.
+- [x] Make the weight change summary follow the selected goal and keep current weight neutral.
+- [x] Replace goal date inputs with styled calendar pickers.
+- [x] Verify the updated mobile interactions and build.

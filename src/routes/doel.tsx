@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, format, parseISO } from "date-fns";
+import { nl } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertTriangle, CalendarIcon, RotateCcw } from "lucide-react";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
 import { computeGoal, type GoalType, type Intensity, type Lifestyle, type Sex } from "@/lib/nutrition-math";
@@ -133,16 +136,16 @@ function DoelPage() {
                 onChange={(e) => setSettings({ ...settings, heightCm: numOrUndef(e.target.value) })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="sd">Startdag</Label>
-                <Input id="sd" className="h-9 w-full min-w-0 shadow-sm" type="date" value={settings.startDate ?? ""}
-                  onChange={(e) => setSettings({ ...settings, startDate: e.target.value || undefined })} />
-              </div>
-              <div className="min-w-0 space-y-2">
-                <Label htmlFor="ed">Einddag</Label>
-                <Input id="ed" className="h-9 w-full min-w-0 shadow-sm" type="date" value={settings.endDate ?? ""}
-                  onChange={(e) => setSettings({ ...settings, endDate: e.target.value || undefined })} />
-              </div>
+              <DatePickerField
+                label="Startdag"
+                value={settings.startDate}
+                onChange={(startDate) => setSettings({ ...settings, startDate })}
+              />
+              <DatePickerField
+                label="Einddag"
+                value={settings.endDate}
+                onChange={(endDate) => setSettings({ ...settings, endDate })}
+              />
             </div>
             {pace && (
               <div
@@ -319,6 +322,48 @@ function DoelPage() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function DatePickerField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value?: string;
+  onChange: (value: string | undefined) => void;
+}) {
+  const selected = value ? parseISO(value) : undefined;
+  return (
+    <div className="min-w-0 space-y-2">
+      <Label>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            className={`h-9 w-full min-w-0 justify-start px-3 text-left font-normal shadow-sm ${!selected ? "text-muted-foreground" : ""}`}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="min-w-0 truncate">
+              {selected ? format(selected, "d MMM yyyy", { locale: nl }) : "Kies datum"}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : undefined)}
+            defaultMonth={selected}
+            locale={nl}
+            initialFocus
+            className="pointer-events-auto p-3"
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
