@@ -3,7 +3,7 @@ import { Scale, UtensilsCrossed, ChefHat, Apple, Target } from "lucide-react";
 
 const items = [
   { to: "/", label: "Gewicht", icon: Scale },
-  { to: "/vandaag", label: "Vandaag", icon: UtensilsCrossed },
+  { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
   { to: "/gerechten", label: "Gerechten", icon: ChefHat },
   { to: "/ingredienten", label: "Ingrediënten", icon: Apple },
   { to: "/doel", label: "Doel", icon: Target },
