@@ -164,16 +164,13 @@ function VandaagPage() {
           ))}
         </div>
 
-        {view === "week" && (
-          <Button type="button" variant="outline" size="sm" className="h-8 w-full text-xs" onClick={() => generateFor(weekDates)}>
-              <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
-              Genereer week
-            </Button>
-        )}
-
         {view === "week" ? (
           <div className="space-y-2">
             <MacroSummary totals={weekAverage} target={target} goalType={goal.type} average />
+            <Button type="button" variant="outline" size="sm" className="h-8 w-full text-xs" onClick={() => generateFor(weekDates)}>
+              <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
+              Genereer week
+            </Button>
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
               const dayEntries = meals.filter((m) => m.date === d);
@@ -214,23 +211,25 @@ function VandaagPage() {
                               </div>
                             );
                           })}
-                          <div className="border-t border-border pt-1.5 text-xs text-muted-foreground tabular-nums">
-                            {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
-                          </div>
                         </div>
                       )}
                     </button>
-                    <div className="mt-2 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => clearDay(d)}
-                        aria-label="Dag leegmaken"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    {dayEntries.length > 0 && (
+                      <div className="mt-2 flex items-center justify-between border-t border-border pt-1.5">
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => clearDay(d)}
+                          aria-label="Dag leegmaken"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
