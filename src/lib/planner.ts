@@ -120,8 +120,10 @@ export function generatePlan(opts: {
 
   const slots = dates.length * 2; // lunch + diner
   const cookCount = Math.max(1, Math.min(opts.cookCount ?? dates.length, slots));
-  // 2 of 3 porties per kookbeurt.
+  // Bij voorkeur 2 porties per kookbeurt; 3 wanneer er weinig kookbeurten zijn.
   const portions = Math.min(3, Math.max(2, Math.round(slots / cookCount)));
+  // Een lunch- of dinergerecht mag nooit vaker dan 3 keer per week voorkomen.
+  const MAX_PER_DISH = 3;
 
   const lunchOnly = candidatesFor("lunch", dishes);
   const dinnerCandidates = candidatesFor("diner", dishes);
