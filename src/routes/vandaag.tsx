@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2, ShoppingBasket } from "lucide-react";
 import { INGREDIENT_CATEGORIES, useDishes, useIngredients, useMeals, type IngredientCategory, type Meal, type Unit } from "@/lib/nutrition-store";
+import { useCloudDoc } from "@/lib/cloud-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
 import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
@@ -36,6 +38,7 @@ const MEAL_LABEL: Record<Meal, string> = {
 };
 const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
+const SHOPPING_CHECKS_KEY = "nutrition-shopping-checks-v1";
 
 const PRIORITY_LABEL: Record<MacroPriority, string> = {
   balans: "In balans houden",
@@ -47,6 +50,11 @@ function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [view, setView] = useState<"dag" | "week">("dag");
   const [showOptions, setShowOptions] = useState(false);
+  const [showShoppingList, setShowShoppingList] = useState(false);
+  const { value: shoppingChecks, setValue: setShoppingChecks } = useCloudDoc<Record<string, boolean>>(
+    SHOPPING_CHECKS_KEY,
+    {},
+  );
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
@@ -127,6 +135,8 @@ function VandaagPage() {
     })).filter((group) => group.items.length > 0);
   }, [meals, weekDates, ingredients, dishes]);
 
+  const shoppingKey = (name: string, unit: Unit) => `${weekDates[0]}:${name}:${unit}`;
+
   const generateFor = (dates: string[]) => {
     meals.filter((m) => dates.includes(m.date)).forEach((m) => remove(m.id));
     const picks = generatePlan({
@@ -166,6 +176,13 @@ function VandaagPage() {
             </Button>
           ))}
         </div>
+
+        {view === "week" && (
+          <Button type="button" variant="outline" className="w-full" onClick={() => setShowShoppingList(true)}>
+            <ShoppingBasket className="h-4 w-4 text-primary" />
+            Boodschappenlijst
+          </Button>
+        )}
 
         {/* Datumkiezer */}
         <Card>
@@ -296,28 +313,6 @@ function VandaagPage() {
                 </Card>
               );
             })}
-            <Card>
-              <CardContent className="space-y-3 px-5 py-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
-                </div>
-                {shoppingList.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Genereer of vul eerst een weekplanning.</p>
-                ) : shoppingList.map((group) => (
-                  <div key={group.category}>
-                    <div className="mb-1 text-xs font-semibold capitalize text-primary">{group.category}</div>
-                    <ul className="divide-y divide-border">
-                      {group.items.map((item) => (
-                        <li key={`${item.name}:${item.unit}`} className="flex justify-between gap-3 py-1.5 text-sm">
-                          <span>{item.name}</span>
-                          <span className="shrink-0 tabular-nums text-muted-foreground">{formatAmount(item.amount)} {item.unit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
           </div>
         ) : (
           <>
@@ -414,6 +409,52 @@ function VandaagPage() {
           onAdd={(entry) => { add(entry); setAdding(null); }}
         />
       )}
+
+      <Dialog open={showShoppingList} onOpenChange={setShowShoppingList}>
+        <DialogContent className="max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBasket className="h-5 w-5 text-primary" /> Boodschappenlijst
+            </DialogTitle>
+          </DialogHeader>
+          {shoppingList.length === 0 ? (
+            <p className="py-5 text-center text-sm text-muted-foreground">Genereer of vul eerst een weekplanning.</p>
+          ) : (
+            <div className="space-y-4">
+              {shoppingList.map((group) => (
+                <section key={group.category}>
+                  <h3 className="mb-1 text-xs font-semibold capitalize text-primary">{group.category}</h3>
+                  <ul className="divide-y divide-border">
+                    {group.items.map((item) => {
+                      const key = shoppingKey(item.name, item.unit);
+                      const checked = Boolean(shoppingChecks[key]);
+                      return (
+                        <li key={`${item.name}:${item.unit}`} className="flex items-center gap-3 py-2.5">
+                          <Checkbox
+                            id={key}
+                            checked={checked}
+                            onCheckedChange={(value) =>
+                              setShoppingChecks((current) => ({ ...current, [key]: value === true }))
+                            }
+                            aria-label={`${item.name} afvinken`}
+                          />
+                          <label
+                            htmlFor={key}
+                            className={`flex min-w-0 flex-1 cursor-pointer justify-between gap-3 text-sm ${checked ? "text-muted-foreground line-through" : ""}`}
+                          >
+                            <span>{item.name}</span>
+                            <span className="shrink-0 tabular-nums">{formatAmount(item.amount)} {item.unit}</span>
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

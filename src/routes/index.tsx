@@ -35,6 +35,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
+import { useGoal } from "@/lib/goal-store";
 import { AppHeader } from "@/components/app-header";
 
 
@@ -55,6 +56,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
   const { settings } = useSettings();
+  const { goal: goalSettings } = useGoal();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
   const [showBmi, setShowBmi] = useState(false);
 
@@ -65,10 +67,17 @@ function Index() {
   const goal = settings.goalWeight;
   const unit = settings.unit;
 
-  const weightChange = start && latest ? latest.weight - start : 0;
+  const firstWeight = first?.weight ?? settings.startWeight;
+  const weightChange = firstWeight && latest ? latest.weight - firstWeight : 0;
   const toGoal = goal && latest ? Math.abs(latest.weight - goal) : 0;
-  const movedTowardGoal = Boolean(start && goal && weightChange !== 0 && Math.sign(goal - start) === Math.sign(weightChange));
-  const changeIsUnhealthy = weightChange !== 0 && !movedTowardGoal;
+  const changeMatchesGoal = weightChange !== 0 && (
+    goalSettings.type === "afvallen"
+      ? weightChange < 0
+      : goalSettings.type === "bijkomen" || goalSettings.type === "spiermassa"
+        ? weightChange > 0
+        : Math.abs(weightChange) <= 0.2
+  );
+  const changeIsUnhealthy = weightChange !== 0 && !changeMatchesGoal;
   const progressPct =
     start && goal && latest && start !== goal
       ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100))
@@ -120,7 +129,7 @@ function Index() {
                   <div className="text-xs font-medium text-muted-foreground">Huidig gewicht</div>
                   <div className="mt-2 flex items-baseline gap-1.5">
                     <span
-                      className="text-5xl font-semibold tabular-nums text-primary"
+                      className="text-5xl font-semibold tabular-nums text-foreground"
                       style={{ fontFamily: "var(--font-display)" }}
                     >
                       {latest ? latest.weight.toFixed(1) : "—"}
@@ -129,7 +138,7 @@ function Index() {
                   </div>
                 </div>
                 <div className={`rounded-xl px-3 py-2 text-right ${changeIsUnhealthy ? "bg-destructive-soft" : weightChange !== 0 ? "bg-primary/15" : ""}`}>
-                   <div className={`text-xs font-medium ${changeIsUnhealthy ? "text-destructive-strong" : "text-muted-foreground"}`}>
+                   <div className={`text-xs font-medium ${changeIsUnhealthy ? "text-destructive-strong" : weightChange !== 0 ? "text-success" : "text-muted-foreground"}`}>
                      {weightChange > 0 ? "Bijgekomen" : weightChange < 0 ? "Afgevallen" : "Verandering"}
                    </div>
                   <div className="mt-2 flex items-baseline justify-end gap-1.5">
