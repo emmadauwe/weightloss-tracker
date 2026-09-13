@@ -181,7 +181,7 @@ function DishDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         {picking !== null ? (
           <IngredientPicker
             ingredients={ingredients}
@@ -192,7 +192,7 @@ function DishDialog({
           <>
           <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-[1fr_90px] gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_90px] gap-3">
             <div className="space-y-2">
               <Label htmlFor="dname">Naam</Label>
               <Input id="dname" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
@@ -230,18 +230,18 @@ function DishDialog({
               {items.map((it, i) => {
                 const ing = ingredients.find((x) => x.id === it.ingredientId);
                 return (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="grid grid-cols-[minmax(0,1fr)_64px_44px_36px] items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setPicking(i)}
-                      className="flex-1 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
+                      className="min-w-0 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
                     >
                       {ing?.name ?? "Kies ingrediënt…"}
                     </button>
-                    <Input className="w-20" inputMode="decimal" value={it.amount}
+                    <Input className="w-full min-w-0 px-2" inputMode="decimal" value={it.amount}
                       onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                    <span className="w-12 text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
+                    <span className="truncate text-center text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(i)}>
                       <X className="h-4 w-4 text-primary" />
                     </Button>
                   </div>
@@ -277,7 +277,7 @@ function DishDialog({
                     value={s}
                     onChange={(e) => setStep(i, e.target.value)}
                     placeholder={`Stap ${i + 1}`}
-                    className="flex-1"
+                    className="min-w-0 flex-1"
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeStep(i)} disabled={steps.length <= 1}>
                     <X className="h-4 w-4 text-primary" />
