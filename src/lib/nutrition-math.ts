@@ -141,6 +141,8 @@ export type GoalCalc = {
 export function computeGoal(opts: {
   type: GoalType;
   weightKg: number;
+  /** Startgewicht van het plan; wordt gebruikt voor het tempo (kg/week) zodat het overeenkomt met de tijdlijn. */
+  startWeightKg?: number;
   goalKg?: number;
   heightCm: number;
   age: number;
@@ -158,9 +160,10 @@ export function computeGoal(opts: {
   const t = tdeeDetailed(opts);
 
   let perWeekKg = 0;
+  const planStartWeight = opts.startWeightKg ?? weightKg;
   if (goalKg && startDate && endDate && (type === "afvallen" || type === "bijkomen")) {
     const days = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000;
-    if (days > 0) perWeekKg = ((goalKg - weightKg) / days) * 7;
+    if (days > 0) perWeekKg = ((goalKg - planStartWeight) / days) * 7;
   }
 
   let kcal = t;
@@ -177,8 +180,8 @@ export function computeGoal(opts: {
   const warnings: string[] = [];
   const minKcal = sex === "v" ? 1500 : 1800;
   if (kcal < minKcal) warnings.push(`Kcal-doel onder ${minKcal} is mogelijk ongezond.`);
-  if (type === "afvallen" && perWeekKg < -1.0)
-    warnings.push("Tempo > 1 kg/week is te ambitieus — kies een latere einddag.");
+  if (type === "afvallen" && perWeekKg < -0.5)
+    warnings.push("Tempo > 0,5 kg/week is te ambitieus — kies een latere einddag.");
   if (type === "bijkomen" && perWeekKg > 0.5)
     warnings.push("Bijkomen > 0,5 kg/week leidt meestal tot extra vet.");
   if (protein / weightKg < 0.8) warnings.push("Eiwitinname is laag voor je gewicht.");

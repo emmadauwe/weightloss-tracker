@@ -45,7 +45,18 @@ function DoelPage() {
     return computeGoal({
       type: goal.type,
       weightKg: settings.unit === "lb" ? latest * 0.453592 : latest,
-      goalKg: settings.goalWeight,
+      startWeightKg:
+        settings.startWeight === undefined
+          ? undefined
+          : settings.unit === "lb"
+            ? settings.startWeight * 0.453592
+            : settings.startWeight,
+      goalKg:
+        settings.goalWeight === undefined
+          ? undefined
+          : settings.unit === "lb"
+            ? settings.goalWeight * 0.453592
+            : settings.goalWeight,
       heightCm: settings.heightCm,
       age: goal.age,
       sex: goal.sex,

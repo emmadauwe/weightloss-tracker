@@ -126,7 +126,7 @@ function Index() {
             <div className={`rounded-2xl px-5 py-5 shadow-sm ${changeIsUnhealthy ? "bg-destructive-soft" : "bg-secondary"}`}>
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-xs font-medium text-muted-foreground">Huidig gewicht</div>
+                  <div className="text-xs font-medium text-foreground">Huidig gewicht</div>
                   <div className="mt-2 flex items-baseline gap-1.5">
                     <span
                       className="text-5xl font-semibold tabular-nums text-foreground"
