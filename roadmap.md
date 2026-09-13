@@ -10,4 +10,4 @@
 - [x] Make the weight-change summary goal-aware and visually consistent.
 - [x] Replace the dashboard/history switch with a tappable weekly-stat history entry.
 - [x] Match goal date fields to weight-field dimensions and styling.
-- [ ] Verify build and mobile interactions.
+- [x] Verify build and mobile interactions.
