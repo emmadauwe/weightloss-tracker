@@ -5,6 +5,9 @@ import catAvatar from "@/assets/avatars/cat.png";
 import bearAvatar from "@/assets/avatars/bear.png";
 import owlAvatar from "@/assets/avatars/owl.png";
 import whaleAvatar from "@/assets/avatars/whale.png";
+import dogAvatar from "@/assets/avatars/dog.png";
+import tigerAvatar from "@/assets/avatars/tiger.png";
+import fennecAvatar from "@/assets/avatars/fennec.png";
 
 export type Profile = {
   name?: string;
@@ -22,6 +25,9 @@ export const AVATAR_CHOICES = [
   { id: "bear", label: "Beer", src: bearAvatar },
   { id: "owl", label: "Uil", src: owlAvatar },
   { id: "whale", label: "Walvis", src: whaleAvatar },
+  { id: "dog", label: "Hond", src: dogAvatar },
+  { id: "tiger", label: "Tijger", src: tigerAvatar },
+  { id: "fennec", label: "Woestijnvos", src: fennecAvatar },
 ] as const;
 
 export function avatarSrc(id?: string) {
