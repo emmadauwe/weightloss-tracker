@@ -24,7 +24,7 @@ export const AVATAR_CHOICES = [
   { id: "cat", label: "Kat", src: catAvatar },
   { id: "bear", label: "Beer", src: bearAvatar },
   { id: "owl", label: "Uil", src: owlAvatar },
-  { id: "frog", label: "Kikker", src: frogAvatar },
+  { id: "whale", label: "Kikker", src: frogAvatar },
   { id: "dog", label: "Hond", src: dogAvatar },
   { id: "tiger", label: "Tijger", src: tigerAvatar },
   { id: "fennec", label: "Woestijnvos", src: fennecAvatar },
