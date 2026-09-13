@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCloudDoc } from "@/lib/cloud-store";
-import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import {
   buildShoppingList,
   formatShoppingAmount,
@@ -91,7 +91,7 @@ function BoodschappenPage() {
                           className={`flex min-w-0 flex-1 cursor-pointer justify-between gap-3 text-sm ${checked ? "text-muted-foreground line-through" : ""}`}
                         >
                           <span>{item.name}</span>
-                          <span className="shrink-0 tabular-nums">{formatShoppingAmount(item.amount)} {item.unit}</span>
+                          <span className="shrink-0 tabular-nums">{formatShoppingAmount(item.amount)} {formatUnit(item.unit, item.amount)}</span>
                         </label>
                       </li>
                     );

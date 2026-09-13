@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft } from "lucide-react";
-import { useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
@@ -240,7 +240,7 @@ function DishDialog({
                     </button>
                     <Input className="w-20" inputMode="decimal" value={it.amount}
                       onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                    <span className="w-10 text-xs text-muted-foreground">{it.unit}</span>
+                    <span className="w-12 text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
                       <X className="h-4 w-4 text-primary" />
                     </Button>

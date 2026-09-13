@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, ShoppingBasket } from "lucide-react";
-import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
@@ -175,7 +175,7 @@ function VandaagPage() {
                                 <span className="text-muted-foreground">
                                   {entriesForMeal.map((entry) => {
                                     const ref = entry.kind === "dish" ? dishes.find((item) => item.id === entry.refId) : ingredients.find((item) => item.id === entry.refId);
-                                    return `${ref?.name ?? "—"} · ${entry.amount} ${entry.unit}`;
+                                    return `${ref?.name ?? "—"} · ${entry.amount} ${formatUnit(entry.unit, entry.amount)}`;
                                   }).join(", ")}
                                 </span>
                               </div>
@@ -238,7 +238,7 @@ function VandaagPage() {
                             <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
                                <span className="min-w-0 flex-1 truncate">
                                 {ref?.name ?? "—"}
-                                <span className="text-muted-foreground"> · {m.amount} {m.unit}</span>
+                                <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
                               </span>
                                <Input
                                  aria-label={`Porties ${ref?.name ?? "maaltijd"}`}
