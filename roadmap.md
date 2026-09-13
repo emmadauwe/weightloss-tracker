@@ -38,4 +38,4 @@
 - [x] Increase week-generator variety while preserving macro and leftovers priorities.
 - [x] Remove the Planning shopping button and the shopping-page back button.
 - [x] Rename the mobile shopping tab and page, and increase navigation height.
-- [ ] Add sign-out confirmation and verify mobile behavior.
+- [x] Add sign-out confirmation and verify mobile behavior.

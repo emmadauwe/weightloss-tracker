@@ -20,9 +20,9 @@ export const Route = createFileRoute("/boodschappen")({
     week: typeof search.week === "string" ? search.week : undefined,
   }),
   head: () => ({ meta: [
-    { title: "Boodschappenlijst | Lichter" },
+    { title: "Boodschappenlijstje | Lichter" },
     { name: "description", content: "Bekijk en vink de boodschappen voor je weekplanning af." },
-    { property: "og:title", content: "Boodschappenlijst | Lichter" },
+    { property: "og:title", content: "Boodschappenlijstje | Lichter" },
     { property: "og:description", content: "Bekijk en vink de boodschappen voor je weekplanning af." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

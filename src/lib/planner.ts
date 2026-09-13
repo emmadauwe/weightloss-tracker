@@ -228,12 +228,16 @@ export function generatePlan(opts: {
   const rankedPlans = [...finalists.values()].sort((a, b) => a.score - b.score);
   if (rankedPlans.length === 0) return [];
 
-  // Trek willekeurig uit meerdere sterke plannen, zodat opnieuw genereren ook
-  // op mobiel merkbaar andere weken oplevert. Zwakke uitschieters vallen af.
-  const bestScore = rankedPlans[0].score;
-  const qualityLimit = bestScore + Math.max(10, Math.abs(bestScore) * 0.08);
-  const strongPlans = rankedPlans.filter((plan) => plan.score <= qualityLimit).slice(0, 16);
-  return strongPlans[Math.floor(Math.random() * strongPlans.length)].picks;
+  // Trek gewogen uit de twaalf beste unieke plannen. Zo blijft een zeer goed
+  // passend plan waarschijnlijker, maar levert opnieuw genereren veel variatie.
+  const strongPlans = rankedPlans.slice(0, 12);
+  const weights = strongPlans.map((_, index) => strongPlans.length - index);
+  let draw = Math.random() * weights.reduce((total, weight) => total + weight, 0);
+  for (let index = 0; index < strongPlans.length; index++) {
+    draw -= weights[index];
+    if (draw <= 0) return strongPlans[index].picks;
+  }
+  return strongPlans[0].picks;
 }
 
 export function picksToEntries(picks: PlanPick[]): Omit<MealEntry, "id">[] {
