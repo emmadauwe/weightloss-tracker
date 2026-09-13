@@ -6,13 +6,13 @@ const items = [
   { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
   { to: "/gerechten", label: "Gerechten", icon: ChefHat },
   { to: "/ingredienten", label: "Ingrediënten", icon: Apple },
-  { to: "/boodschappen", label: "Boodschappen", icon: ShoppingBasket },
+  { to: "/boodschappen", label: "Lijstje", icon: ShoppingBasket },
 ] as const;
 
 export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-2xl items-stretch justify-around px-2 py-1.5">
+      <div className="mx-auto flex min-h-16 max-w-2xl items-stretch justify-around px-2 py-2">
         {items.map(({ to, label, icon: Icon }) => (
           <Link
             key={to}

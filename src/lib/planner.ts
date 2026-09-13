@@ -77,17 +77,23 @@ function pickForSlot(opts: {
     carbs: existing.carbs + (target.carbs - existing.carbs) / slots,
     fat: existing.fat + (target.fat - existing.fat) / slots,
   };
-  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-  let best: Dish | undefined;
-  let bestScore = Infinity;
-  for (const candidate of shuffled) {
-    const score = dayScore(sum(existing, dishMacrosPerServing(candidate, ingredients)), partial, priority);
-    if (score < bestScore) {
-      bestScore = score;
-      best = candidate;
-    }
+  const ranked = candidates
+    .map((candidate) => ({
+      candidate,
+      score: dayScore(sum(existing, dishMacrosPerServing(candidate, ingredients)), partial, priority),
+    }))
+    .sort((a, b) => a.score - b.score);
+
+  // Variatie zonder de voedingsdoelen los te laten: kies uit de beste passende
+  // opties, met een grotere kans voor het gerecht met de laagste afwijking.
+  const shortlist = ranked.slice(0, Math.min(4, ranked.length));
+  const weights = shortlist.map((_, index) => shortlist.length - index);
+  let draw = Math.random() * weights.reduce((total, weight) => total + weight, 0);
+  for (let index = 0; index < shortlist.length; index++) {
+    draw -= weights[index];
+    if (draw <= 0) return shortlist[index].candidate;
   }
-  return best;
+  return shortlist[0]?.candidate;
 }
 
 /**
@@ -207,8 +213,7 @@ export function generatePlan(opts: {
     return picks;
   };
 
-  let best: PlanPick[] = [];
-  let bestScore = Infinity;
+  const finalists = new Map<string, { picks: PlanPick[]; score: number }>();
   for (let i = 0; i < attempts; i++) {
     const picks = buildAttempt();
     const byDate = macrosForPicks(picks, dishes, ingredients);
@@ -216,12 +221,19 @@ export function generatePlan(opts: {
     for (const date of dates) {
       score += dayScore(byDate.get(date) ?? ZERO, target, priority);
     }
-    if (score < bestScore) {
-      bestScore = score;
-      best = picks;
-    }
+    const signature = picks.map((pick) => `${pick.date}:${pick.meal}:${pick.dishId}`).join("|");
+    const previous = finalists.get(signature);
+    if (!previous || score < previous.score) finalists.set(signature, { picks, score });
   }
-  return best;
+  const rankedPlans = [...finalists.values()].sort((a, b) => a.score - b.score);
+  if (rankedPlans.length === 0) return [];
+
+  // Trek willekeurig uit meerdere sterke plannen, zodat opnieuw genereren ook
+  // op mobiel merkbaar andere weken oplevert. Zwakke uitschieters vallen af.
+  const bestScore = rankedPlans[0].score;
+  const qualityLimit = bestScore + Math.max(10, Math.abs(bestScore) * 0.08);
+  const strongPlans = rankedPlans.filter((plan) => plan.score <= qualityLimit).slice(0, 16);
+  return strongPlans[Math.floor(Math.random() * strongPlans.length)].picks;
 }
 
 export function picksToEntries(picks: PlanPick[]): Omit<MealEntry, "id">[] {

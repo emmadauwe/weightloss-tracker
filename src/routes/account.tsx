@@ -6,6 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -121,9 +132,25 @@ function AccountPage() {
                 <div className="text-xs text-muted-foreground">Ingelogd als</div>
                 <div className="truncate text-sm">{user?.email ?? "—"}</div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void signOut()}>
-                <LogOut className="mr-1 h-4 w-4 text-primary" /> Uitloggen
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <LogOut className="mr-1 h-4 w-4 text-primary" /> Uitloggen
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-[calc(100vw-2rem)] rounded-lg">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Wil je uitloggen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Weet je zeker dat je uit je account wilt uitloggen?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => void signOut()}>Ja, uitloggen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
 
             <div className="space-y-2">
