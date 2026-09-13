@@ -26,3 +26,8 @@
 - [x] Move the shopping-list button below the weekly plan.
 - [x] Compact macro summaries and apply goal-aware calorie and protein colors.
 - [x] Verify the updated day and week views on mobile.
+- [x] Share one goal calculation between Doel/Account and Planning targets.
+- [x] Treat the start weight as the first measurement for the plan.
+- [x] Replace the sign-out icon with a profile link to a new Account page.
+- [x] Add profile photo/cartoon avatar, name and settings on Account.
+- [x] Move the goal into Account and put the shopping list in the bottom nav.

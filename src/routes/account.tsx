@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { differenceInDays, format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,22 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, CalendarIcon, RotateCcw } from "lucide-react";
-import { useGoal } from "@/lib/goal-store";
-import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, type GoalType, type Intensity, type Lifestyle, type Sex } from "@/lib/nutrition-math";
+import { AlertTriangle, CalendarIcon, Camera, LogOut, RotateCcw } from "lucide-react";
+import { useGoalTargets } from "@/lib/goal-targets";
+import { AVATAR_CHOICES, useProfile } from "@/lib/profile-store";
+import { useAuth, signOut } from "@/lib/auth";
+import type { GoalType, Intensity, Lifestyle, Sex } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
-export const Route = createFileRoute("/doel")({
+export const Route = createFileRoute("/account")({
   head: () => ({ meta: [
-    { title: "Doel | Lichter" },
-    { name: "description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
-    { property: "og:title", content: "Doel | Lichter" },
-    { property: "og:description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
+    { title: "Account | Lichter" },
+    { name: "description", content: "Beheer je profiel, je doel en je persoonlijke macro's." },
+    { property: "og:title", content: "Account | Lichter" },
+    { property: "og:description", content: "Beheer je profiel, je doel en je persoonlijke macro's." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  component: DoelPage,
+  component: AccountPage,
 });
 
 const GOAL_TYPES: { id: GoalType; label: string }[] = [
@@ -34,41 +35,35 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
   { id: "spiermassa", label: "Spiermassa" },
 ];
 
-function DoelPage() {
-  const { goal, setGoal } = useGoal();
-  const { entries } = useEntries();
-  const { settings, setSettings } = useSettings();
+async function fileToAvatar(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("read"));
+    reader.readAsDataURL(file);
+  });
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("image"));
+    img.src = dataUrl;
+  });
+  const size = 192;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  const side = Math.min(image.width, image.height);
+  ctx.drawImage(image, (image.width - side) / 2, (image.height - side) / 2, side, side, 0, 0, size, size);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
 
-  const latest = entries[entries.length - 1]?.weight;
-  const calc = useMemo(() => {
-    if (!latest || !settings.heightCm || !goal.age) return null;
-    return computeGoal({
-      type: goal.type,
-      weightKg: settings.unit === "lb" ? latest * 0.453592 : latest,
-      startWeightKg:
-        settings.startWeight === undefined
-          ? undefined
-          : settings.unit === "lb"
-            ? settings.startWeight * 0.453592
-            : settings.startWeight,
-      goalKg:
-        settings.goalWeight === undefined
-          ? undefined
-          : settings.unit === "lb"
-            ? settings.goalWeight * 0.453592
-            : settings.goalWeight,
-      heightCm: settings.heightCm,
-      age: goal.age,
-      sex: goal.sex,
-      activity: goal.activity,
-      lifestyle: goal.lifestyle,
-      sessionsPerWeek: goal.sessionsPerWeek,
-      minutesPerSession: goal.minutesPerSession,
-      intensity: goal.intensity,
-      startDate: settings.startDate,
-      endDate: settings.endDate,
-    });
-  }, [latest, settings, goal]);
+function AccountPage() {
+  const { goal, setGoal, settings, setSettings, calc } = useGoalTargets();
+  const { profile, setProfile } = useProfile();
+  const { user } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
@@ -82,15 +77,13 @@ function DoelPage() {
     return isNaN(n) ? undefined : n;
   };
 
-  // Pace (kg/week) op basis van start/doel/datums
   const pace = useMemo(() => {
     const s = settings.startWeight;
     const g = settings.goalWeight;
     if (!s || !g || !settings.startDate || !settings.endDate) return null;
     const days = differenceInDays(parseISO(settings.endDate), parseISO(settings.startDate));
     if (days <= 0) return null;
-    const perWeek = ((g - s) / days) * 7; // negatief = afvallen
-    return { perWeek, days };
+    return { perWeek: ((g - s) / days) * 7, days };
   }, [settings]);
 
   const paceUnhealthy = pace && (
@@ -100,8 +93,95 @@ function DoelPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AppHeader title="Doel" subtitle="Persoonlijk plan en macro's" />
+      <AppHeader title="Account" subtitle="Profiel, doel en macro's" />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
+        {/* Profiel */}
+        <Card>
+          <CardContent className="px-5 py-4 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-secondary text-3xl">
+                  {profile.photo ? (
+                    <img src={profile.photo} alt="Profielfoto" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{profile.avatar ?? "🥑"}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  aria-label="Eigen foto kiezen"
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card"
+                >
+                  <Camera className="h-3.5 w-3.5 text-primary" />
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (!file) return;
+                    const photo = await fileToAvatar(file);
+                    setProfile({ ...profile, photo });
+                  }}
+                />
+              </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label htmlFor="pname">Naam</Label>
+                <Input
+                  id="pname"
+                  placeholder="Je naam"
+                  value={profile.name ?? ""}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Of kies een cartoon</Label>
+              <div className="flex flex-wrap gap-2">
+                {AVATAR_CHOICES.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    aria-label={`Avatar ${a}`}
+                    onClick={() => setProfile({ ...profile, avatar: a, photo: undefined })}
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border text-xl transition-colors ${
+                      !profile.photo && profile.avatar === a ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-accent"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground">Ingelogd als</div>
+                <div className="truncate text-sm">{user?.email ?? "—"}</div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => void signOut()}>
+                <LogOut className="mr-1 h-4 w-4 text-primary" /> Uitloggen
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Eenheid</Label>
+              <Select value={settings.unit} onValueChange={(v) => setSettings({ ...settings, unit: v as "kg" | "lb" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                  <SelectItem value="lb">Pond (lb)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Doeltype */}
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
@@ -125,7 +205,7 @@ function DoelPage() {
           </CardContent>
         </Card>
 
-        {/* Gewicht + tijdlijn (verplaatst uit instellingen) */}
+        {/* Gewicht + tijdlijn */}
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
             <div className="text-sm font-medium">Gewicht &amp; tijdlijn</div>
@@ -268,7 +348,7 @@ function DoelPage() {
         {!calc ? (
           <Card>
             <CardContent className="px-5 py-6 text-sm text-muted-foreground text-center">
-              Vul je leeftijd, lengte en een eerste meting in om je dagelijks plan te zien.
+              Vul je leeftijd, lengte en startgewicht in om je dagelijks plan te zien.
             </CardContent>
           </Card>
         ) : (
@@ -328,6 +408,9 @@ function DoelPage() {
                   <OverrideInput label="Koolhydraten (g)" v={active.carbs} onChange={(n) => setGoal({ ...goal, overrideCarbs: n })} />
                   <OverrideInput label="Vet (g)" v={active.fat} onChange={(n) => setGoal({ ...goal, overrideFat: n })} />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Deze waarden worden gebruikt in je dag- en weekplanning.
+                </p>
               </CardContent>
             </Card>
           </>

@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, LogOut } from "lucide-react";
-import { signOut } from "@/lib/auth";
+import { ArrowLeft, User } from "lucide-react";
 
 export function AppHeader({
   title, subtitle, back,
@@ -19,14 +18,13 @@ export function AppHeader({
           </h1>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
-        <button
-          type="button"
-          aria-label="Uitloggen"
-          onClick={() => void signOut()}
+        <Link
+          to="/account"
+          aria-label="Account"
           className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent"
         >
-          <LogOut className="h-4 w-4 text-primary" />
-        </button>
+          <User className="h-5 w-5 text-primary" />
+        </Link>
       </div>
     </header>
   );
