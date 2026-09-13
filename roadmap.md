@@ -34,3 +34,4 @@
 - [x] Standardize all animal avatars as readable head-only cartoons and add dog, tiger, and fennec choices.
 - [x] Lighten every animal, use the app background, and keep each avatar safe for a circular crop.
 - [x] Remove personal photo uploads so profiles use only the cartoon avatars.
+- [x] Apply the exact neutral text and avatar palette, and remove the frog avatar.
