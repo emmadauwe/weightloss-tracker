@@ -31,3 +31,4 @@
 - [x] Replace the sign-out icon with a profile link to a new Account page.
 - [x] Add profile photo/cartoon avatar, name and settings on Account.
 - [x] Move the goal into Account and put the shopping list in the bottom nav.
+- [x] Standardize all animal avatars as readable head-only cartoons and add dog, tiger, and fennec choices.
