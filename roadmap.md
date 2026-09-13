@@ -20,4 +20,4 @@
 - [x] Use sentence case for ingredient categories and add Bereide maaltijden and Voedselkast.
 - [x] Compact the Planning date/view/generator controls and mark today/current week in the date selector.
 - [x] Show weekly average calories and macros in the same layout as the daily summary.
-- [ ] Verify build and mobile interactions for all requested changes.
+- [x] Verify build and mobile interactions for all requested changes.
