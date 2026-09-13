@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { Scale, UtensilsCrossed, ChefHat, Apple, Target } from "lucide-react";
+import { Scale, UtensilsCrossed, ChefHat, Apple, ShoppingBasket } from "lucide-react";
 
 const items = [
   { to: "/", label: "Gewicht", icon: Scale },
   { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
   { to: "/gerechten", label: "Gerechten", icon: ChefHat },
   { to: "/ingredienten", label: "Ingrediënten", icon: Apple },
-  { to: "/doel", label: "Doel", icon: Target },
+  { to: "/boodschappen", label: "Boodschappen", icon: ShoppingBasket },
 ] as const;
 
 export function BottomNav() {
