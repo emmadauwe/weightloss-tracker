@@ -240,7 +240,7 @@ function DishDialog({
                     </button>
                     <Input className="w-20" inputMode="decimal" value={it.amount}
                       onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                    <span className="w-10 text-xs text-muted-foreground">{it.unit}</span>
+                    <span className="w-12 text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(i)}>
                       <X className="h-4 w-4 text-primary" />
                     </Button>

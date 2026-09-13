@@ -155,3 +155,11 @@ export function useMeals() {
 
   return { items, add, remove, update, loaded };
 }
+
+/** 'stuk' wordt 'stuks' (en 'portie' → 'porties') bij meer dan 1. */
+export function formatUnit(unit: Unit, amount: number): string {
+  if (Math.abs(amount) === 1) return unit;
+  if (unit === "stuk") return "stuks";
+  if (unit === "portie") return "porties";
+  return unit;
+}
