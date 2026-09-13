@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertTriangle, CalendarIcon, Camera, LogOut, RotateCcw } from "lucide-react";
 import { useGoalTargets } from "@/lib/goal-targets";
-import { AVATAR_CHOICES, useProfile } from "@/lib/profile-store";
+import { AVATAR_CHOICES, avatarSrc, useProfile } from "@/lib/profile-store";
 import { useAuth, signOut } from "@/lib/auth";
 import type { GoalType, Intensity, Lifestyle, Sex } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
@@ -100,11 +100,18 @@ function AccountPage() {
           <CardContent className="px-5 py-4 space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-secondary text-3xl">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-secondary">
                   {profile.photo ? (
                     <img src={profile.photo} alt="Profielfoto" className="h-full w-full object-cover" />
                   ) : (
-                    <span>{profile.avatar ?? "🥑"}</span>
+                    <img
+                      src={avatarSrc(profile.avatar)}
+                      alt="Cartoon-avatar"
+                      loading="lazy"
+                      width={512}
+                      height={512}
+                      className="h-full w-full object-contain p-1"
+                    />
                   )}
                 </div>
                 <button
