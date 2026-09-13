@@ -125,6 +125,10 @@ function VandaagPage() {
   const shift = (delta: number) =>
     setDate(format(addDays(parseISO(date), view === "week" ? delta * 7 : delta), "yyyy-MM-dd"));
 
+  const clearDay = (dayDate: string) => {
+    meals.filter((m) => m.date === dayDate).forEach((m) => remove(m.id));
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title="Planning" subtitle="Dag- en weekplanning met macro's" />
@@ -177,20 +181,30 @@ function VandaagPage() {
               return (
                 <Card key={d} className={isToday ? "border-primary ring-1 ring-primary/30" : undefined}>
                   <CardContent className="px-5 py-3.5">
+                    <div className="flex items-baseline justify-between">
+                      <div className="flex items-center gap-2 text-sm font-medium capitalize">
+                        {format(parseISO(d), "EEEE d MMM", { locale: nl })}
+                        {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => clearDay(d)}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Leegmaken
+                        </Button>
+                        <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {Math.round(t.kcal)} / {target.kcal} kcal
+                        </div>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       className="w-full text-left"
                       onClick={() => { setDate(d); setView("dag"); }}
                     >
-                      <div className="flex items-baseline justify-between">
-                        <div className="flex items-center gap-2 text-sm font-medium capitalize">
-                          {format(parseISO(d), "EEEE d MMM", { locale: nl })}
-                          {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
-                        </div>
-                        <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
-                          {Math.round(t.kcal)} / {target.kcal} kcal
-                        </div>
-                      </div>
                       {dayEntries.length === 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">Nog niets gepland.</p>
                       ) : (
