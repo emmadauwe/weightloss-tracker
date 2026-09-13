@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2 } from "lucide-react";
-import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2, ShoppingBasket } from "lucide-react";
+import { INGREDIENT_CATEGORIES, useDishes, useIngredients, useMeals, type IngredientCategory, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
 import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
@@ -17,7 +17,14 @@ import { generatePlan, picksToEntries, type MacroPriority } from "@/lib/planner"
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vandaag")({
-  head: () => ({ meta: [{ title: "Vandaag" }] }),
+  head: () => ({ meta: [
+    { title: "Planning | Lichter" },
+    { name: "description", content: "Plan je maaltijden en bekijk je dagelijkse macro's." },
+    { property: "og:title", content: "Planning | Lichter" },
+    { property: "og:description", content: "Plan je maaltijden en bekijk je dagelijkse macro's." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: VandaagPage,
 });
 
@@ -42,7 +49,7 @@ function VandaagPage() {
   const [showOptions, setShowOptions] = useState(false);
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
-  const { items: meals, add, remove } = useMeals();
+  const { items: meals, add, remove, update } = useMeals();
   const { goal, setGoal } = useGoal();
   const { settings } = useSettings();
   const { entries, addEntry } = useEntries();
@@ -83,6 +90,43 @@ function VandaagPage() {
     return Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), "yyyy-MM-dd"));
   }, [date]);
 
+  const shoppingList = useMemo(() => {
+    const totals = new Map<string, { name: string; amount: number; unit: Unit; category: IngredientCategory }>();
+    for (const entry of meals.filter((meal) => weekDates.includes(meal.date))) {
+      if (entry.kind === "ingredient") {
+        const ingredient = ingredients.find((item) => item.id === entry.refId);
+        if (!ingredient) continue;
+        const key = `${ingredient.id}:${entry.unit}`;
+        const current = totals.get(key);
+        totals.set(key, {
+          name: ingredient.name,
+          amount: (current?.amount ?? 0) + entry.amount,
+          unit: entry.unit,
+          category: ingredient.category ?? "groenten en fruit",
+        });
+        continue;
+      }
+      const dish = dishes.find((item) => item.id === entry.refId);
+      if (!dish) continue;
+      for (const item of dish.items) {
+        const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
+        if (!ingredient) continue;
+        const key = `${ingredient.id}:${item.unit}`;
+        const current = totals.get(key);
+        totals.set(key, {
+          name: ingredient.name,
+          amount: (current?.amount ?? 0) + item.amount * entry.amount / Math.max(1, dish.servings),
+          unit: item.unit,
+          category: ingredient.category ?? "groenten en fruit",
+        });
+      }
+    }
+    return INGREDIENT_CATEGORIES.map((category) => ({
+      category,
+      items: [...totals.values()].filter((item) => item.category === category).sort((a, b) => a.name.localeCompare(b.name, "nl")),
+    })).filter((group) => group.items.length > 0);
+  }, [meals, weekDates, ingredients, dishes]);
+
   const generateFor = (dates: string[]) => {
     meals.filter((m) => dates.includes(m.date)).forEach((m) => remove(m.id));
     const picks = generatePlan({
@@ -105,7 +149,7 @@ function VandaagPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AppHeader title="Vandaag" subtitle="Dagplanning en macro's" />
+      <AppHeader title="Planning" subtitle="Dag- en weekplanning met macro's" />
 
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
         {/* Dag / week schakelaar */}
@@ -204,9 +248,10 @@ function VandaagPage() {
           <div className="space-y-2">
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
-              const count = meals.filter((m) => m.date === d).length;
+              const dayEntries = meals.filter((m) => m.date === d);
+              const isToday = d === format(new Date(), "yyyy-MM-dd");
               return (
-                <Card key={d}>
+                <Card key={d} className={isToday ? "border-primary ring-1 ring-primary/30" : undefined}>
                   <CardContent className="px-5 py-3.5">
                     <button
                       type="button"
@@ -214,18 +259,36 @@ function VandaagPage() {
                       onClick={() => { setDate(d); setView("dag"); }}
                     >
                       <div className="flex items-baseline justify-between">
-                        <div className="text-sm font-medium capitalize">
+                        <div className="flex items-center gap-2 text-sm font-medium capitalize">
                           {format(parseISO(d), "EEEE d MMM", { locale: nl })}
+                          {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
                         </div>
                         <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
                           {Math.round(t.kcal)} / {target.kcal} kcal
                         </div>
                       </div>
-                      {count === 0 ? (
+                      {dayEntries.length === 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">Nog niets gepland.</p>
                       ) : (
-                        <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-                          {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
+                        <div className="mt-2 space-y-1.5">
+                          {MEAL_ORDER.map((meal) => {
+                            const entriesForMeal = dayEntries.filter((entry) => entry.meal === meal);
+                            if (entriesForMeal.length === 0) return null;
+                            return (
+                              <div key={meal} className="grid grid-cols-[64px_1fr] gap-2 text-xs">
+                                <span className="font-medium text-foreground">{MEAL_LABEL[meal]}</span>
+                                <span className="text-muted-foreground">
+                                  {entriesForMeal.map((entry) => {
+                                    const ref = entry.kind === "dish" ? dishes.find((item) => item.id === entry.refId) : ingredients.find((item) => item.id === entry.refId);
+                                    return `${ref?.name ?? "—"} · ${entry.amount} ${entry.unit}`;
+                                  }).join(", ")}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          <div className="border-t border-border pt-1.5 text-xs text-muted-foreground tabular-nums">
+                            {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
+                          </div>
                         </div>
                       )}
                     </button>
@@ -233,6 +296,28 @@ function VandaagPage() {
                 </Card>
               );
             })}
+            <Card>
+              <CardContent className="space-y-3 px-5 py-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
+                </div>
+                {shoppingList.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Genereer of vul eerst een weekplanning.</p>
+                ) : shoppingList.map((group) => (
+                  <div key={group.category}>
+                    <div className="mb-1 text-xs font-semibold capitalize text-primary">{group.category}</div>
+                    <ul className="divide-y divide-border">
+                      {group.items.map((item) => (
+                        <li key={`${item.name}:${item.unit}`} className="flex justify-between gap-3 py-1.5 text-sm">
+                          <span>{item.name}</span>
+                          <span className="shrink-0 tabular-nums text-muted-foreground">{formatAmount(item.amount)} {item.unit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <>
@@ -287,11 +372,21 @@ function VandaagPage() {
                           const macros = mealEntryMacros(m, ingredients, dishes);
                           return (
                             <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
-                              <span className="flex-1 truncate">
+                               <span className="min-w-0 flex-1 truncate">
                                 {ref?.name ?? "—"}
                                 <span className="text-muted-foreground"> · {m.amount} {m.unit}</span>
                               </span>
-                              <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
+                               <Input
+                                 aria-label={`Porties ${ref?.name ?? "maaltijd"}`}
+                                 className="h-7 w-14 px-2 text-xs"
+                                 inputMode="decimal"
+                                 value={m.amount}
+                                 onChange={(event) => {
+                                   const amount = parseFloat(event.target.value.replace(",", "."));
+                                   if (amount > 0) update(m.id, { amount });
+                                 }}
+                               />
+                               <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
                                 <Trash2 className="h-3.5 w-3.5 text-primary" />
                               </Button>
@@ -321,6 +416,10 @@ function VandaagPage() {
       )}
     </div>
   );
+}
+
+function formatAmount(amount: number) {
+  return Number.isInteger(amount) ? String(amount) : amount.toFixed(1).replace(".0", "");
 }
 
 function MacroBar({ label, cur, max, unit }: { label: string; cur: number; max: number; unit: string }) {

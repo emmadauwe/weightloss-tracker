@@ -5,13 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X } from "lucide-react";
+import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft } from "lucide-react";
 import { useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/gerechten")({
-  head: () => ({ meta: [{ title: "Gerechten" }] }),
+  head: () => ({ meta: [
+    { title: "Gerechten | Lichter" },
+    { name: "description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
+    { property: "og:title", content: "Gerechten | Lichter" },
+    { property: "og:description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: GerechtenPage,
 });
 
@@ -175,8 +182,16 @@ function DishDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+        {picking !== null ? (
+          <IngredientPicker
+            ingredients={ingredients}
+            onClose={() => setPicking(null)}
+            onPick={(id) => chooseIngredient(picking, id)}
+          />
+        ) : (
+          <>
+          <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
+          <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-[1fr_90px] gap-3">
             <div className="space-y-2">
               <Label htmlFor="dname">Naam</Label>
@@ -278,15 +293,10 @@ function DishDialog({
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
-        </form>
+          </form>
+          </>
+        )}
       </DialogContent>
-      {picking !== null && (
-        <IngredientPicker
-          ingredients={ingredients}
-          onClose={() => setPicking(null)}
-          onPick={(id) => chooseIngredient(picking, id)}
-        />
-      )}
     </Dialog>
   );
 }
@@ -308,9 +318,15 @@ export function IngredientPicker({
   );
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[80vh] overflow-hidden">
-        <DialogHeader><DialogTitle>Ingrediënt kiezen</DialogTitle></DialogHeader>
+      <div className="space-y-4">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Terug">
+              <ChevronLeft className="h-5 w-5 text-primary" />
+            </Button>
+            Ingrediënt kiezen
+          </DialogTitle>
+        </DialogHeader>
         <Input autoFocus placeholder="Zoek ingrediënt…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="max-h-[50vh] overflow-y-auto rounded-md border border-border">
           {list.length === 0 ? (
@@ -334,7 +350,6 @@ export function IngredientPicker({
             </ul>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
   );
 }

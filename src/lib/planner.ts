@@ -4,7 +4,6 @@ import { dishMacrosPerServing, type Macros } from "./nutrition-math";
 export type MacroPriority = "balans" | "eiwit" | "vet";
 
 export const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
-const COOKED_MEALS: Meal[] = ["lunch", "diner"];
 
 export type PlanPick = { date: string; meal: Meal; dishId: string };
 
@@ -113,42 +112,41 @@ export function generatePlan(opts: {
     const sessions = Array.from({ length: cookCount }, (_, i) =>
       Math.min(dates.length - 1, Math.floor((i * dates.length) / cookCount)),
     );
-    const batches = sessions.map((dateIndex) => ({
+    const batches = sessions.map((dateIndex, index) => ({
       dateIndex,
       dish: pickRandom(dinnerCandidates),
       uses: 0,
-    })).filter((batch): batch is { dateIndex: number; dish: Dish; uses: number } => Boolean(batch.dish));
+      targetUses: Math.floor((dates.length * 2) / cookCount) + (index < (dates.length * 2) % cookCount ? 1 : 0),
+    })).filter((batch): batch is { dateIndex: number; dish: Dish; uses: number; targetUses: number } => Boolean(batch.dish));
 
     for (const batch of batches) {
       picks.push({ date: dates[batch.dateIndex], meal: "diner", dishId: batch.dish.id });
       batch.uses += 1;
     }
 
-    // Lunches use a previous dinner where possible; never repeat lunch and dinner on one day.
-    for (let day = 0; day < dates.length; day++) {
-      const previous = [...batches]
-        .reverse()
-        .find((batch) => batch.dateIndex < day && batch.dish.categories?.includes("lunch"));
-      const existing = macrosForPicks(picks.filter((p) => p.date === dates[day]), dishes, ingredients).get(dates[day]) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-      const lunch = previous?.dish ?? pickBestComplement("lunch", existing, dishes, ingredients, target, priority);
-      if (lunch) {
-        picks.push({ date: dates[day], meal: "lunch", dishId: lunch.id });
-        if (previous) previous.uses += 1;
+    // Every cooked dinner supplies later leftovers. Prefer the next lunch, then a later dinner.
+    for (const batch of batches) {
+      for (let day = batch.dateIndex + 1; day < dates.length && batch.uses < batch.targetUses; day++) {
+        for (const meal of ["lunch", "diner"] as Meal[]) {
+          if (batch.uses >= batch.targetUses) break;
+          if (!batch.dish.categories?.includes(meal)) continue;
+          if (picks.some((p) => p.date === dates[day] && p.meal === meal)) continue;
+          if (picks.some((p) => p.date === dates[day] && p.dishId === batch.dish.id)) continue;
+          picks.push({ date: dates[day], meal, dishId: batch.dish.id });
+          batch.uses += 1;
+        }
       }
     }
 
-    // Fill dinner gaps with the best complement. Reuse an earlier batch before introducing an extra dish.
+    // Fill remaining lunches and dinners as complementary pairs, never duplicating a dish on one day.
     for (let day = 0; day < dates.length; day++) {
-      if (picks.some((p) => p.date === dates[day] && p.meal === "diner")) continue;
-      const sameDayLunch = picks.find((p) => p.date === dates[day] && p.meal === "lunch")?.dishId;
-      const reusable = [...batches].reverse().find((batch) =>
-        batch.dateIndex < day && batch.dish.id !== sameDayLunch && batch.dish.categories?.includes("diner"),
-      );
-      const existing = macrosForPicks(picks.filter((p) => p.date === dates[day]), dishes, ingredients).get(dates[day]) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-      const dinner = reusable?.dish ?? pickBestComplement("diner", existing, dishes, ingredients, target, priority);
-      if (dinner) {
-        picks.push({ date: dates[day], meal: "diner", dishId: dinner.id });
-        if (reusable) reusable.uses += 1;
+      for (const meal of ["lunch", "diner"] as Meal[]) {
+        if (picks.some((p) => p.date === dates[day] && p.meal === meal)) continue;
+        const sameDayDishIds = new Set(picks.filter((p) => p.date === dates[day]).map((p) => p.dishId));
+        const available = dishes.filter((dish) => !sameDayDishIds.has(dish.id));
+        const existing = macrosForPicks(picks.filter((p) => p.date === dates[day]), dishes, ingredients).get(dates[day]) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+        const dish = pickBestComplement(meal, existing, available, ingredients, target, priority);
+        if (dish) picks.push({ date: dates[day], meal, dishId: dish.id });
       }
     }
     return picks;

@@ -13,7 +13,14 @@ import { computeGoal, type GoalType, type Intensity, type Lifestyle, type Sex } 
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/doel")({
-  head: () => ({ meta: [{ title: "Doel" }] }),
+  head: () => ({ meta: [
+    { title: "Doel | Lichter" },
+    { name: "description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
+    { property: "og:title", content: "Doel | Lichter" },
+    { property: "og:description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DoelPage,
 });
 
@@ -126,14 +133,14 @@ function DoelPage() {
                 onChange={(e) => setSettings({ ...settings, heightCm: numOrUndef(e.target.value) })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="sd">Startdag</Label>
-                <Input id="sd" type="date" value={settings.startDate ?? ""}
+                <Input id="sd" className="h-9 w-full min-w-0 shadow-sm" type="date" value={settings.startDate ?? ""}
                   onChange={(e) => setSettings({ ...settings, startDate: e.target.value || undefined })} />
               </div>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <Label htmlFor="ed">Einddag</Label>
-                <Input id="ed" type="date" value={settings.endDate ?? ""}
+                <Input id="ed" className="h-9 w-full min-w-0 shadow-sm" type="date" value={settings.endDate ?? ""}
                   onChange={(e) => setSettings({ ...settings, endDate: e.target.value || undefined })} />
               </div>
             </div>

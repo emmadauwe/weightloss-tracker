@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays, startOfWeek } from "date-fns";
 
@@ -29,17 +29,12 @@ import {
   Trash2,
   Plus,
   Scale,
-  History,
-  LayoutDashboard,
   TrendingDown,
   Pencil,
   AlertTriangle,
+  ChevronLeft,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
-import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
-import { useGoal } from "@/lib/goal-store";
-import { computeGoal, dayMacros } from "@/lib/nutrition-math";
-import { UtensilsCrossed, ChevronRight } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 
 
@@ -50,6 +45,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Houd je gewicht en voortgang naar je doel bij." },
       { property: "og:title", content: "Gewichtstracker" },
       { property: "og:description", content: "Houd je gewicht en voortgang naar je doel bij." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
@@ -59,6 +56,7 @@ function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
   const { settings } = useSettings();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
+  const [showBmi, setShowBmi] = useState(false);
 
   const sorted = entries;
   const latest = sorted[sorted.length - 1];
@@ -67,8 +65,10 @@ function Index() {
   const goal = settings.goalWeight;
   const unit = settings.unit;
 
-  const totalLost = start && latest ? start - latest.weight : 0;
-  const toGoal = goal && latest ? Math.max(0, latest.weight - goal) : 0;
+  const weightChange = start && latest ? latest.weight - start : 0;
+  const toGoal = goal && latest ? Math.abs(latest.weight - goal) : 0;
+  const movedTowardGoal = Boolean(start && goal && weightChange !== 0 && Math.sign(goal - start) === Math.sign(weightChange));
+  const changeIsUnhealthy = weightChange !== 0 && !movedTowardGoal;
   const progressPct =
     start && goal && latest && start !== goal
       ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100))
@@ -94,35 +94,6 @@ function Index() {
     if (!before || !latest) return null;
     return latest.weight - before.weight;
   }, [sorted, latest]);
-
-  // Energie-balans vandaag (slimme koppeling)
-  const { items: ingredients } = useIngredients();
-  const { items: dishes } = useDishes();
-  const { items: meals } = useMeals();
-  const { goal: goalCfg } = useGoal();
-  const todayKey = format(new Date(), "yyyy-MM-dd");
-  const todayKcal = Math.round(dayMacros(todayKey, meals, ingredients, dishes).kcal);
-  const kcalTarget = useMemo(() => {
-    if (goalCfg.overrideKcal) return goalCfg.overrideKcal;
-    if (!latest || !settings.heightCm || !goalCfg.age) return null;
-    const c = computeGoal({
-      type: goalCfg.type,
-      weightKg: unit === "lb" ? latest.weight * 0.453592 : latest.weight,
-      goalKg: goal,
-      heightCm: settings.heightCm,
-      age: goalCfg.age,
-      sex: goalCfg.sex,
-      activity: goalCfg.activity,
-      lifestyle: goalCfg.lifestyle,
-      sessionsPerWeek: goalCfg.sessionsPerWeek,
-      minutesPerSession: goalCfg.minutesPerSession,
-      intensity: goalCfg.intensity,
-      startDate: settings.startDate,
-      endDate: settings.endDate,
-    });
-    return c?.kcal ?? null;
-  }, [latest, settings, goal, unit, goalCfg]);
-
 
   const chartData = useMemo(
     () =>
@@ -157,17 +128,19 @@ function Index() {
                     <span className="text-base text-muted-foreground">{unit}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs font-medium text-muted-foreground">Afgevallen</div>
+                <div className={`rounded-xl px-3 py-2 text-right ${changeIsUnhealthy ? "bg-destructive-soft" : weightChange !== 0 ? "bg-primary/15" : ""}`}>
+                   <div className={`text-xs font-medium ${changeIsUnhealthy ? "text-destructive-strong" : "text-muted-foreground"}`}>
+                     {weightChange > 0 ? "Bijgekomen" : weightChange < 0 ? "Afgevallen" : "Verandering"}
+                   </div>
                   <div className="mt-2 flex items-baseline justify-end gap-1.5">
                     <span
                       className={`text-3xl font-semibold tabular-nums ${
-                        totalLost > 0 ? "text-success" : "text-foreground"
+                         changeIsUnhealthy ? "text-destructive-strong" : weightChange !== 0 ? "text-success" : "text-foreground"
                       }`}
                       style={{ fontFamily: "var(--font-display)" }}
                     >
-                      {totalLost > 0 ? "-" : ""}
-                      {Math.abs(totalLost).toFixed(1)}
+                       {weightChange > 0 ? "+" : weightChange < 0 ? "-" : ""}
+                       {Math.abs(weightChange).toFixed(1)}
                     </span>
                     <span className="text-sm text-muted-foreground">{unit}</span>
                   </div>
@@ -203,25 +176,29 @@ function Index() {
             <div className="grid grid-cols-2 gap-3">
               <MiniStat
                 label="Nog te gaan"
-                value={goal && latest ? `${toGoal.toFixed(1)} ${unit}` : "—"}
+                value={goal && latest ? toGoal.toFixed(1) : "—"}
+                unit={goal && latest ? unit : undefined}
               />
               <MiniStat
                 label="Dagen over"
-                value={daysLeft !== null ? `${daysLeft} d` : "—"}
+                value={daysLeft !== null ? String(daysLeft) : "—"}
+                unit={daysLeft !== null ? "dagen" : undefined}
               />
               <MiniStat
                 label="BMI"
                 value={bmi ? bmi.toFixed(1) : "—"}
                 sub={bmiCat?.label}
                 subColor={bmiCat?.color}
+                onClick={bmi ? () => setShowBmi(true) : undefined}
               />
               <MiniStat
                 label="Deze week"
                 value={
                   thisWeekDiff === null
                     ? "—"
-                    : `${thisWeekDiff > 0 ? "+" : ""}${thisWeekDiff.toFixed(1)} ${unit}`
+                    : `${thisWeekDiff > 0 ? "+" : ""}${thisWeekDiff.toFixed(1)}`
                 }
+                unit={thisWeekDiff === null ? undefined : unit}
                 valueColor={
                   thisWeekDiff === null
                     ? undefined
@@ -231,31 +208,9 @@ function Index() {
                         ? "var(--destructive)"
                         : undefined
                 }
+                onClick={() => setTab("history")}
               />
             </div>
-
-            {/* Slimme koppeling: kcal vandaag */}
-            <Link to="/vandaag" className="block">
-              <Card className="transition-colors hover:bg-accent/40">
-                <CardContent className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
-                    <UtensilsCrossed className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-muted-foreground">Vandaag gegeten</div>
-                    <div className="text-sm font-medium tabular-nums">
-                      {todayKcal} kcal{kcalTarget && <span className="text-muted-foreground"> / {kcalTarget}</span>}
-                    </div>
-                  </div>
-                  {kcalTarget && (
-                    <div className={`text-xs font-medium tabular-nums ${todayKcal > kcalTarget * 1.05 ? "text-destructive" : "text-success"}`}>
-                      {kcalTarget - todayKcal >= 0 ? `${kcalTarget - todayKcal} over` : `+${todayKcal - kcalTarget}`}
-                    </div>
-                  )}
-                  <ChevronRight className="h-4 w-4 text-primary" />
-                </CardContent>
-              </Card>
-            </Link>
 
 
 
@@ -340,56 +295,35 @@ function Index() {
             )}
           </div>
         ) : (
-          <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} />
+          <div className="space-y-3">
+            <Button variant="ghost" size="sm" onClick={() => setTab("dashboard")}>
+              <ChevronLeft className="h-4 w-4 text-primary" /> Terug naar overzicht
+            </Button>
+            <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} />
+          </div>
         )}
       </main>
 
       {/* Floating add button */}
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
-      {/* In-page sub-tab toggle */}
-      <nav className="fixed inset-x-0 bottom-16 z-20 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto inline-flex rounded-full border border-border bg-card/95 p-1 shadow-sm backdrop-blur">
-          <SubTab active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
-          <SubTab active={tab === "history"} onClick={() => setTab("history")} icon={<History className="h-4 w-4" />} label="Geschiedenis" />
-        </div>
-      </nav>
+      <BmiDialog open={showBmi} onOpenChange={setShowBmi} bmi={bmi} />
 
     </div>
   );
 }
 
-function SubTab({
-  active, onClick, icon, label,
-}: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-        active ? "bg-primary text-primary-foreground" : "text-foreground/70 hover:text-foreground"
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-
 function MiniStat({
-  label, value, sub, subColor, valueColor,
+  label, value, unit, sub, subColor, valueColor, onClick,
 }: {
-  label: string; value: string; sub?: string; subColor?: string; valueColor?: string;
+  label: string; value: string; unit?: string; sub?: string; subColor?: string; valueColor?: string; onClick?: () => void;
 }) {
-  return (
-    <Card>
+  const content = (
       <CardContent className="px-4 py-3.5">
         <div className="text-xs text-muted-foreground">{label}</div>
-        <div
-          className="mt-1.5 text-2xl font-semibold tabular-nums"
-          style={{ fontFamily: "var(--font-display)", color: valueColor }}
-        >
-          {value}
+        <div className="mt-1.5 flex items-baseline gap-1" style={{ color: valueColor }}>
+          <span className="text-2xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{value}</span>
+          {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
         </div>
         {sub && (
           <div className="mt-0.5 text-xs font-medium" style={{ color: subColor }}>
@@ -397,7 +331,39 @@ function MiniStat({
           </div>
         )}
       </CardContent>
-    </Card>
+  );
+  return <Card className={onClick ? "transition-colors hover:bg-accent/40" : undefined}>{onClick ? <button type="button" className="w-full text-left" onClick={onClick}>{content}</button> : content}</Card>;
+}
+
+function BmiDialog({ open, onOpenChange, bmi }: { open: boolean; onOpenChange: (open: boolean) => void; bmi: number | null }) {
+  const position = bmi ? Math.max(0, Math.min(100, ((bmi - 15) / 25) * 100)) : 0;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>BMI-schaal</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="text-center">
+            <span className="text-4xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{bmi?.toFixed(1)}</span>
+            <div className="text-sm font-medium" style={{ color: bmi ? bmiCategory(bmi).color : undefined }}>{bmi ? bmiCategory(bmi).label : "—"}</div>
+          </div>
+          <div className="relative pt-4">
+            <div className="flex h-3 overflow-hidden rounded-full">
+              <div className="w-[14%] bg-destructive/70" />
+              <div className="w-[26%] bg-success" />
+              <div className="w-[20%] bg-destructive" />
+              <div className="w-[40%] bg-destructive-strong" />
+            </div>
+            {bmi && <div className="absolute top-0 -translate-x-1/2 text-primary" style={{ left: `${position}%` }}>▼</div>}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <span className="text-destructive">Ondergewicht · &lt;18,5</span>
+            <span className="text-success">Gezond · 18,5–24,9</span>
+            <span className="text-destructive">Overgewicht · 25–29,9</span>
+            <span className="text-destructive-strong">Obesitas · ≥30</span>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -590,10 +556,10 @@ function AddEntryDialog({
 }
 
 function bmiCategory(bmi: number): { label: string; color: string } {
-  if (bmi < 18.5) return { label: "Ondergewicht", color: "var(--accent)" };
+  if (bmi < 18.5) return { label: "Ondergewicht", color: "var(--destructive)" };
   if (bmi < 25) return { label: "Gezond", color: "var(--success)" };
-  if (bmi < 30) return { label: "Overgewicht", color: "var(--accent)" };
-  return { label: "Obesitas", color: "var(--destructive)" };
+  if (bmi < 30) return { label: "Overgewicht", color: "var(--destructive)" };
+  return { label: "Obesitas", color: "var(--destructive-strong)" };
 }
 
 function DeadlineCard({
