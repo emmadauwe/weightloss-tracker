@@ -167,6 +167,10 @@ function VandaagPage() {
         {view === "week" ? (
           <div className="space-y-2">
             <MacroSummary totals={weekAverage} target={target} goalType={goal.type} average />
+            <Button type="button" variant="outline" size="sm" className="h-8 w-full text-xs" onClick={() => generateFor(weekDates)}>
+              <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
+              Genereer week
+            </Button>
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
               const dayEntries = meals.filter((m) => m.date === d);
