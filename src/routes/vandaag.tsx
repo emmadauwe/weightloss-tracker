@@ -211,23 +211,25 @@ function VandaagPage() {
                               </div>
                             );
                           })}
-                          <div className="border-t border-border pt-1.5 text-xs text-muted-foreground tabular-nums">
-                            {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
-                          </div>
                         </div>
                       )}
                     </button>
-                    <div className="mt-2 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => clearDay(d)}
-                        aria-label="Dag leegmaken"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    {dayEntries.length > 0 && (
+                      <div className="mt-2 flex items-center justify-between border-t border-border pt-1.5">
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {Math.round(t.protein)}P · {Math.round(t.carbs)}K · {Math.round(t.fat)}V
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => clearDay(d)}
+                          aria-label="Dag leegmaken"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
