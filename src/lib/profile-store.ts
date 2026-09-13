@@ -13,7 +13,6 @@ export type Profile = {
   name?: string;
   /** Id van een cartoon-avatar. */
   avatar?: string;
-  photo?: string;
 };
 
 export const PROFILE_KEY = "profile-v1";

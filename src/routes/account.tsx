@@ -105,7 +105,7 @@ function AccountPage() {
                     key={a.id}
                     type="button"
                     aria-label={a.label}
-                    onClick={() => setProfile({ ...profile, avatar: a.id, photo: undefined })}
+                    onClick={() => setProfile({ ...profile, avatar: a.id })}
                     className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border transition-colors ${
                       profile.avatar === a.id ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-accent"
                     }`}
