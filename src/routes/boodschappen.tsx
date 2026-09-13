@@ -48,7 +48,7 @@ function BoodschappenPage() {
       <AppHeader title="Boodschappenlijst" subtitle="Alles voor je geplande week" />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
         <Button asChild variant="ghost" size="sm">
-          <Link to="/vandaag" search={{}}>
+          <Link to="/vandaag">
             <ArrowLeft className="h-4 w-4 text-primary" /> Terug naar planning
           </Link>
         </Button>

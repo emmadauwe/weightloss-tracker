@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Pencil, Trash2, Apple } from "lucide-react";
 import { INGREDIENT_CATEGORIES, useIngredients, type Ingredient, type IngredientCategory, type Unit } from "@/lib/nutrition-store";
 import { AppHeader } from "@/components/app-header";
+import { sentenceCase } from "@/lib/shopping-list";
 
 export const Route = createFileRoute("/ingredienten")({
   head: () => ({ meta: [
@@ -61,7 +62,7 @@ function IngredientenPage() {
                         {" · "}
                         per {i.baseUnit === "g" || i.baseUnit === "ml" ? `100 ${i.baseUnit}` : i.baseUnit}
                       </div>
-                      <div className="mt-0.5 text-[11px] capitalize text-primary">{i.category ?? "Nog geen type"}</div>
+                      <div className="mt-0.5 text-[11px] text-primary">{i.category ? sentenceCase(i.category) : "Nog geen type"}</div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => setEditing(i)} aria-label="Bewerken">
                       <Pencil className="h-4 w-4 text-primary" />
@@ -163,9 +164,9 @@ function IngredientDialog({
           <div className="space-y-2">
             <Label>Type</Label>
             <Select value={category} onValueChange={(v) => setCategory(v as IngredientCategory)}>
-              <SelectTrigger className="capitalize"><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {INGREDIENT_CATEGORIES.map((item) => <SelectItem key={item} value={item} className="capitalize">{item}</SelectItem>)}
+                {INGREDIENT_CATEGORIES.map((item) => <SelectItem key={item} value={item}>{sentenceCase(item)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
