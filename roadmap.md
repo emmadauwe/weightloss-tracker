@@ -21,3 +21,8 @@
 - [x] Compact the Planning date/view/generator controls and mark today/current week in the date selector.
 - [x] Show weekly average calories and macros in the same layout as the daily summary.
 - [x] Verify build and mobile interactions for all requested changes.
+- [ ] Remove the Planning weigh prompt and day generator.
+- [ ] Keep one automatic week generator without visible settings.
+- [ ] Move the shopping-list button below the weekly plan.
+- [ ] Compact macro summaries and apply goal-aware calorie and protein colors.
+- [ ] Verify the updated day and week views on mobile.
