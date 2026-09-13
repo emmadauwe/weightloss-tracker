@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
-import { ArrowLeft, ShoppingBasket } from "lucide-react";
+import { ShoppingBasket } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCloudDoc } from "@/lib/cloud-store";
@@ -21,9 +20,9 @@ export const Route = createFileRoute("/boodschappen")({
     week: typeof search.week === "string" ? search.week : undefined,
   }),
   head: () => ({ meta: [
-    { title: "Boodschappenlijst | Lichter" },
+    { title: "Boodschappenlijstje | Lichter" },
     { name: "description", content: "Bekijk en vink de boodschappen voor je weekplanning af." },
-    { property: "og:title", content: "Boodschappenlijst | Lichter" },
+    { property: "og:title", content: "Boodschappenlijstje | Lichter" },
     { property: "og:description", content: "Bekijk en vink de boodschappen voor je weekplanning af." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
@@ -45,14 +44,8 @@ function BoodschappenPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AppHeader title="Boodschappenlijst" subtitle="Alles voor je geplande week" />
+      <AppHeader title="Boodschappenlijstje" subtitle="Alles voor je geplande week" />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/vandaag">
-            <ArrowLeft className="h-4 w-4 text-primary" /> Terug naar planning
-          </Link>
-        </Button>
-
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
             <div className="text-sm font-medium">

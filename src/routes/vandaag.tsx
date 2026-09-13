@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format, addDays, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, ShoppingBasket } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
@@ -204,11 +204,6 @@ function VandaagPage() {
                 </Card>
               );
             })}
-            <Button asChild type="button" variant="outline" size="sm" className="mt-3 w-full">
-              <Link to="/boodschappen" search={{ week: weekDates[0] }}>
-                <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
-              </Link>
-            </Button>
           </div>
         ) : (
           <>

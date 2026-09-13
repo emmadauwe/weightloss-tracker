@@ -35,7 +35,7 @@
 - [x] Lighten every animal, use the app background, and keep each avatar safe for a circular crop.
 - [x] Remove personal photo uploads so profiles use only the cartoon avatars.
 - [x] Apply the exact neutral text and avatar palette, and remove the frog avatar.
-- [ ] Increase week-generator variety while preserving macro and leftovers priorities.
-- [ ] Remove the Planning shopping button and the shopping-page back button.
-- [ ] Rename the mobile shopping tab and page, and increase navigation height.
-- [ ] Add sign-out confirmation and verify mobile behavior.
+- [x] Increase week-generator variety while preserving macro and leftovers priorities.
+- [x] Remove the Planning shopping button and the shopping-page back button.
+- [x] Rename the mobile shopping tab and page, and increase navigation height.
+- [x] Add sign-out confirmation and verify mobile behavior.
