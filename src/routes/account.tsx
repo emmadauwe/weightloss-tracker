@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { differenceInDays, format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertTriangle, CalendarIcon, Camera, LogOut, RotateCcw } from "lucide-react";
+import { AlertTriangle, CalendarIcon, LogOut, RotateCcw } from "lucide-react";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { AVATAR_CHOICES, avatarSrc, useProfile } from "@/lib/profile-store";
 import { useAuth, signOut } from "@/lib/auth";
@@ -35,35 +35,10 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
   { id: "spiermassa", label: "Spiermassa" },
 ];
 
-async function fileToAvatar(file: File): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("read"));
-    reader.readAsDataURL(file);
-  });
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("image"));
-    img.src = dataUrl;
-  });
-  const size = 192;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return dataUrl;
-  const side = Math.min(image.width, image.height);
-  ctx.drawImage(image, (image.width - side) / 2, (image.height - side) / 2, side, side, 0, 0, size, size);
-  return canvas.toDataURL("image/jpeg", 0.82);
-}
-
 function AccountPage() {
   const { goal, setGoal, settings, setSettings, calc } = useGoalTargets();
   const { profile, setProfile } = useProfile();
   const { user } = useAuth();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
@@ -99,42 +74,17 @@ function AccountPage() {
         <Card>
           <CardContent className="px-5 py-4 space-y-4">
             <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-secondary">
-                  {profile.photo ? (
-                    <img src={profile.photo} alt="Profielfoto" className="h-full w-full object-cover" />
-                  ) : (
-                    <img
-                      src={avatarSrc(profile.avatar)}
-                      alt="Cartoon-avatar"
-                      loading="lazy"
-                      width={512}
-                      height={512}
-                      className="h-full w-full object-contain p-1"
-                    />
-                  )}
+              <div>
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-background">
+                  <img
+                    src={avatarSrc(profile.avatar)}
+                    alt="Cartoon-avatar"
+                    loading="lazy"
+                    width={512}
+                    height={512}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  aria-label="Eigen foto kiezen"
-                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card"
-                >
-                  <Camera className="h-3.5 w-3.5 text-primary" />
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = "";
-                    if (!file) return;
-                    const photo = await fileToAvatar(file);
-                    setProfile({ ...profile, photo });
-                  }}
-                />
               </div>
               <div className="min-w-0 flex-1 space-y-2">
                 <Label htmlFor="pname">Naam</Label>
@@ -148,7 +98,7 @@ function AccountPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Of kies een cartoon</Label>
+              <Label>Kies je cartoon</Label>
               <div className="flex flex-wrap gap-2">
                 {AVATAR_CHOICES.map((a) => (
                   <button
@@ -157,10 +107,10 @@ function AccountPage() {
                     aria-label={a.label}
                     onClick={() => setProfile({ ...profile, avatar: a.id, photo: undefined })}
                     className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border transition-colors ${
-                      !profile.photo && profile.avatar === a.id ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-accent"
+                      profile.avatar === a.id ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-accent"
                     }`}
                   >
-                    <img src={a.src} alt={a.label} loading="lazy" width={512} height={512} className="h-full w-full object-contain p-1" />
+                    <img src={a.src} alt={a.label} loading="lazy" width={512} height={512} className="h-full w-full object-cover" />
                   </button>
                 ))}
               </div>
