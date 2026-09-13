@@ -14,6 +14,7 @@ import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as DoelRouteImport } from './routes/doel'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VandaagRoute = VandaagRouteImport.update({
@@ -41,6 +42,11 @@ const BoodschappenRoute = BoodschappenRouteImport.update({
   path: '/boodschappen',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
@@ -76,6 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/boodschappen'
     | '/doel'
     | '/gerechten'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/boodschappen'
     | '/doel'
     | '/gerechten'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/boodschappen'
     | '/doel'
     | '/gerechten'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   BoodschappenRoute: typeof BoodschappenRoute
   DoelRoute: typeof DoelRoute
   GerechtenRoute: typeof GerechtenRoute
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BoodschappenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -157,6 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   BoodschappenRoute: BoodschappenRoute,
   DoelRoute: DoelRoute,
   GerechtenRoute: GerechtenRoute,

@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, ShoppingBasket } from "lucide-react";
 import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
-import { useGoal } from "@/lib/goal-store";
-import { useEntries, useSettings } from "@/lib/weight-store";
-import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
+import { useGoalTargets } from "@/lib/goal-targets";
+import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
 
@@ -43,37 +42,8 @@ function VandaagPage() {
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
-  const { goal } = useGoal();
-  const { settings } = useSettings();
-  const { entries } = useEntries();
+  const { goal, target } = useGoalTargets();
   const [adding, setAdding] = useState<Meal | null>(null);
-
-  const latestWeight = entries[entries.length - 1]?.weight;
-  const goalCalc = useMemo(() => {
-    if (!latestWeight || !settings.heightCm || !goal.age) return null;
-    return computeGoal({
-      type: goal.type,
-      weightKg: settings.unit === "lb" ? latestWeight * 0.453592 : latestWeight,
-      goalKg: settings.goalWeight,
-      heightCm: settings.heightCm,
-      age: goal.age,
-      sex: goal.sex,
-      activity: goal.activity,
-      lifestyle: goal.lifestyle,
-      sessionsPerWeek: goal.sessionsPerWeek,
-      minutesPerSession: goal.minutesPerSession,
-      intensity: goal.intensity,
-      startDate: settings.startDate,
-      endDate: settings.endDate,
-    });
-  }, [latestWeight, settings, goal]);
-
-  const target = useMemo(() => ({
-    kcal: goal.overrideKcal ?? goalCalc?.kcal ?? 2000,
-    protein: goal.overrideProtein ?? goalCalc?.protein ?? 100,
-    carbs: goal.overrideCarbs ?? goalCalc?.carbs ?? 220,
-    fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
-  }), [goal, goalCalc]);
 
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
