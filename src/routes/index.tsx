@@ -29,14 +29,12 @@ import {
   Trash2,
   Plus,
   Scale,
-  History,
   TrendingDown,
   Pencil,
   AlertTriangle,
   ChevronLeft,
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
-import { useGoal } from "@/lib/goal-store";
 import { AppHeader } from "@/components/app-header";
 
 
@@ -96,9 +94,6 @@ function Index() {
     if (!before || !latest) return null;
     return latest.weight - before.weight;
   }, [sorted, latest]);
-
-  useGoal();
-
 
   const chartData = useMemo(
     () =>

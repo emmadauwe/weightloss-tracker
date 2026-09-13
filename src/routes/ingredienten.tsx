@@ -11,7 +11,14 @@ import { INGREDIENT_CATEGORIES, useIngredients, type Ingredient, type Ingredient
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/ingredienten")({
-  head: () => ({ meta: [{ title: "Ingrediënten" }] }),
+  head: () => ({ meta: [
+    { title: "Ingrediënten | Lichter" },
+    { name: "description", content: "Beheer ingrediënten, voedingswaarden en winkeltypes." },
+    { property: "og:title", content: "Ingrediënten | Lichter" },
+    { property: "og:description", content: "Beheer ingrediënten, voedingswaarden en winkeltypes." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: IngredientenPage,
 });
 

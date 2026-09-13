@@ -13,7 +13,14 @@ import { computeGoal, type GoalType, type Intensity, type Lifestyle, type Sex } 
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/doel")({
-  head: () => ({ meta: [{ title: "Doel" }] }),
+  head: () => ({ meta: [
+    { title: "Doel | Lichter" },
+    { name: "description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
+    { property: "og:title", content: "Doel | Lichter" },
+    { property: "og:description", content: "Stel je gewichtsdoel en persoonlijke voedingsplan in." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: DoelPage,
 });
 

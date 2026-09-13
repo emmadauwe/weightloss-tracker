@@ -11,7 +11,14 @@ import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/gerechten")({
-  head: () => ({ meta: [{ title: "Gerechten" }] }),
+  head: () => ({ meta: [
+    { title: "Gerechten | Lichter" },
+    { name: "description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
+    { property: "og:title", content: "Gerechten | Lichter" },
+    { property: "og:description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: GerechtenPage,
 });
 
