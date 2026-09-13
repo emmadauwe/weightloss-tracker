@@ -14,4 +14,4 @@
 - [x] Move the weekly shopping list behind a button and add persistent check-offs.
 - [x] Make the weight change summary follow the selected goal and keep current weight neutral.
 - [x] Replace goal date inputs with styled calendar pickers.
-- [ ] Verify the updated mobile interactions and build.
+- [x] Verify the updated mobile interactions and build.
