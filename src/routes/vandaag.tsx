@@ -186,18 +186,8 @@ function VandaagPage() {
                         {format(parseISO(d), "EEEE d MMM", { locale: nl })}
                         {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => clearDay(d)}
-                        >
-                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Leegmaken
-                        </Button>
-                        <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
-                          {Math.round(t.kcal)} / {target.kcal} kcal
-                        </div>
+                      <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {Math.round(t.kcal)} / {target.kcal} kcal
                       </div>
                     </div>
                     <button
@@ -230,6 +220,17 @@ function VandaagPage() {
                         </div>
                       )}
                     </button>
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => clearDay(d)}
+                        aria-label="Dag leegmaken"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -281,9 +282,9 @@ function VandaagPage() {
                                  }}
                                />
                                <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
-                                <Trash2 className="h-3.5 w-3.5 text-primary" />
-                              </Button>
+                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
+                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                               </Button>
                             </li>
                           );
                         })}
