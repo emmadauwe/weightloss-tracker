@@ -15,3 +15,9 @@
 - [x] Make the weight change summary follow the selected goal and keep current weight neutral.
 - [x] Replace goal date inputs with styled calendar pickers.
 - [x] Verify the updated mobile interactions and build.
+- [ ] Make the full weight summary panel goal-aware, using the existing soft red/green colors without an inner badge.
+- [ ] Move the weekly shopping list to its own page while preserving persistent check-offs.
+- [ ] Use sentence case for ingredient categories and add Bereide maaltijden and Voedselkast.
+- [ ] Compact the Planning date/view/generator controls and mark today/current week in the date selector.
+- [ ] Show weekly average calories and macros in the same layout as the daily summary.
+- [ ] Verify build and mobile interactions for all requested changes.
