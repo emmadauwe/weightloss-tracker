@@ -8,12 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2, ShoppingBasket } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, ShoppingBasket } from "lucide-react";
 import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
 import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
-import { generatePlan, picksToEntries, type MacroPriority } from "@/lib/planner";
+import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vandaag")({
@@ -37,22 +37,15 @@ const MEAL_LABEL: Record<Meal, string> = {
 const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
 
-const PRIORITY_LABEL: Record<MacroPriority, string> = {
-  balans: "In balans houden",
-  eiwit: "Eiwitdoel altijd halen",
-  vet: "Nooit over het vetdoel",
-};
-
 function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [view, setView] = useState<"dag" | "week">("dag");
-  const [showOptions, setShowOptions] = useState(false);
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
-  const { goal, setGoal } = useGoal();
+  const { goal } = useGoal();
   const { settings } = useSettings();
-  const { entries, addEntry } = useEntries();
+  const { entries } = useEntries();
   const [adding, setAdding] = useState<Meal | null>(null);
 
   const latestWeight = entries[entries.length - 1]?.weight;
@@ -82,7 +75,6 @@ function VandaagPage() {
     fat: goal.overrideFat ?? goalCalc?.fat ?? 70,
   }), [goal, goalCalc]);
 
-  const priority: MacroPriority = goal.macroPriority ?? "balans";
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
   const weekDates = useMemo(() => {
@@ -97,7 +89,7 @@ function VandaagPage() {
       dishes,
       ingredients,
       target,
-      priority,
+      priority: "eiwit",
       cookCount: dates.length === 1 ? undefined : Math.round((cookPerWeek * dates.length) / 7),
     });
     picksToEntries(picks).forEach((e) => add(e));
@@ -125,7 +117,6 @@ function VandaagPage() {
     };
   }, [weekDates, meals, ingredients, dishes]);
   const todayMeals = meals.filter((m) => m.date === date);
-  const weighedToday = entries.some((e) => e.date === date);
   const today = format(new Date(), "yyyy-MM-dd");
   const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
   const selectedIsToday = date === today;
@@ -170,70 +161,15 @@ function VandaagPage() {
         </div>
 
         {view === "week" && (
-          <Button asChild type="button" variant="outline" size="sm" className="w-full">
-            <Link to="/boodschappen" search={{ week: weekDates[0] }}>
-              <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
-            </Link>
-          </Button>
-        )}
-
-        {/* Generator-opties */}
-        <Card>
-          <CardContent className="space-y-2 px-4 py-2.5">
-            <button
-              type="button"
-              onClick={() => setShowOptions((s) => !s)}
-              className="flex w-full items-center justify-between text-sm font-medium"
-            >
-              <span className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4 text-primary" /> Generator-instellingen
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">{PRIORITY_LABEL[priority]}</span>
-            </button>
-            {showOptions && (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Wat krijgt voorrang naast calorieën?</Label>
-                  <Select
-                    value={priority}
-                    onValueChange={(v) => setGoal({ ...goal, macroPriority: v as MacroPriority })}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="balans">In balans houden</SelectItem>
-                      <SelectItem value="eiwit">Eiwitdoel halen (mag over koolhydraten/vet)</SelectItem>
-                      <SelectItem value="vet">Onder het vetdoel blijven (mag onder eiwit)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cook">Nieuwe warme maaltijden koken per week</Label>
-                  <Input
-                    id="cook"
-                    type="number"
-                    min={1}
-                    max={14}
-                    value={cookPerWeek}
-                    onChange={(e) =>
-                      setGoal({ ...goal, cookPerWeek: Math.max(1, Math.min(14, parseInt(e.target.value) || 1)) })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    De rest van de lunches en diners wordt gevuld met restjes van wat je kookt.
-                  </p>
-                </div>
-              </div>
-            )}
-            <Button type="button" variant="outline" size="sm" className="h-7 w-full text-xs" onClick={() => generateFor(view === "dag" ? [date] : weekDates)}>
+          <Button type="button" variant="outline" size="sm" className="h-8 w-full text-xs" onClick={() => generateFor(weekDates)}>
               <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
-              {view === "dag" ? "Genereer dag" : "Genereer week"}
+              Genereer week
             </Button>
-          </CardContent>
-        </Card>
+        )}
 
         {view === "week" ? (
           <div className="space-y-2">
-            <MacroSummary totals={weekAverage} target={target} average />
+            <MacroSummary totals={weekAverage} target={target} goalType={goal.type} average />
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
               const dayEntries = meals.filter((m) => m.date === d);
@@ -284,15 +220,15 @@ function VandaagPage() {
                 </Card>
               );
             })}
+            <Button asChild type="button" variant="outline" size="sm" className="mt-3 w-full">
+              <Link to="/boodschappen" search={{ week: weekDates[0] }}>
+                <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
+              </Link>
+            </Button>
           </div>
         ) : (
           <>
-            <MacroSummary totals={totals} target={target} />
-
-            {/* Wegen-reminder */}
-            {!weighedToday && date === format(new Date(), "yyyy-MM-dd") && (
-              <QuickWeighCard unit={settings.unit} latest={latestWeight} onSave={(w) => addEntry({ date, weight: w })} />
-            )}
+            <MacroSummary totals={totals} target={target} goalType={goal.type} />
 
             {/* Maaltijden */}
             {MEAL_ORDER.map((meal) => {
@@ -366,30 +302,36 @@ function VandaagPage() {
 function MacroSummary({
   totals,
   target,
+  goalType,
   average = false,
 }: {
   totals: { kcal: number; protein: number; carbs: number; fat: number };
   target: { kcal: number; protein: number; carbs: number; fat: number };
+  goalType: "afvallen" | "behouden" | "bijkomen" | "spiermassa";
   average?: boolean;
 }) {
+  const caloriesAgainstGoal = goalType === "bijkomen"
+    ? totals.kcal < target.kcal
+    : totals.kcal > target.kcal;
+
   return (
     <Card>
-      <CardContent className="space-y-3 px-5 py-4">
+      <CardContent className="space-y-2 px-4 py-3">
         <div className="flex items-baseline justify-between">
           <div>
             <div className="text-xs text-muted-foreground">{average ? "Gemiddelde calorieën per dag" : "Calorieën"}</div>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-semibold tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>
+              <span className="text-2xl font-semibold tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>
                 {Math.round(totals.kcal)}
               </span>
-              <span className="text-sm text-muted-foreground">/ {target.kcal} kcal</span>
+              <span className="text-xs text-muted-foreground">/ {target.kcal} kcal</span>
             </div>
           </div>
-          <div className={`text-sm font-medium tabular-nums ${totals.kcal > target.kcal * 1.05 ? "text-destructive" : "text-success"}`}>
+          <div className={`text-xs font-medium tabular-nums ${caloriesAgainstGoal ? "text-destructive" : "text-success-strong"}`}>
             {Math.round(target.kcal - totals.kcal)} resterend
           </div>
         </div>
-        <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
+        <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" favorableOver />
         <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
         <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
       </CardContent>
@@ -397,7 +339,7 @@ function MacroSummary({
   );
 }
 
-function MacroBar({ label, cur, max, unit }: { label: string; cur: number; max: number; unit: string }) {
+function MacroBar({ label, cur, max, unit, favorableOver = false }: { label: string; cur: number; max: number; unit: string; favorableOver?: boolean }) {
   const pct = Math.max(0, Math.min(100, (cur / Math.max(1, max)) * 100));
   const over = cur > max;
   return (
@@ -408,31 +350,11 @@ function MacroBar({ label, cur, max, unit }: { label: string; cur: number; max: 
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: over ? "var(--destructive)" : "var(--primary)" }}
+          className={`h-full rounded-full transition-all ${over ? (favorableOver ? "bg-success-strong" : "bg-destructive") : "bg-primary"}`}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
-  );
-}
-
-function QuickWeighCard({ unit, latest, onSave }: { unit: string; latest?: number; onSave: (w: number) => void }) {
-  const [v, setV] = useState("");
-  return (
-    <Card className="border-primary/40 bg-primary/5">
-      <CardContent className="flex items-center gap-3 px-5 py-3">
-        <Scale className="h-5 w-5 shrink-0 text-primary" />
-        <div className="flex-1 text-sm">
-          <div className="font-medium">Nog niet gewogen vandaag</div>
-        </div>
-        <Input className="w-20" inputMode="decimal" placeholder={latest ? String(latest) : unit}
-          value={v} onChange={(e) => setV(e.target.value)} />
-        <Button size="sm" onClick={() => {
-          const w = parseFloat(v.replace(",", "."));
-          if (w) { onSave(w); setV(""); }
-        }}>Opslaan</Button>
-      </CardContent>
-    </Card>
   );
 }
 
