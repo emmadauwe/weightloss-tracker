@@ -125,6 +125,10 @@ function VandaagPage() {
   const shift = (delta: number) =>
     setDate(format(addDays(parseISO(date), view === "week" ? delta * 7 : delta), "yyyy-MM-dd"));
 
+  const clearDay = (dayDate: string) => {
+    meals.filter((m) => m.date === dayDate).forEach((m) => remove(m.id));
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title="Planning" subtitle="Dag- en weekplanning met macro's" />
