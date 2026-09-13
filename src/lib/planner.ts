@@ -4,7 +4,6 @@ import { dishMacrosPerServing, type Macros } from "./nutrition-math";
 export type MacroPriority = "balans" | "eiwit" | "vet";
 
 export const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
-/** Meals that are typically cooked and can be batch-cooked / leftovers. */
 const COOKED_MEALS: Meal[] = ["lunch", "diner"];
 
 export type PlanPick = { date: string; meal: Meal; dishId: string };
@@ -58,6 +57,25 @@ function candidatesFor(meal: Meal, dishes: Dish[]): Dish[] {
   return dishes.filter((d) => d.categories?.includes(meal));
 }
 
+function pickBestComplement(
+  meal: Meal,
+  existing: Macros,
+  dishes: Dish[],
+  ingredients: Ingredient[],
+  target: Macros,
+  priority: MacroPriority,
+): Dish | undefined {
+  const candidates = candidatesFor(meal, dishes);
+  if (candidates.length === 0) return undefined;
+  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+  return shuffled.reduce<Dish | undefined>((best, candidate) => {
+    if (!best) return candidate;
+    const candidateScore = dayScore(sum(existing, dishMacrosPerServing(candidate, ingredients)), target, priority);
+    const bestScore = dayScore(sum(existing, dishMacrosPerServing(best, ingredients)), target, priority);
+    return candidateScore < bestScore ? candidate : best;
+  }, undefined);
+}
+
 /**
  * Generate a plan for one or more days.
  * `cookCount` limits how many *different* cooked dishes (lunch/diner) are used
@@ -76,40 +94,61 @@ export function generatePlan(opts: {
   const attempts = opts.attempts ?? 40;
   if (dates.length === 0) return [];
 
-  const cookedSlots: { date: string; meal: Meal }[] = [];
-  for (const date of dates) for (const meal of COOKED_MEALS) cookedSlots.push({ date, meal });
-
-  const cookCount = Math.max(1, Math.min(opts.cookCount ?? cookedSlots.length, cookedSlots.length));
-  const repeats = Math.ceil(cookedSlots.length / cookCount);
+  const cookCount = Math.max(1, Math.min(opts.cookCount ?? dates.length, dates.length));
 
   const buildAttempt = (): PlanPick[] => {
     const picks: PlanPick[] = [];
 
-    // Cooked meals: pick a limited pool and spread it over consecutive slots.
-    const pool: Dish[] = [];
-    const cookedCandidates = dishes.filter((d) =>
-      COOKED_MEALS.some((m) => d.categories?.includes(m)),
-    );
-    for (let i = 0; i < cookCount; i++) {
-      const pick = pickRandom(cookedCandidates);
-      if (pick) pool.push(pick);
-    }
-    cookedSlots.forEach((slot, index) => {
-      const preferred = pool[Math.floor(index / repeats)];
-      const dish =
-        preferred && preferred.categories?.includes(slot.meal)
-          ? preferred
-          : pool.find((d) => d.categories?.includes(slot.meal)) ??
-            pickRandom(candidatesFor(slot.meal, dishes));
-      if (dish) picks.push({ date: slot.date, meal: slot.meal, dishId: dish.id });
-    });
-
-    // Other meals: free choice per day.
+    // Breakfast and snacks establish part of the daily macro budget first.
     for (const date of dates) {
-      for (const meal of MEAL_ORDER) {
-        if (COOKED_MEALS.includes(meal)) continue;
-        const dish = pickRandom(candidatesFor(meal, dishes));
+      for (const meal of ["ontbijt", "snack"] as Meal[]) {
+        const current = macrosForPicks(picks.filter((p) => p.date === date), dishes, ingredients).get(date) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+        const dish = pickBestComplement(meal, current, dishes, ingredients, target, priority);
         if (dish) picks.push({ date, meal, dishId: dish.id });
+      }
+    }
+
+    // New batch meals always start at dinner. Their extra portions become later leftovers.
+    const dinnerCandidates = candidatesFor("diner", dishes);
+    const sessions = Array.from({ length: cookCount }, (_, i) =>
+      Math.min(dates.length - 1, Math.floor((i * dates.length) / cookCount)),
+    );
+    const batches = sessions.map((dateIndex) => ({
+      dateIndex,
+      dish: pickRandom(dinnerCandidates),
+      uses: 0,
+    })).filter((batch): batch is { dateIndex: number; dish: Dish; uses: number } => Boolean(batch.dish));
+
+    for (const batch of batches) {
+      picks.push({ date: dates[batch.dateIndex], meal: "diner", dishId: batch.dish.id });
+      batch.uses += 1;
+    }
+
+    // Lunches use a previous dinner where possible; never repeat lunch and dinner on one day.
+    for (let day = 0; day < dates.length; day++) {
+      const previous = [...batches]
+        .reverse()
+        .find((batch) => batch.dateIndex < day && batch.dish.categories?.includes("lunch"));
+      const existing = macrosForPicks(picks.filter((p) => p.date === dates[day]), dishes, ingredients).get(dates[day]) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+      const lunch = previous?.dish ?? pickBestComplement("lunch", existing, dishes, ingredients, target, priority);
+      if (lunch) {
+        picks.push({ date: dates[day], meal: "lunch", dishId: lunch.id });
+        if (previous) previous.uses += 1;
+      }
+    }
+
+    // Fill dinner gaps with the best complement. Reuse an earlier batch before introducing an extra dish.
+    for (let day = 0; day < dates.length; day++) {
+      if (picks.some((p) => p.date === dates[day] && p.meal === "diner")) continue;
+      const sameDayLunch = picks.find((p) => p.date === dates[day] && p.meal === "lunch")?.dishId;
+      const reusable = [...batches].reverse().find((batch) =>
+        batch.dateIndex < day && batch.dish.id !== sameDayLunch && batch.dish.categories?.includes("diner"),
+      );
+      const existing = macrosForPicks(picks.filter((p) => p.date === dates[day]), dishes, ingredients).get(dates[day]) ?? { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+      const dinner = reusable?.dish ?? pickBestComplement("diner", existing, dishes, ingredients, target, priority);
+      if (dinner) {
+        picks.push({ date: dates[day], meal: "diner", dishId: dinner.id });
+        if (reusable) reusable.uses += 1;
       }
     }
     return picks;
