@@ -4,7 +4,6 @@ import rabbitAvatar from "@/assets/avatars/rabbit.png";
 import catAvatar from "@/assets/avatars/cat.png";
 import bearAvatar from "@/assets/avatars/bear.png";
 import owlAvatar from "@/assets/avatars/owl.png";
-import frogAvatar from "@/assets/avatars/frog.png";
 import dogAvatar from "@/assets/avatars/dog.png";
 import tigerAvatar from "@/assets/avatars/tiger.png";
 import fennecAvatar from "@/assets/avatars/fennec.png";
@@ -23,7 +22,6 @@ export const AVATAR_CHOICES = [
   { id: "cat", label: "Kat", src: catAvatar },
   { id: "bear", label: "Beer", src: bearAvatar },
   { id: "owl", label: "Uil", src: owlAvatar },
-  { id: "whale", label: "Kikker", src: frogAvatar },
   { id: "dog", label: "Hond", src: dogAvatar },
   { id: "tiger", label: "Tijger", src: tigerAvatar },
   { id: "fennec", label: "Woestijnvos", src: fennecAvatar },

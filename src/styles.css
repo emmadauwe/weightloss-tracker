@@ -40,19 +40,19 @@
 :root {
   --radius: 0.875rem;
   --background: #F6F4F1;
-  --foreground: #2C3A2A;
+  --foreground: #33302C;
   --card: #FFFFFF;
-  --card-foreground: #2C3A2A;
+  --card-foreground: #33302C;
   --popover: #FFFFFF;
-  --popover-foreground: #2C3A2A;
+  --popover-foreground: #33302C;
   --primary: #97b185;
   --primary-foreground: #FFFFFF;
   --secondary: #DCE5D4;
-  --secondary-foreground: #2C3A2A;
+  --secondary-foreground: #33302C;
   --muted: #ECE8E1;
-  --muted-foreground: #6B7565;
+  --muted-foreground: #746F68;
   --accent: #E8E4DE;
-  --accent-foreground: #2C3A2A;
+  --accent-foreground: #33302C;
   --destructive: #C88177;
   --destructive-foreground: #FFFFFF;
   --destructive-soft: #F3E3E0;
