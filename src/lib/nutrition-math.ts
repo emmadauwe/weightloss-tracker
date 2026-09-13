@@ -160,9 +160,10 @@ export function computeGoal(opts: {
   const t = tdeeDetailed(opts);
 
   let perWeekKg = 0;
+  const planStartWeight = opts.startWeightKg ?? weightKg;
   if (goalKg && startDate && endDate && (type === "afvallen" || type === "bijkomen")) {
     const days = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000;
-    if (days > 0) perWeekKg = ((goalKg - weightKg) / days) * 7;
+    if (days > 0) perWeekKg = ((goalKg - planStartWeight) / days) * 7;
   }
 
   let kcal = t;
