@@ -282,9 +282,9 @@ function VandaagPage() {
                                  }}
                                />
                                <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
-                                <Trash2 className="h-3.5 w-3.5 text-primary" />
-                              </Button>
+                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
+                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                               </Button>
                             </li>
                           );
                         })}
