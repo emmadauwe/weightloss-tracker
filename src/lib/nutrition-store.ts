@@ -11,6 +11,8 @@ export const INGREDIENT_CATEGORIES = [
   "granen en deegwaren",
   "kruiden",
   "vetten en oliën",
+  "bereide maaltijden",
+  "voedselkast",
 ] as const;
 
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];

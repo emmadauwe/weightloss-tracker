@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format, addDays, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -8,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Scale, Sparkles, Settings2, ShoppingBasket } from "lucide-react";
-import { INGREDIENT_CATEGORIES, useDishes, useIngredients, useMeals, type IngredientCategory, type Meal, type Unit } from "@/lib/nutrition-store";
-import { useCloudDoc } from "@/lib/cloud-store";
+import { useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
 import { useGoal } from "@/lib/goal-store";
 import { useEntries, useSettings } from "@/lib/weight-store";
 import { computeGoal, dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
@@ -38,7 +36,6 @@ const MEAL_LABEL: Record<Meal, string> = {
 };
 const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
-const SHOPPING_CHECKS_KEY = "nutrition-shopping-checks-v1";
 
 const PRIORITY_LABEL: Record<MacroPriority, string> = {
   balans: "In balans houden",
@@ -50,11 +47,6 @@ function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [view, setView] = useState<"dag" | "week">("dag");
   const [showOptions, setShowOptions] = useState(false);
-  const [showShoppingList, setShowShoppingList] = useState(false);
-  const { value: shoppingChecks, setValue: setShoppingChecks } = useCloudDoc<Record<string, boolean>>(
-    SHOPPING_CHECKS_KEY,
-    {},
-  );
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
@@ -98,45 +90,6 @@ function VandaagPage() {
     return Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), "yyyy-MM-dd"));
   }, [date]);
 
-  const shoppingList = useMemo(() => {
-    const totals = new Map<string, { name: string; amount: number; unit: Unit; category: IngredientCategory }>();
-    for (const entry of meals.filter((meal) => weekDates.includes(meal.date))) {
-      if (entry.kind === "ingredient") {
-        const ingredient = ingredients.find((item) => item.id === entry.refId);
-        if (!ingredient) continue;
-        const key = `${ingredient.id}:${entry.unit}`;
-        const current = totals.get(key);
-        totals.set(key, {
-          name: ingredient.name,
-          amount: (current?.amount ?? 0) + entry.amount,
-          unit: entry.unit,
-          category: ingredient.category ?? "groenten en fruit",
-        });
-        continue;
-      }
-      const dish = dishes.find((item) => item.id === entry.refId);
-      if (!dish) continue;
-      for (const item of dish.items) {
-        const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
-        if (!ingredient) continue;
-        const key = `${ingredient.id}:${item.unit}`;
-        const current = totals.get(key);
-        totals.set(key, {
-          name: ingredient.name,
-          amount: (current?.amount ?? 0) + item.amount * entry.amount / Math.max(1, dish.servings),
-          unit: item.unit,
-          category: ingredient.category ?? "groenten en fruit",
-        });
-      }
-    }
-    return INGREDIENT_CATEGORIES.map((category) => ({
-      category,
-      items: [...totals.values()].filter((item) => item.category === category).sort((a, b) => a.name.localeCompare(b.name, "nl")),
-    })).filter((group) => group.items.length > 0);
-  }, [meals, weekDates, ingredients, dishes]);
-
-  const shoppingKey = (name: string, unit: Unit) => `${weekDates[0]}:${name}:${unit}`;
-
   const generateFor = (dates: string[]) => {
     meals.filter((m) => dates.includes(m.date)).forEach((m) => remove(m.id));
     const picks = generatePlan({
@@ -151,8 +104,32 @@ function VandaagPage() {
   };
 
   const totals = dayMacros(date, meals, ingredients, dishes);
+  const weekAverage = useMemo(() => {
+    const sum = weekDates.reduce(
+      (current, weekDate) => {
+        const macros = dayMacros(weekDate, meals, ingredients, dishes);
+        return {
+          kcal: current.kcal + macros.kcal,
+          protein: current.protein + macros.protein,
+          carbs: current.carbs + macros.carbs,
+          fat: current.fat + macros.fat,
+        };
+      },
+      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+    );
+    return {
+      kcal: sum.kcal / 7,
+      protein: sum.protein / 7,
+      carbs: sum.carbs / 7,
+      fat: sum.fat / 7,
+    };
+  }, [weekDates, meals, ingredients, dishes]);
   const todayMeals = meals.filter((m) => m.date === date);
   const weighedToday = entries.some((e) => e.date === date);
+  const today = format(new Date(), "yyyy-MM-dd");
+  const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const selectedIsToday = date === today;
+  const selectedIsCurrentWeek = weekDates[0] === currentWeekStart;
 
   const shift = (delta: number) =>
     setDate(format(addDays(parseISO(date), view === "week" ? delta * 7 : delta), "yyyy-MM-dd"));
@@ -162,48 +139,47 @@ function VandaagPage() {
       <AppHeader title="Planning" subtitle="Dag- en weekplanning met macro's" />
 
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
-        {/* Dag / week schakelaar */}
-        <div className="flex gap-2">
+        {/* Datumkiezer */}
+        <Card>
+          <CardContent className="flex items-center justify-between px-3 py-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shift(-1)} aria-label="Vorige">
+              <ChevronLeft className="h-4 w-4 text-primary" />
+            </Button>
+            <div className="text-center">
+              <div className="text-sm font-medium capitalize">
+                {view === "dag"
+                  ? format(parseISO(date), "EEEE d MMMM", { locale: nl })
+                  : `${format(parseISO(weekDates[0]), "d MMM", { locale: nl })} – ${format(parseISO(weekDates[6]), "d MMM", { locale: nl })}`}
+              </div>
+              {((view === "dag" && selectedIsToday) || (view === "week" && selectedIsCurrentWeek)) && (
+                <div className="text-[11px] font-semibold text-primary">{view === "dag" ? "Vandaag" : "Deze week"}</div>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shift(1)} aria-label="Volgende">
+              <ChevronRight className="h-4 w-4 text-primary" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-2">
           {(["dag", "week"] as const).map((v) => (
-            <Button
-              key={v}
-              size="sm"
-              variant={view === v ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => setView(v)}
-            >
+            <Button key={v} size="sm" variant={view === v ? "default" : "outline"} onClick={() => setView(v)}>
               {v === "dag" ? "Dag" : "Week"}
             </Button>
           ))}
         </div>
 
         {view === "week" && (
-          <Button type="button" variant="outline" className="w-full" onClick={() => setShowShoppingList(true)}>
-            <ShoppingBasket className="h-4 w-4 text-primary" />
-            Boodschappenlijst
+          <Button asChild type="button" variant="outline" size="sm" className="w-full">
+            <Link to="/boodschappen" search={{ week: weekDates[0] }}>
+              <ShoppingBasket className="h-4 w-4 text-primary" /> Boodschappenlijst
+            </Link>
           </Button>
         )}
 
-        {/* Datumkiezer */}
-        <Card>
-          <CardContent className="flex items-center justify-between px-4 py-2.5">
-            <Button variant="ghost" size="icon" onClick={() => shift(-1)} aria-label="Vorige">
-              <ChevronLeft className="h-5 w-5 text-primary" />
-            </Button>
-            <div className="text-sm font-medium capitalize">
-              {view === "dag"
-                ? format(parseISO(date), "EEEE d MMMM", { locale: nl })
-                : `${format(parseISO(weekDates[0]), "d MMM", { locale: nl })} – ${format(parseISO(weekDates[6]), "d MMM", { locale: nl })}`}
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => shift(1)} aria-label="Volgende">
-              <ChevronRight className="h-5 w-5 text-primary" />
-            </Button>
-          </CardContent>
-        </Card>
-
         {/* Generator-opties */}
         <Card>
-          <CardContent className="space-y-3 px-5 py-3.5">
+          <CardContent className="space-y-2 px-4 py-2.5">
             <button
               type="button"
               onClick={() => setShowOptions((s) => !s)}
@@ -248,13 +224,7 @@ function VandaagPage() {
                 </div>
               </div>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => generateFor(view === "dag" ? [date] : weekDates)}
-            >
+            <Button type="button" variant="outline" size="sm" className="h-7 w-full text-xs" onClick={() => generateFor(view === "dag" ? [date] : weekDates)}>
               <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
               {view === "dag" ? "Genereer dag" : "Genereer week"}
             </Button>
@@ -263,6 +233,7 @@ function VandaagPage() {
 
         {view === "week" ? (
           <div className="space-y-2">
+            <MacroSummary totals={weekAverage} target={target} average />
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
               const dayEntries = meals.filter((m) => m.date === d);
@@ -316,29 +287,7 @@ function VandaagPage() {
           </div>
         ) : (
           <>
-            {/* Macro overzicht */}
-            <Card>
-              <CardContent className="px-5 py-4 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Calorieën</div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-semibold tabular-nums text-primary"
-                        style={{ fontFamily: "var(--font-display)" }}>
-                        {Math.round(totals.kcal)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">/ {target.kcal} kcal</span>
-                    </div>
-                  </div>
-                  <div className={`text-sm font-medium tabular-nums ${totals.kcal > target.kcal * 1.05 ? "text-destructive" : "text-success"}`}>
-                    {Math.round(target.kcal - totals.kcal)} resterend
-                  </div>
-                </div>
-                <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
-                <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
-                <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
-              </CardContent>
-            </Card>
+            <MacroSummary totals={totals} target={target} />
 
             {/* Wegen-reminder */}
             {!weighedToday && date === format(new Date(), "yyyy-MM-dd") && (
@@ -410,57 +359,42 @@ function VandaagPage() {
         />
       )}
 
-      <Dialog open={showShoppingList} onOpenChange={setShowShoppingList}>
-        <DialogContent className="max-h-[88vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingBasket className="h-5 w-5 text-primary" /> Boodschappenlijst
-            </DialogTitle>
-          </DialogHeader>
-          {shoppingList.length === 0 ? (
-            <p className="py-5 text-center text-sm text-muted-foreground">Genereer of vul eerst een weekplanning.</p>
-          ) : (
-            <div className="space-y-4">
-              {shoppingList.map((group) => (
-                <section key={group.category}>
-                  <h3 className="mb-1 text-xs font-semibold capitalize text-primary">{group.category}</h3>
-                  <ul className="divide-y divide-border">
-                    {group.items.map((item) => {
-                      const key = shoppingKey(item.name, item.unit);
-                      const checked = Boolean(shoppingChecks[key]);
-                      return (
-                        <li key={`${item.name}:${item.unit}`} className="flex items-center gap-3 py-2.5">
-                          <Checkbox
-                            id={key}
-                            checked={checked}
-                            onCheckedChange={(value) =>
-                              setShoppingChecks((current) => ({ ...current, [key]: value === true }))
-                            }
-                            aria-label={`${item.name} afvinken`}
-                          />
-                          <label
-                            htmlFor={key}
-                            className={`flex min-w-0 flex-1 cursor-pointer justify-between gap-3 text-sm ${checked ? "text-muted-foreground line-through" : ""}`}
-                          >
-                            <span>{item.name}</span>
-                            <span className="shrink-0 tabular-nums">{formatAmount(item.amount)} {item.unit}</span>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
 
-function formatAmount(amount: number) {
-  return Number.isInteger(amount) ? String(amount) : amount.toFixed(1).replace(".0", "");
+function MacroSummary({
+  totals,
+  target,
+  average = false,
+}: {
+  totals: { kcal: number; protein: number; carbs: number; fat: number };
+  target: { kcal: number; protein: number; carbs: number; fat: number };
+  average?: boolean;
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-3 px-5 py-4">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground">{average ? "Gemiddelde calorieën per dag" : "Calorieën"}</div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-semibold tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>
+                {Math.round(totals.kcal)}
+              </span>
+              <span className="text-sm text-muted-foreground">/ {target.kcal} kcal</span>
+            </div>
+          </div>
+          <div className={`text-sm font-medium tabular-nums ${totals.kcal > target.kcal * 1.05 ? "text-destructive" : "text-success"}`}>
+            {Math.round(target.kcal - totals.kcal)} resterend
+          </div>
+        </div>
+        <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" />
+        <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
+        <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
+      </CardContent>
+    </Card>
+  );
 }
 
 function MacroBar({ label, cur, max, unit }: { label: string; cur: number; max: number; unit: string }) {

@@ -13,6 +13,7 @@ import { Route as VandaagRouteImport } from './routes/vandaag'
 import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as DoelRouteImport } from './routes/doel'
+import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
 
 const VandaagRoute = VandaagRouteImport.update({
@@ -35,6 +36,11 @@ const DoelRoute = DoelRouteImport.update({
   path: '/doel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BoodschappenRoute = BoodschappenRouteImport.update({
+  id: '/boodschappen',
+  path: '/boodschappen',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/boodschappen': typeof BoodschappenRoute
   '/doel': typeof DoelRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
@@ -65,14 +74,34 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/doel' | '/gerechten' | '/ingredienten' | '/vandaag'
+  fullPaths:
+    | '/'
+    | '/boodschappen'
+    | '/doel'
+    | '/gerechten'
+    | '/ingredienten'
+    | '/vandaag'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/doel' | '/gerechten' | '/ingredienten' | '/vandaag'
-  id: '__root__' | '/' | '/doel' | '/gerechten' | '/ingredienten' | '/vandaag'
+  to:
+    | '/'
+    | '/boodschappen'
+    | '/doel'
+    | '/gerechten'
+    | '/ingredienten'
+    | '/vandaag'
+  id:
+    | '__root__'
+    | '/'
+    | '/boodschappen'
+    | '/doel'
+    | '/gerechten'
+    | '/ingredienten'
+    | '/vandaag'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BoodschappenRoute: typeof BoodschappenRoute
   DoelRoute: typeof DoelRoute
   GerechtenRoute: typeof GerechtenRoute
   IngredientenRoute: typeof IngredientenRoute
@@ -109,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boodschappen': {
+      id: '/boodschappen'
+      path: '/boodschappen'
+      fullPath: '/boodschappen'
+      preLoaderRoute: typeof BoodschappenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BoodschappenRoute: BoodschappenRoute,
   DoelRoute: DoelRoute,
   GerechtenRoute: GerechtenRoute,
   IngredientenRoute: IngredientenRoute,

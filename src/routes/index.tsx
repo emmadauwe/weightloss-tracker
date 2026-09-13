@@ -123,7 +123,7 @@ function Index() {
         {tab === "dashboard" ? (
           <div className="space-y-3">
             {/* Hero */}
-            <div className="rounded-2xl bg-secondary px-5 py-5 shadow-sm">
+            <div className={`rounded-2xl px-5 py-5 shadow-sm ${changeIsUnhealthy ? "bg-destructive-soft" : "bg-secondary"}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-xs font-medium text-muted-foreground">Huidig gewicht</div>
@@ -137,14 +137,14 @@ function Index() {
                     <span className="text-base text-muted-foreground">{unit}</span>
                   </div>
                 </div>
-                <div className={`rounded-xl px-3 py-2 text-right ${changeIsUnhealthy ? "bg-destructive-soft" : weightChange !== 0 ? "bg-primary/15" : ""}`}>
-                   <div className={`text-xs font-medium ${changeIsUnhealthy ? "text-destructive-strong" : weightChange !== 0 ? "text-success" : "text-muted-foreground"}`}>
+                <div className="py-2 text-right">
+                   <div className={`text-xs font-medium ${changeIsUnhealthy ? "text-destructive" : weightChange !== 0 ? "text-success" : "text-muted-foreground"}`}>
                      {weightChange > 0 ? "Bijgekomen" : weightChange < 0 ? "Afgevallen" : "Verandering"}
                    </div>
                   <div className="mt-2 flex items-baseline justify-end gap-1.5">
                     <span
                       className={`text-3xl font-semibold tabular-nums ${
-                         changeIsUnhealthy ? "text-destructive-strong" : weightChange !== 0 ? "text-success" : "text-foreground"
+                          changeIsUnhealthy ? "text-destructive" : weightChange !== 0 ? "text-success" : "text-foreground"
                       }`}
                       style={{ fontFamily: "var(--font-display)" }}
                     >
