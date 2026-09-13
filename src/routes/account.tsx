@@ -152,15 +152,15 @@ function AccountPage() {
               <div className="flex flex-wrap gap-2">
                 {AVATAR_CHOICES.map((a) => (
                   <button
-                    key={a}
+                    key={a.id}
                     type="button"
-                    aria-label={`Avatar ${a}`}
-                    onClick={() => setProfile({ ...profile, avatar: a, photo: undefined })}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border text-xl transition-colors ${
-                      !profile.photo && profile.avatar === a ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-accent"
+                    aria-label={a.label}
+                    onClick={() => setProfile({ ...profile, avatar: a.id, photo: undefined })}
+                    className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border transition-colors ${
+                      !profile.photo && profile.avatar === a.id ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-accent"
                     }`}
                   >
-                    {a}
+                    <img src={a.src} alt={a.label} loading="lazy" width={512} height={512} className="h-full w-full object-contain p-1" />
                   </button>
                 ))}
               </div>
