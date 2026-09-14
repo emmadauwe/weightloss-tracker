@@ -1,4 +1,5 @@
-import { useCloudDoc } from "./cloud-store";
+import { useCallback } from "react";
+import { useMyProfile } from "./social";
 import foxAvatar from "@/assets/avatars/fox.png";
 import rabbitAvatar from "@/assets/avatars/rabbit.png";
 import catAvatar from "@/assets/avatars/cat.png";
@@ -14,8 +15,6 @@ export type Profile = {
   avatar?: string;
 };
 
-export const PROFILE_KEY = "profile-v1";
-
 export const AVATAR_CHOICES = [
   { id: "fox", label: "Vos", src: foxAvatar },
   { id: "rabbit", label: "Konijn", src: rabbitAvatar },
@@ -27,13 +26,30 @@ export const AVATAR_CHOICES = [
   { id: "fennec", label: "Woestijnvos", src: fennecAvatar },
 ] as const;
 
-export function avatarSrc(id?: string) {
+export function avatarSrc(id?: string | null) {
   return AVATAR_CHOICES.find((a) => a.id === id)?.src ?? AVATAR_CHOICES[0].src;
 }
 
-const EMPTY: Profile = {};
-
+/** Profiel (naam + cartoon) leeft in de gedeelde profieltabel, zodat vrienden het kunnen zien. */
 export function useProfile() {
-  const { value, setValue, loaded } = useCloudDoc<Profile>(PROFILE_KEY, EMPTY);
-  return { profile: value, setProfile: setValue, loaded };
+  const { profile, loaded, update } = useMyProfile();
+
+  const setProfile = useCallback(
+    (next: Profile) => {
+      void update({
+        display_name: next.name ?? null,
+        avatar_id: next.avatar ?? null,
+      });
+    },
+    [update],
+  );
+
+  return {
+    profile: {
+      name: profile?.display_name ?? undefined,
+      avatar: profile?.avatar_id ?? undefined,
+    } as Profile,
+    setProfile,
+    loaded,
+  };
 }

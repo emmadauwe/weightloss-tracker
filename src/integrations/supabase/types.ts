@@ -14,6 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: Database["public"]["Enums"]["friend_status"]
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status?: Database["public"]["Enums"]["friend_status"]
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: Database["public"]["Enums"]["friend_status"]
+        }
+        Relationships: []
+      }
+      high_fives: {
+        Row: {
+          created_at: string
+          from_user: string
+          id: string
+          kind: string
+          seen: boolean
+          to_user: string
+        }
+        Insert: {
+          created_at?: string
+          from_user: string
+          id?: string
+          kind: string
+          seen?: boolean
+          to_user: string
+        }
+        Update: {
+          created_at?: string
+          from_user?: string
+          id?: string
+          kind?: string
+          seen?: boolean
+          to_user?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_id: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          share_dishes: boolean
+          share_goal: boolean
+          share_macros: boolean
+          share_streak: boolean
+          share_weight: boolean
+          updated_at: string
+        }
+        Insert: {
+          avatar_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          share_dishes?: boolean
+          share_goal?: boolean
+          share_macros?: boolean
+          share_streak?: boolean
+          share_weight?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avatar_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          share_dishes?: boolean
+          share_goal?: boolean
+          share_macros?: boolean
+          share_streak?: boolean
+          share_weight?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shared_dishes: {
+        Row: {
+          categories: Json
+          created_at: string
+          id: string
+          items: Json
+          local_id: string | null
+          name: string
+          owner_id: string
+          recipe_url: string | null
+          servings: number
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          categories?: Json
+          created_at?: string
+          id?: string
+          items?: Json
+          local_id?: string | null
+          name: string
+          owner_id: string
+          recipe_url?: string | null
+          servings?: number
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          categories?: Json
+          created_at?: string
+          id?: string
+          items?: Json
+          local_id?: string | null
+          name?: string
+          owner_id?: string
+          recipe_url?: string | null
+          servings?: number
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           key: string
@@ -35,15 +170,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stats: {
+        Row: {
+          change_kg: number | null
+          current_weight: number | null
+          goal_type: string | null
+          goal_weight: number | null
+          kcal_target: number | null
+          kcal_today: number | null
+          protein_target: number | null
+          protein_today: number | null
+          start_weight: number | null
+          streak_days: number | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          change_kg?: number | null
+          current_weight?: number | null
+          goal_type?: string | null
+          goal_weight?: number | null
+          kcal_target?: number | null
+          kcal_today?: number | null
+          protein_target?: number | null
+          protein_today?: number | null
+          start_weight?: number | null
+          streak_days?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          change_kg?: number | null
+          current_weight?: number | null
+          goal_type?: string | null
+          goal_weight?: number | null
+          kcal_target?: number | null
+          kcal_today?: number | null
+          protein_target?: number | null
+          protein_today?: number | null
+          start_weight?: number | null
+          streak_days?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
+      find_user_by_email: {
+        Args: { _email: string }
+        Returns: {
+          avatar_id: string
+          display_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      friend_status: "pending" | "accepted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -170,6 +361,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      friend_status: ["pending", "accepted"],
+    },
   },
 } as const
