@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
@@ -274,21 +275,33 @@ function DishDialog({
   const [categories, setCategories] = useState<Meal[]>(initial?.categories ?? []);
   const [items, setItems] = useState<DishItem[]>(initial?.items ?? []);
   const [direct, setDirect] = useState(!!initial?.directMacros);
-  const [dKcal, setDKcal] = useState(initial?.directMacros ? String(initial.directMacros.kcal) : "");
-  const [dProt, setDProt] = useState(initial?.directMacros ? String(initial.directMacros.protein) : "");
-  const [dCarb, setDCarb] = useState(initial?.directMacros ? String(initial.directMacros.carbs) : "");
-  const [dFat, setDFat] = useState(initial?.directMacros ? String(initial.directMacros.fat) : "");
+  const initPortion = initial?.portionAmount;
+  // Bij een ingevuld portiegewicht tonen we de macro's terug per 100 g/ml.
+  const backMacro = (v?: number) =>
+    v === undefined ? "" : initPortion ? String(Number(((v * 100) / initPortion).toFixed(1))) : String(v);
+  const [portionAmount, setPortionAmount] = useState(initPortion ? String(initPortion) : "");
+  const [portionBase, setPortionBase] = useState<"g" | "ml">(initial?.portionBase ?? "g");
+  const [dKcal, setDKcal] = useState(backMacro(initial?.directMacros?.kcal));
+  const [dProt, setDProt] = useState(backMacro(initial?.directMacros?.protein));
+  const [dCarb, setDCarb] = useState(backMacro(initial?.directMacros?.carbs));
+  const [dFat, setDFat] = useState(backMacro(initial?.directMacros?.fat));
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+
+  const portionGrams = num(portionAmount);
+  const per100 = portionGrams > 0;
+  const macroFactor = per100 ? portionGrams / 100 : 1;
 
   const askAi = async () => {
     if (!name.trim()) return;
     setAiLoading(true);
     setAiError(null);
     try {
-      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: "portie" } });
+      const s = await suggestMacros({
+        data: { name: name.trim(), baseUnit: per100 ? portionBase : "portie" },
+      });
       setDKcal(String(s.kcal));
       setDProt(String(s.protein));
       setDCarb(String(s.carbs));
@@ -300,11 +313,19 @@ function DishDialog({
     }
   };
 
+  const round = (v: number) => Number(v.toFixed(2));
+  const directPerServing = () => ({
+    kcal: round(num(dKcal) * macroFactor),
+    protein: round(num(dProt) * macroFactor),
+    carbs: round(num(dCarb) * macroFactor),
+    fat: round(num(dFat) * macroFactor),
+  });
+
   const macros = useMemo(() => {
-    if (direct) return { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) };
+    if (direct) return directPerServing();
     const sNum = Math.max(1, parseInt(servings) || 1);
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
-  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat]);
+  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat, macroFactor]);
 
   const [picking, setPicking] = useState<number | "new" | null>(null);
 
@@ -337,9 +358,9 @@ function DishDialog({
       steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
       categories: categories.length > 0 ? categories : undefined,
       items: direct ? [] : items,
-      directMacros: direct
-        ? { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) }
-        : undefined,
+      directMacros: direct ? directPerServing() : undefined,
+      portionAmount: direct && per100 ? portionGrams : undefined,
+      portionBase: direct && per100 ? portionBase : undefined,
     });
   };
 
@@ -391,6 +412,25 @@ function DishDialog({
 
           {direct ? (
             <div className="space-y-3">
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <Label htmlFor="dportion">Hoeveel weegt 1 portie? (optioneel)</Label>
+                <div className="flex gap-2">
+                  <Input id="dportion" inputMode="decimal" placeholder="bv. 350" value={portionAmount}
+                    onChange={(e) => setPortionAmount(e.target.value)} className="min-w-0 flex-1" />
+                  <Select value={portionBase} onValueChange={(v) => setPortionBase(v as "g" | "ml")}>
+                    <SelectTrigger className="w-20 shrink-0"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {per100
+                    ? `Vul de macro's in per 100 ${portionBase}; we rekenen ze om naar 1 portie (${portionGrams} ${portionBase}).`
+                    : "Laat je dit leeg, vul dan de macro's per 1 portie in."}
+                </p>
+              </div>
               <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void askAi()} disabled={aiLoading || !name.trim()}>
                 <Sparkles className="mr-1 h-4 w-4 text-primary" />
                 {aiLoading ? "Even zoeken…" : "Stel macro's voor met AI"}
@@ -398,7 +438,7 @@ function DishDialog({
               {aiError && <p className="text-xs text-destructive">{aiError}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="dkcal">Kcal per portie</Label>
+                  <Label htmlFor="dkcal">Kcal {per100 ? `per 100 ${portionBase}` : "per portie"}</Label>
                   <Input id="dkcal" inputMode="decimal" value={dKcal} onChange={(e) => setDKcal(e.target.value)} />
                 </div>
                 <div className="space-y-2">
