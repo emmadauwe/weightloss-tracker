@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
 import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
+import { Route as AccountDoelRouteImport } from './routes/account/doel'
 
 const VandaagRoute = VandaagRouteImport.update({
   id: '/vandaag',
@@ -58,6 +59,11 @@ const AccountGegevensRoute = AccountGegevensRouteImport.update({
   path: '/account/gegevens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountDoelRoute = AccountDoelRouteImport.update({
+  id: '/account/doel',
+  path: '/account/doel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account/': typeof AccountIndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account': typeof AccountIndexRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account/': typeof AccountIndexRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
     | '/account/gegevens'
     | '/api/suggest-macros'
     | '/account/'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
     | '/account/gegevens'
     | '/api/suggest-macros'
     | '/account'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
     | '/account/gegevens'
     | '/api/suggest-macros'
     | '/account/'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   GerechtenRoute: typeof GerechtenRoute
   IngredientenRoute: typeof IngredientenRoute
   VandaagRoute: typeof VandaagRoute
+  AccountDoelRoute: typeof AccountDoelRoute
   AccountGegevensRoute: typeof AccountGegevensRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
   AccountIndexRoute: typeof AccountIndexRoute
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountGegevensRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/doel': {
+      id: '/account/doel'
+      path: '/account/doel'
+      fullPath: '/account/doel'
+      preLoaderRoute: typeof AccountDoelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   GerechtenRoute: GerechtenRoute,
   IngredientenRoute: IngredientenRoute,
   VandaagRoute: VandaagRoute,
+  AccountDoelRoute: AccountDoelRoute,
   AccountGegevensRoute: AccountGegevensRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
   AccountIndexRoute: AccountIndexRoute,
