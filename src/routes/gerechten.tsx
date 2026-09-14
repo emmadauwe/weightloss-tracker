@@ -373,6 +373,50 @@ function DishDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>Hoe geef je de voedingswaarde in?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant={direct ? "outline" : "default"} size="sm" onClick={() => setDirect(false)}>
+                Uit ingrediënten
+              </Button>
+              <Button type="button" variant={direct ? "default" : "outline"} size="sm" onClick={() => setDirect(true)}>
+                Kant-en-klaar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {direct
+                ? "Vul de macro's per portie zelf in — handig voor kant-en-klare maaltijden."
+                : "Bereken de macro's automatisch uit de ingrediënten."}
+            </p>
+          </div>
+
+          {direct ? (
+            <div className="space-y-3">
+              <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void askAi()} disabled={aiLoading || !name.trim()}>
+                <Sparkles className="mr-1 h-4 w-4 text-primary" />
+                {aiLoading ? "Even zoeken…" : "Stel macro's voor met AI"}
+              </Button>
+              {aiError && <p className="text-xs text-destructive">{aiError}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="dkcal">Kcal per portie</Label>
+                  <Input id="dkcal" inputMode="decimal" value={dKcal} onChange={(e) => setDKcal(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dprot">Eiwit (g)</Label>
+                  <Input id="dprot" inputMode="decimal" value={dProt} onChange={(e) => setDProt(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dcarb">Koolhydraten (g)</Label>
+                  <Input id="dcarb" inputMode="decimal" value={dCarb} onChange={(e) => setDCarb(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dfat">Vet (g)</Label>
+                  <Input id="dfat" inputMode="decimal" value={dFat} onChange={(e) => setDFat(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ) : (
+          <div className="space-y-2">
             <Label>Ingrediënten</Label>
             <div className="space-y-2">
               {items.map((it, i) => {
@@ -400,6 +444,7 @@ function DishDialog({
               </Button>
             </div>
           </div>
+          )}
 
           <div className="rounded-lg bg-secondary px-3 py-2 text-xs">
             <div className="font-medium">Per portie</div>
