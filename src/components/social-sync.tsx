@@ -15,7 +15,7 @@ import { dayMacros } from "@/lib/nutrition-math";
 export function SocialSync() {
   const { user } = useAuth();
   const { profile, loaded } = useMyProfile();
-  const { settings, target, calc, currentWeight } = useGoalTargets();
+  const { settings, goal, target, calc, currentWeight } = useGoalTargets();
   const { items: meals } = useMeals();
   const { items: dishes } = useDishes();
   const { items: ingredients } = useIngredients();
@@ -56,7 +56,7 @@ export function SocialSync() {
 
     const row = {
       user_id: user.id,
-      goal_type: profile.share_goal ? settings.type ?? null : null,
+      goal_type: profile.share_goal ? goal.type ?? null : null,
       unit: settings.unit,
       start_weight: profile.share_weight ? start : null,
       current_weight: profile.share_weight ? current : null,
@@ -74,7 +74,7 @@ export function SocialSync() {
     if (sig === statsSig.current) return;
     statsSig.current = sig;
     void supabase.from("user_stats").upsert(row, { onConflict: "user_id" });
-  }, [user, profile, settings, currentWeight, calc, target, meals, ingredients, dishes]);
+  }, [user, profile, settings, goal, currentWeight, calc, target, meals, ingredients, dishes]);
 
   // Recepten delen
   useEffect(() => {
