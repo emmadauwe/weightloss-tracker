@@ -139,6 +139,7 @@ function Gate() {
   if (!user) return <AuthScreen />;
   return (
     <>
+      <SocialSync />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <BottomNav />
