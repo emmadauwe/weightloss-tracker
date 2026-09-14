@@ -29,6 +29,12 @@ export type Ingredient = {
   carbs: number;
   fat: number;
   category?: IngredientCategory;
+  /** Voor stuk/portie: hoeveel gram of ml één stuk/portie weegt. */
+  unitGrams?: number;
+  /** Of unitGrams in gram of milliliter is. */
+  unitBase?: "g" | "ml";
+  /** Verduidelijking, bv. "1 snee" of "1 middelgrote appel". */
+  unitNote?: string;
 };
 
 export type DishItem = {
