@@ -191,7 +191,7 @@ function DishDetailDialog({
             )}
           </div>
 
-          {dish.steps && dish.steps.length > 0 && (
+          {!dish.directMacros && dish.steps && dish.steps.length > 0 && (
             <div className="space-y-2">
               <div className="text-sm font-medium">Bereiding</div>
               <ol className="space-y-2">
@@ -207,7 +207,7 @@ function DishDetailDialog({
             </div>
           )}
 
-          {dish.recipeUrl && (
+          {!dish.directMacros && dish.recipeUrl && (
             <a href={dish.recipeUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-primary">
               <ExternalLink className="h-4 w-4" /> Recept openen
             </a>
@@ -354,8 +354,8 @@ function DishDialog({
       id: initial?.id ?? newId(),
       name: name.trim(),
       servings: Math.max(1, parseInt(servings) || 1),
-      recipeUrl: recipeUrl.trim() || undefined,
-      steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
+      recipeUrl: direct ? undefined : (recipeUrl.trim() || undefined),
+      steps: direct ? undefined : (cleanedSteps.length > 0 ? cleanedSteps : undefined),
       categories: categories.length > 0 ? categories : undefined,
       items: direct ? [] : items,
       directMacros: direct ? directPerServing() : undefined,
@@ -493,41 +493,45 @@ function DishDialog({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="durl">Recept-URL (optioneel)</Label>
-            <Input id="durl" type="url" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)} placeholder="https://…" />
-          </div>
+          {!direct && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="durl">Recept-URL (optioneel)</Label>
+                <Input id="durl" type="url" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)} placeholder="https://…" />
+              </div>
 
-          <div className="space-y-2">
-            <Label>Bereiding</Label>
-            <div className="space-y-2">
-              {steps.map((s, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
-                    {i + 1}
-                  </div>
-                  <Input
-                    value={s}
-                    onChange={(e) => setStep(i, e.target.value)}
-                    placeholder={`Stap ${i + 1}`}
-                    className="min-w-0 flex-1"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeStep(i)}
-                    disabled={steps.length <= 1}
-                    aria-label="Stap verwijderen"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent disabled:opacity-40"
-                  >
-                    <X className="h-3.5 w-3.5 text-primary" />
-                  </button>
+              <div className="space-y-2">
+                <Label>Bereiding</Label>
+                <div className="space-y-2">
+                  {steps.map((s, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
+                        {i + 1}
+                      </div>
+                      <Input
+                        value={s}
+                        onChange={(e) => setStep(i, e.target.value)}
+                        placeholder={`Stap ${i + 1}`}
+                        className="min-w-0 flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeStep(i)}
+                        disabled={steps.length <= 1}
+                        aria-label="Stap verwijderen"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent disabled:opacity-40"
+                      >
+                        <X className="h-3.5 w-3.5 text-primary" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addStep} className="w-full">
+                    <Plus className="mr-1 h-4 w-4" /> Stap toevoegen
+                  </Button>
                 </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addStep} className="w-full">
-                <Plus className="mr-1 h-4 w-4" /> Stap toevoegen
-              </Button>
-            </div>
-          </div>
+              </div>
+            </>
+          )}
 
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
