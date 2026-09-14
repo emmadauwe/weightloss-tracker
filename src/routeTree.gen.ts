@@ -13,9 +13,14 @@ import { Route as VandaagRouteImport } from './routes/vandaag'
 import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
-import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as VriendIdRouteImport } from './routes/vriend.$id'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
+import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
+import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
+import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
+import { Route as AccountDoelRouteImport } from './routes/account/doel'
 
 const VandaagRoute = VandaagRouteImport.update({
   id: '/vandaag',
@@ -37,14 +42,19 @@ const BoodschappenRoute = BoodschappenRouteImport.update({
   path: '/boodschappen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VriendIdRoute = VriendIdRouteImport.update({
+  id: '/vriend/$id',
+  path: '/vriend/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
@@ -52,73 +62,128 @@ const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
   path: '/api/suggest-macros',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountVriendenRoute = AccountVriendenRouteImport.update({
+  id: '/account/vrienden',
+  path: '/account/vrienden',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountPrivacyRoute = AccountPrivacyRouteImport.update({
+  id: '/account/privacy',
+  path: '/account/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountGegevensRoute = AccountGegevensRouteImport.update({
+  id: '/account/gegevens',
+  path: '/account/gegevens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDoelRoute = AccountDoelRouteImport.update({
+  id: '/account/doel',
+  path: '/account/doel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
+  '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
+  '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
+  '/account/': typeof AccountIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
+  '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
+  '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
+  '/account': typeof AccountIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
+  '/account/doel': typeof AccountDoelRoute
+  '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
+  '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
+  '/account/': typeof AccountIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account'
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
+    | '/account/gegevens'
+    | '/account/privacy'
+    | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
+    | '/account/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account'
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
+    | '/account/gegevens'
+    | '/account/privacy'
+    | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
+    | '/account'
   id:
     | '__root__'
     | '/'
-    | '/account'
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
     | '/vandaag'
+    | '/account/doel'
+    | '/account/gegevens'
+    | '/account/privacy'
+    | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
+    | '/account/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRoute: typeof AccountRoute
   BoodschappenRoute: typeof BoodschappenRoute
   GerechtenRoute: typeof GerechtenRoute
   IngredientenRoute: typeof IngredientenRoute
   VandaagRoute: typeof VandaagRoute
+  AccountDoelRoute: typeof AccountDoelRoute
+  AccountGegevensRoute: typeof AccountGegevensRoute
+  AccountPrivacyRoute: typeof AccountPrivacyRoute
+  AccountVriendenRoute: typeof AccountVriendenRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
+  VriendIdRoute: typeof VriendIdRoute
+  AccountIndexRoute: typeof AccountIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,18 +216,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BoodschappenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/': {
+      id: '/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vriend/$id': {
+      id: '/vriend/$id'
+      path: '/vriend/$id'
+      fullPath: '/vriend/$id'
+      preLoaderRoute: typeof VriendIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/suggest-macros': {
@@ -172,17 +244,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSuggestMacrosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/vrienden': {
+      id: '/account/vrienden'
+      path: '/account/vrienden'
+      fullPath: '/account/vrienden'
+      preLoaderRoute: typeof AccountVriendenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/privacy': {
+      id: '/account/privacy'
+      path: '/account/privacy'
+      fullPath: '/account/privacy'
+      preLoaderRoute: typeof AccountPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/gegevens': {
+      id: '/account/gegevens'
+      path: '/account/gegevens'
+      fullPath: '/account/gegevens'
+      preLoaderRoute: typeof AccountGegevensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/doel': {
+      id: '/account/doel'
+      path: '/account/doel'
+      fullPath: '/account/doel'
+      preLoaderRoute: typeof AccountDoelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRoute: AccountRoute,
   BoodschappenRoute: BoodschappenRoute,
   GerechtenRoute: GerechtenRoute,
   IngredientenRoute: IngredientenRoute,
   VandaagRoute: VandaagRoute,
+  AccountDoelRoute: AccountDoelRoute,
+  AccountGegevensRoute: AccountGegevensRoute,
+  AccountPrivacyRoute: AccountPrivacyRoute,
+  AccountVriendenRoute: AccountVriendenRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
+  VriendIdRoute: VriendIdRoute,
+  AccountIndexRoute: AccountIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

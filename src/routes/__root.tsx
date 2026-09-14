@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/bottom-nav";
 import { AuthProvider, useAuth } from "../lib/auth";
 import { AuthScreen } from "../components/auth-screen";
+import { SocialSync } from "../components/social-sync";
 
 
 function NotFoundComponent() {
@@ -139,6 +140,7 @@ function Gate() {
   if (!user) return <AuthScreen />;
   return (
     <>
+      <SocialSync />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <BottomNav />
