@@ -17,7 +17,8 @@ import {
 import { Check, ChevronRight, LogOut, Pencil, ShieldCheck, Target, Users, UserRound } from "lucide-react";
 import { AVATAR_CHOICES, avatarSrc, useProfile } from "@/lib/profile-store";
 import { useAuth, signOut } from "@/lib/auth";
-import { useFriends, useHighFives } from "@/lib/social";
+import { useFriends } from "@/lib/social";
+import { useNotifications } from "@/lib/notifications";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/account/")({
@@ -38,7 +39,8 @@ function AccountPage() {
   const { profile, setProfile } = useProfile();
   const { user } = useAuth();
   const { incoming } = useFriends();
-  const { unseen } = useHighFives();
+  const { items: notifications } = useNotifications();
+
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
@@ -49,7 +51,7 @@ function AccountPage() {
   }, [profile.name, editingName]);
 
   const hasName = Boolean(profile.name?.trim());
-  const badge = incoming.length + unseen.length;
+  const badge = incoming.length + notifications.length;
 
   const saveName = () => {
     setProfile({ ...profile, name: draft.trim() || undefined });
@@ -76,9 +78,6 @@ function AccountPage() {
                   height={512}
                   className="h-full w-full object-cover"
                 />
-                <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card">
-                  <Pencil className="h-3 w-3 text-primary" />
-                </span>
               </button>
               <div className="min-w-0 flex-1">
                 {editingName || !hasName ? (

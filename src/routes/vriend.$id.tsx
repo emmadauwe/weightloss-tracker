@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
 import {
   friendHighlights,
+  progressKg,
   useFriendDishes,
   useFriendStats,
   useHighFives,
@@ -50,6 +51,8 @@ function FriendPage() {
 
   const s = stats[id];
   const highlights = friendHighlights(s);
+  const prog = progressKg(s);
+  const wantsGain = s?.goal_type === "bijkomen" || s?.goal_type === "spiermassa";
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -106,14 +109,14 @@ function FriendPage() {
                 <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
               )}
               {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
+              {prog != null && (
+                <Stat
+                  label={prog >= 0 ? (wantsGain ? "Bijgekomen" : "Afgevallen") : "Andere richting"}
+                  value={`${Math.abs(prog).toFixed(1)} kg`}
+                />
+              )}
               {s.goal_type && <Stat label="Doel" value={s.goal_type} />}
               {s.streak_days != null && <Stat label="Streak" value={`${s.streak_days} dagen`} />}
-              {s.kcal_target != null && (
-                <Stat label="Kcal vandaag" value={`${s.kcal_today ?? 0} / ${s.kcal_target}`} />
-              )}
-              {s.protein_target != null && (
-                <Stat label="Eiwit vandaag" value={`${s.protein_today ?? 0} / ${s.protein_target} g`} />
-              )}
             </CardContent>
           </Card>
         )}

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { differenceInDays, parseISO } from "date-fns";
+import { addWeeks, differenceInDays, format, parseISO } from "date-fns";
 import { DateField } from "@/components/date-field";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,12 +34,32 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 ];
 
 function DoelPage() {
-  const { goal, setGoal, calc, settings, setSettings } = useGoalTargets();
+  const { goal, setGoal, calc, settings, setSettings, currentWeight } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
     return isNaN(n) ? undefined : n;
   };
+
+  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9). */
+  const suggestion = useMemo(() => {
+    const h = settings.heightCm;
+    if (!h || h < 100 || !currentWeight) return null;
+    const m = h / 100;
+    const ideal = 21.7 * m * m;
+    const target = settings.goalWeight ?? ideal;
+    const diff = Math.abs(currentWeight - target);
+    const weeks = diff >= 0.5 ? Math.ceil(diff / 0.5) : 0;
+    const start = settings.startDate ? parseISO(settings.startDate) : new Date();
+    return {
+      ideal,
+      min: 18.5 * m * m,
+      max: 24.9 * m * m,
+      weeks,
+      startDate: format(start, "yyyy-MM-dd"),
+      endDate: weeks > 0 ? format(addWeeks(start, weeks), "yyyy-MM-dd") : undefined,
+    };
+  }, [settings.heightCm, settings.goalWeight, settings.startDate, currentWeight]);
 
   const pace = useMemo(() => {
     const s = settings.startWeight;
@@ -52,6 +72,7 @@ function DoelPage() {
 
   const paceUnhealthy =
     !!pace && ((goal.type === "afvallen" && pace.perWeek < -0.5) || (goal.type === "bijkomen" && pace.perWeek > 0.5));
+
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
@@ -94,6 +115,43 @@ function DoelPage() {
               <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
                 onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
             </div>
+            {suggestion && (
+              <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
+                <div className="font-medium">
+                  Voorstel: {suggestion.ideal.toFixed(1)} kg
+                </div>
+                <div className="mt-0.5 text-muted-foreground">
+                  Dat ligt precies in het midden van een gezonde BMI voor jouw lengte
+                  ({suggestion.min.toFixed(1)}–{suggestion.max.toFixed(1)} kg).
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSettings({ ...settings, goalWeight: Number(suggestion.ideal.toFixed(1)) })
+                    }
+                  >
+                    Gebruik dit doelgewicht
+                  </Button>
+                  {suggestion.endDate && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          startDate: settings.startDate ?? suggestion.startDate,
+                          endDate: suggestion.endDate,
+                        })
+                      }
+                    >
+                      Stel einddag voor ({suggestion.weeks} weken)
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <DateField label="Startdag" value={settings.startDate}
                 onChange={(startDate) => setSettings({ ...settings, startDate })} />

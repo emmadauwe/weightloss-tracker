@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, Hand, Search, Trash2, UserPlus } from "lucide-react";
+import { Bell, Check, ChevronRight, Hand, Search, Trash2, UserPlus, X } from "lucide-react";
 import { avatarSrc } from "@/lib/profile-store";
 import {
   friendHighlights,
@@ -12,7 +12,9 @@ import {
   useHighFives,
   type ProfileRow,
 } from "@/lib/social";
+import { useNotifications } from "@/lib/notifications";
 import { AppHeader } from "@/components/app-header";
+
 
 export const Route = createFileRoute("/account/vrienden")({
   head: () => ({
@@ -30,7 +32,8 @@ export const Route = createFileRoute("/account/vrienden")({
 
 function VriendenPage() {
   const { friends, incoming, outgoing, findByEmail, sendRequest, accept, removeLink, reload } = useFriends();
-  const { received, unseen, send, markSeen, reload: reloadFives } = useHighFives();
+  const { send, reload: reloadFives } = useHighFives();
+  const { items: notifications, dismiss, highFive: highFiveFor } = useNotifications();
   const stats = useFriendStats(friends.map((f) => f.friendId));
 
   const [email, setEmail] = useState("");
@@ -38,11 +41,6 @@ function VriendenPage() {
   const [found, setFound] = useState<{ id: string; display_name: string | null; avatar_id: string | null } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [sentFives, setSentFives] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    if (unseen.length) void markSeen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unseen.length]);
 
   const search = async () => {
     setMessage(null);
@@ -71,8 +69,7 @@ function VriendenPage() {
     await reloadFives();
   };
 
-  const namesById = new Map(friends.map((f) => [f.friendId, f.profile?.display_name ?? "Een vriend"]));
-  const recentFives = received.slice(0, 5);
+
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -113,18 +110,35 @@ function VriendenPage() {
           </CardContent>
         </Card>
 
-        {/* High fives */}
-        {recentFives.length > 0 && (
+        {/* Meldingen */}
+        {notifications.length > 0 && (
           <Card className="border-primary/40 bg-primary/5">
             <CardContent className="space-y-2 px-5 py-4">
               <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                <Hand className="h-4 w-4" /> High fives voor jou
+                <Bell className="h-4 w-4" /> Meldingen
               </div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {recentFives.map((h) => (
-                  <li key={h.id}>· {namesById.get(h.from_user) ?? "Een vriend"} gaf je een high five 🙌</li>
+              <div className="space-y-2">
+                {notifications.map((n) => (
+                  <div key={n.id} className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                    <img
+                      src={avatarSrc(n.avatarId)}
+                      alt=""
+                      width={512}
+                      height={512}
+                      className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                    <div className="min-w-0 flex-1 text-xs">{n.text}</div>
+                    {n.kind !== "highfive" && (
+                      <Button size="sm" variant="outline" onClick={() => void highFiveFor(n)}>
+                        <Hand className="mr-1 h-4 w-4 text-primary" /> High five
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" aria-label="Melding sluiten" onClick={() => void dismiss(n)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </CardContent>
           </Card>
         )}

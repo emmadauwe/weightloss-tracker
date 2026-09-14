@@ -63,10 +63,10 @@ export function SocialSync() {
       goal_weight: profile.share_goal ? toKg(settings.goalWeight) : null,
       change_kg: profile.share_weight && start != null && current != null ? Number((current - start).toFixed(2)) : null,
       streak_days: profile.share_streak ? streak : null,
-      kcal_target: profile.share_macros ? Math.round(target.kcal) : null,
-      kcal_today: profile.share_macros ? Math.round(macros.kcal) : null,
-      protein_target: profile.share_macros ? Math.round(target.protein) : null,
-      protein_today: profile.share_macros ? Math.round(macros.protein) : null,
+      kcal_target: null,
+      kcal_today: null,
+      protein_target: null,
+      protein_today: null,
       updated_at: new Date().toISOString(),
     };
 
