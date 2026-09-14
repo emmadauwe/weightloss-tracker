@@ -273,11 +273,38 @@ function DishDialog({
   );
   const [categories, setCategories] = useState<Meal[]>(initial?.categories ?? []);
   const [items, setItems] = useState<DishItem[]>(initial?.items ?? []);
+  const [direct, setDirect] = useState(!!initial?.directMacros);
+  const [dKcal, setDKcal] = useState(initial?.directMacros ? String(initial.directMacros.kcal) : "");
+  const [dProt, setDProt] = useState(initial?.directMacros ? String(initial.directMacros.protein) : "");
+  const [dCarb, setDCarb] = useState(initial?.directMacros ? String(initial.directMacros.carbs) : "");
+  const [dFat, setDFat] = useState(initial?.directMacros ? String(initial.directMacros.fat) : "");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+
+  const askAi = async () => {
+    if (!name.trim()) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: "portie" } });
+      setDKcal(String(s.kcal));
+      setDProt(String(s.protein));
+      setDCarb(String(s.carbs));
+      setDFat(String(s.fat));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "De AI-schatting is niet gelukt.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const macros = useMemo(() => {
+    if (direct) return { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) };
     const sNum = Math.max(1, parseInt(servings) || 1);
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
-  }, [items, servings, ingredients]);
+  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat]);
 
   const [picking, setPicking] = useState<number | "new" | null>(null);
 
