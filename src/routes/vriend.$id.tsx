@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
 import {
-  friendHighlights,
-  goalProgressPercent,
+  friendSummary,
+  sharedProgressPercent,
   useFriendDishes,
   useFriendStats,
   type ProfileRow,
@@ -47,8 +47,8 @@ function FriendPage() {
   }, [id]);
 
   const s = stats[id];
-  const highlights = friendHighlights(s);
-  const progress = goalProgressPercent(s);
+  const summary = friendSummary(s, profile);
+  const progress = profile?.share_progress === false ? null : sharedProgressPercent(s);
 
   return (
     <div className="min-h-screen bg-background pb-28">
