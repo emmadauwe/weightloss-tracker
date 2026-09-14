@@ -52,6 +52,7 @@ export function dishMacros(dish: Dish, ingredients: Ingredient[]): Macros {
 }
 
 export function dishMacrosPerServing(dish: Dish, ingredients: Ingredient[]): Macros {
+  if (dish.directMacros) return dish.directMacros;
   const t = dishMacros(dish, ingredients);
   const s = Math.max(1, dish.servings);
   return scale(t, 1 / s);
