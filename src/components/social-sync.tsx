@@ -56,7 +56,7 @@ export function SocialSync() {
 
     const row = {
       user_id: user.id,
-      goal_type: profile.share_goal ? (calc ? calc.type ?? null : null) : null,
+      goal_type: profile.share_goal ? settings.type ?? null : null,
       unit: settings.unit,
       start_weight: profile.share_weight ? start : null,
       current_weight: profile.share_weight ? current : null,
