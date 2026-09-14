@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronRight, Hand, Search, Trash2, UserPlus } from "lucide-react";
+import { Bell, Check, ChevronRight, Hand, Search, Trash2, UserPlus, X } from "lucide-react";
 import { avatarSrc } from "@/lib/profile-store";
 import {
   friendHighlights,
@@ -12,7 +12,9 @@ import {
   useHighFives,
   type ProfileRow,
 } from "@/lib/social";
+import { useNotifications } from "@/lib/notifications";
 import { AppHeader } from "@/components/app-header";
+
 
 export const Route = createFileRoute("/account/vrienden")({
   head: () => ({
