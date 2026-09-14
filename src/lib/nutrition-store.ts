@@ -53,6 +53,8 @@ export type Dish = {
   steps?: string[];
   categories?: Meal[];
   items: DishItem[];
+  /** Kant-en-klaar gerecht: macro's per portie rechtstreeks ingevuld, zonder ingrediënten. */
+  directMacros?: { kcal: number; protein: number; carbs: number; fat: number };
 };
 
 export type MealEntry = {

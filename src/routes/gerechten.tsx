@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft } from "lucide-react";
+import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
+import { suggestMacros } from "@/lib/ai.functions";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/gerechten")({
@@ -168,7 +169,7 @@ function DishDetailDialog({
             </div>
           )}
 
-          <div className="space-y-1.5">
+          <div className={`space-y-1.5 ${dish.directMacros ? "hidden" : ""}`}>
             <div className="text-sm font-medium">Ingrediënten</div>
             {dish.items.length === 0 ? (
               <p className="text-xs text-muted-foreground">Geen ingrediënten.</p>
@@ -272,11 +273,38 @@ function DishDialog({
   );
   const [categories, setCategories] = useState<Meal[]>(initial?.categories ?? []);
   const [items, setItems] = useState<DishItem[]>(initial?.items ?? []);
+  const [direct, setDirect] = useState(!!initial?.directMacros);
+  const [dKcal, setDKcal] = useState(initial?.directMacros ? String(initial.directMacros.kcal) : "");
+  const [dProt, setDProt] = useState(initial?.directMacros ? String(initial.directMacros.protein) : "");
+  const [dCarb, setDCarb] = useState(initial?.directMacros ? String(initial.directMacros.carbs) : "");
+  const [dFat, setDFat] = useState(initial?.directMacros ? String(initial.directMacros.fat) : "");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+
+  const askAi = async () => {
+    if (!name.trim()) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: "portie" } });
+      setDKcal(String(s.kcal));
+      setDProt(String(s.protein));
+      setDCarb(String(s.carbs));
+      setDFat(String(s.fat));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "De AI-schatting is niet gelukt.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const macros = useMemo(() => {
+    if (direct) return { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) };
     const sNum = Math.max(1, parseInt(servings) || 1);
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
-  }, [items, servings, ingredients]);
+  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat]);
 
   const [picking, setPicking] = useState<number | "new" | null>(null);
 
@@ -308,7 +336,10 @@ function DishDialog({
       recipeUrl: recipeUrl.trim() || undefined,
       steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
       categories: categories.length > 0 ? categories : undefined,
-      items,
+      items: direct ? [] : items,
+      directMacros: direct
+        ? { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) }
+        : undefined,
     });
   };
 
@@ -342,6 +373,50 @@ function DishDialog({
           </div>
 
           <div className="space-y-2">
+            <Label>Hoe geef je de voedingswaarde in?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant={direct ? "outline" : "default"} size="sm" onClick={() => setDirect(false)}>
+                Uit ingrediënten
+              </Button>
+              <Button type="button" variant={direct ? "default" : "outline"} size="sm" onClick={() => setDirect(true)}>
+                Kant-en-klaar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {direct
+                ? "Vul de macro's per portie zelf in — handig voor kant-en-klare maaltijden."
+                : "Bereken de macro's automatisch uit de ingrediënten."}
+            </p>
+          </div>
+
+          {direct ? (
+            <div className="space-y-3">
+              <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void askAi()} disabled={aiLoading || !name.trim()}>
+                <Sparkles className="mr-1 h-4 w-4 text-primary" />
+                {aiLoading ? "Even zoeken…" : "Stel macro's voor met AI"}
+              </Button>
+              {aiError && <p className="text-xs text-destructive">{aiError}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="dkcal">Kcal per portie</Label>
+                  <Input id="dkcal" inputMode="decimal" value={dKcal} onChange={(e) => setDKcal(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dprot">Eiwit (g)</Label>
+                  <Input id="dprot" inputMode="decimal" value={dProt} onChange={(e) => setDProt(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dcarb">Koolhydraten (g)</Label>
+                  <Input id="dcarb" inputMode="decimal" value={dCarb} onChange={(e) => setDCarb(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dfat">Vet (g)</Label>
+                  <Input id="dfat" inputMode="decimal" value={dFat} onChange={(e) => setDFat(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ) : (
+          <div className="space-y-2">
             <Label>Ingrediënten</Label>
             <div className="space-y-2">
               {items.map((it, i) => {
@@ -369,6 +444,7 @@ function DishDialog({
               </Button>
             </div>
           </div>
+          )}
 
           <div className="rounded-lg bg-secondary px-3 py-2 text-xs">
             <div className="font-medium">Per portie</div>
