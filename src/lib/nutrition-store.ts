@@ -73,48 +73,23 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-const SEED_INGREDIENTS: Ingredient[] = [
-  { id: "ei", name: "Ei (heel)", baseUnit: "stuk", kcal: 78, protein: 6.3, carbs: 0.6, fat: 5.3, category: "zuivel en eieren" },
-  { id: "kipfilet", name: "Kipfilet", baseUnit: "g", kcal: 165, protein: 31, carbs: 0, fat: 3.6, category: "vleesvervangers" },
-  { id: "rijst", name: "Rijst (gekookt)", baseUnit: "g", kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, category: "granen en deegwaren" },
-  { id: "havermout", name: "Havermout (droog)", baseUnit: "g", kcal: 379, protein: 13, carbs: 67, fat: 7, category: "granen en deegwaren" },
-  { id: "banaan", name: "Banaan", baseUnit: "stuk", kcal: 105, protein: 1.3, carbs: 27, fat: 0.4, category: "groenten en fruit" },
-  { id: "olijfolie", name: "Olijfolie", baseUnit: "ml", kcal: 884, protein: 0, carbs: 0, fat: 100, category: "vetten en oliën" },
-  { id: "brood-volkoren", name: "Volkorenbrood (snee)", baseUnit: "stuk", kcal: 90, protein: 4, carbs: 16, fat: 1, category: "granen en deegwaren" },
-  { id: "melk-halfvol", name: "Melk halfvol", baseUnit: "ml", kcal: 46, protein: 3.4, carbs: 4.7, fat: 1.5, category: "zuivel en eieren" },
-  { id: "yoghurt-grieks", name: "Griekse yoghurt", baseUnit: "g", kcal: 97, protein: 9, carbs: 4, fat: 5, category: "zuivel en eieren" },
-  { id: "kaas", name: "Kaas (jong belegen)", baseUnit: "g", kcal: 350, protein: 25, carbs: 0, fat: 28, category: "zuivel en eieren" },
-  { id: "pasta", name: "Pasta (gekookt)", baseUnit: "g", kcal: 131, protein: 5, carbs: 25, fat: 1.1, category: "granen en deegwaren" },
-  { id: "tonijn", name: "Tonijn op water", baseUnit: "g", kcal: 116, protein: 26, carbs: 0, fat: 1, category: "vleesvervangers" },
-  { id: "appel", name: "Appel", baseUnit: "stuk", kcal: 95, protein: 0.5, carbs: 25, fat: 0.3, category: "groenten en fruit" },
-  { id: "amandelen", name: "Amandelen", baseUnit: "g", kcal: 579, protein: 21, carbs: 22, fat: 50, category: "noten, zaden en peulvruchten" },
-  { id: "boter", name: "Boter", baseUnit: "g", kcal: 717, protein: 0.9, carbs: 0.1, fat: 81, category: "vetten en oliën" },
-  { id: "aardappel", name: "Aardappel (gekookt)", baseUnit: "g", kcal: 87, protein: 1.9, carbs: 20, fat: 0.1, category: "groenten en fruit" },
-  { id: "broccoli", name: "Broccoli", baseUnit: "g", kcal: 34, protein: 2.8, carbs: 7, fat: 0.4, category: "groenten en fruit" },
-  { id: "zalm", name: "Zalm", baseUnit: "g", kcal: 208, protein: 20, carbs: 0, fat: 13, category: "vleesvervangers" },
-];
-
+const EMPTY_INGREDIENTS: Ingredient[] = [];
 const EMPTY_DISHES: Dish[] = [];
 const EMPTY_MEALS: MealEntry[] = [];
 
 export function useIngredients() {
-  const { value, setValue, loaded } = useCloudDoc<Ingredient[] | undefined>(ING_KEY, undefined);
+  const { value, setValue, loaded } = useCloudDoc<Ingredient[]>(ING_KEY, EMPTY_INGREDIENTS);
 
-  useEffect(() => {
-    if (loaded && value === undefined) setValue(SEED_INGREDIENTS);
-  }, [loaded, value, setValue]);
-
-  const items = (value ?? SEED_INGREDIENTS).map((ing) =>
+  const items = value.map((ing) =>
     (ing.category as string) === "kruiden" ? { ...ing, category: "kruiden en sauzen" as IngredientCategory } : ing,
   );
 
   const upsert = useCallback(
     (ing: Ingredient) => {
       setValue((prev) => {
-        const list = prev ?? SEED_INGREDIENTS;
-        const i = list.findIndex((x) => x.id === ing.id);
-        if (i === -1) return [...list, ing];
-        const c = [...list];
+        const i = prev.findIndex((x) => x.id === ing.id);
+        if (i === -1) return [...prev, ing];
+        const c = [...prev];
         c[i] = ing;
         return c;
       });
@@ -122,7 +97,7 @@ export function useIngredients() {
     [setValue],
   );
   const remove = useCallback(
-    (id: string) => setValue((prev) => (prev ?? SEED_INGREDIENTS).filter((x) => x.id !== id)),
+    (id: string) => setValue((prev) => prev.filter((x) => x.id !== id)),
     [setValue],
   );
 
