@@ -55,6 +55,10 @@ export type Dish = {
   items: DishItem[];
   /** Kant-en-klaar gerecht: macro's per portie rechtstreeks ingevuld, zonder ingrediënten. */
   directMacros?: { kcal: number; protein: number; carbs: number; fat: number };
+  /** Kant-en-klaar: hoeveel gram of ml één portie weegt (optioneel). */
+  portionAmount?: number;
+  /** Of portionAmount in gram of milliliter is. */
+  portionBase?: "g" | "ml";
 };
 
 export type MealEntry = {
