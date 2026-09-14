@@ -88,6 +88,42 @@ function DoelPage() {
 
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
+            <div className="text-sm font-medium">Doelgewicht &amp; tijdlijn</div>
+            <div className="space-y-2">
+              <Label htmlFor="gw">Doelgewicht (kg)</Label>
+              <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
+                onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <DateField label="Startdag" value={settings.startDate}
+                onChange={(startDate) => setSettings({ ...settings, startDate })} />
+              <DateField label="Einddag" value={settings.endDate}
+                onChange={(endDate) => setSettings({ ...settings, endDate })} />
+            </div>
+            {pace && (
+              <div
+                className="rounded-lg border px-3 py-2.5 text-xs"
+                style={{
+                  borderColor: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                  background: paceUnhealthy
+                    ? "color-mix(in oklab, var(--destructive) 10%, transparent)"
+                    : "color-mix(in oklab, var(--primary) 10%, transparent)",
+                  color: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                }}
+              >
+                <div className="font-medium tabular-nums">
+                  {pace.perWeek > 0 ? "+" : ""}{pace.perWeek.toFixed(2)} kg/week nodig
+                </div>
+                <div className="mt-0.5 opacity-80">
+                  {paceUnhealthy ? "Te ambitieus — aanbevolen is max 0,5 kg/week." : "Gezond tempo (≤ 0,5 kg/week)."}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="px-5 py-4 space-y-3">
             <div className="text-sm font-medium">Dagelijks leven</div>
             <p className="text-xs text-muted-foreground">Hoe zit/sta/wandel je op een gemiddelde dag, buiten sport om?</p>
             <Select value={goal.lifestyle ?? "zittend"} onValueChange={(v) => setGoal({ ...goal, lifestyle: v as Lifestyle })}>
