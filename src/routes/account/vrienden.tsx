@@ -30,7 +30,8 @@ export const Route = createFileRoute("/account/vrienden")({
 
 function VriendenPage() {
   const { friends, incoming, outgoing, findByEmail, sendRequest, accept, removeLink, reload } = useFriends();
-  const { received, unseen, send, markSeen, reload: reloadFives } = useHighFives();
+  const { send, reload: reloadFives } = useHighFives();
+  const { items: notifications, dismiss, highFive: highFiveFor } = useNotifications();
   const stats = useFriendStats(friends.map((f) => f.friendId));
 
   const [email, setEmail] = useState("");
@@ -38,11 +39,6 @@ function VriendenPage() {
   const [found, setFound] = useState<{ id: string; display_name: string | null; avatar_id: string | null } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [sentFives, setSentFives] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    if (unseen.length) void markSeen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unseen.length]);
 
   const search = async () => {
     setMessage(null);
@@ -71,8 +67,7 @@ function VriendenPage() {
     await reloadFives();
   };
 
-  const namesById = new Map(friends.map((f) => [f.friendId, f.profile?.display_name ?? "Een vriend"]));
-  const recentFives = received.slice(0, 5);
+
 
   return (
     <div className="min-h-screen bg-background pb-28">
