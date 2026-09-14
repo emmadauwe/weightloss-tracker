@@ -94,6 +94,43 @@ function DoelPage() {
               <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
                 onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
             </div>
+            {suggestion && (
+              <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
+                <div className="font-medium">
+                  Voorstel: {suggestion.ideal.toFixed(1)} kg
+                </div>
+                <div className="mt-0.5 text-muted-foreground">
+                  Dat ligt precies in het midden van een gezonde BMI voor jouw lengte
+                  ({suggestion.min.toFixed(1)}–{suggestion.max.toFixed(1)} kg).
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSettings({ ...settings, goalWeight: Number(suggestion.ideal.toFixed(1)) })
+                    }
+                  >
+                    Gebruik dit doelgewicht
+                  </Button>
+                  {suggestion.endDate && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setSettings({
+                          ...settings,
+                          startDate: settings.startDate ?? suggestion.startDate,
+                          endDate: suggestion.endDate,
+                        })
+                      }
+                    >
+                      Stel einddag voor ({suggestion.weeks} weken)
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <DateField label="Startdag" value={settings.startDate}
                 onChange={(startDate) => setSettings({ ...settings, startDate })} />
