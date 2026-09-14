@@ -30,11 +30,13 @@ export function ingredientMacros(ing: Ingredient, amount: number, unit: Unit): M
   const base: Macros = { kcal: ing.kcal, protein: ing.protein, carbs: ing.carbs, fat: ing.fat };
   if (ing.baseUnit === "g" || ing.baseUnit === "ml") {
     // base macros are per 100 of baseUnit
-    if (unit === ing.baseUnit) return scale(base, amount / 100);
     if (unit === "stuk" || unit === "portie") return scale(base, amount * 1); // assume 100g/ml per stuk fallback
     return scale(base, amount / 100);
   }
-  // baseUnit stuk/portie: macros per 1
+  // baseUnit stuk/portie: macros per 1 stuk/portie
+  if ((unit === "g" || unit === "ml") && ing.unitGrams && ing.unitGrams > 0) {
+    return scale(base, amount / ing.unitGrams);
+  }
   return scale(base, amount);
 }
 

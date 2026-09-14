@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { differenceInDays, parseISO } from "date-fns";
+import { DateField } from "@/components/date-field";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,12 +34,24 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 ];
 
 function DoelPage() {
-  const { goal, setGoal, calc } = useGoalTargets();
+  const { goal, setGoal, calc, settings, setSettings } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
     return isNaN(n) ? undefined : n;
   };
+
+  const pace = useMemo(() => {
+    const s = settings.startWeight;
+    const g = settings.goalWeight;
+    if (!s || !g || !settings.startDate || !settings.endDate) return null;
+    const days = differenceInDays(parseISO(settings.endDate), parseISO(settings.startDate));
+    if (days <= 0) return null;
+    return { perWeek: ((g - s) / days) * 7, days };
+  }, [settings]);
+
+  const paceUnhealthy =
+    !!pace && ((goal.type === "afvallen" && pace.perWeek < -0.5) || (goal.type === "bijkomen" && pace.perWeek > 0.5));
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
@@ -68,6 +83,42 @@ function DoelPage() {
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="px-5 py-4 space-y-3">
+            <div className="text-sm font-medium">Doelgewicht &amp; tijdlijn</div>
+            <div className="space-y-2">
+              <Label htmlFor="gw">Doelgewicht (kg)</Label>
+              <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
+                onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <DateField label="Startdag" value={settings.startDate}
+                onChange={(startDate) => setSettings({ ...settings, startDate })} />
+              <DateField label="Einddag" value={settings.endDate}
+                onChange={(endDate) => setSettings({ ...settings, endDate })} />
+            </div>
+            {pace && (
+              <div
+                className="rounded-lg border px-3 py-2.5 text-xs"
+                style={{
+                  borderColor: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                  background: paceUnhealthy
+                    ? "color-mix(in oklab, var(--destructive) 10%, transparent)"
+                    : "color-mix(in oklab, var(--primary) 10%, transparent)",
+                  color: paceUnhealthy ? "var(--destructive)" : "var(--primary)",
+                }}
+              >
+                <div className="font-medium tabular-nums">
+                  {pace.perWeek > 0 ? "+" : ""}{pace.perWeek.toFixed(2)} kg/week nodig
+                </div>
+                <div className="mt-0.5 opacity-80">
+                  {paceUnhealthy ? "Te ambitieus — aanbevolen is max 0,5 kg/week." : "Gezond tempo (≤ 0,5 kg/week)."}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -57,7 +57,7 @@ export function SocialSync() {
     const row = {
       user_id: user.id,
       goal_type: profile.share_goal ? goal.type ?? null : null,
-      unit: settings.unit,
+      unit: "kg",
       start_weight: profile.share_weight ? start : null,
       current_weight: profile.share_weight ? current : null,
       goal_weight: profile.share_goal ? toKg(settings.goalWeight) : null,
@@ -73,7 +73,13 @@ export function SocialSync() {
     const sig = JSON.stringify({ ...row, updated_at: "" });
     if (sig === statsSig.current) return;
     statsSig.current = sig;
-    void supabase.from("user_stats").upsert(row, { onConflict: "user_id" });
+    void (async () => {
+      const { error } = await supabase.from("user_stats").upsert(row, { onConflict: "user_id" });
+      if (error) {
+        statsSig.current = "";
+        console.error("user_stats sync", error);
+      }
+    })();
   }, [user, profile, settings, goal, currentWeight, calc, target, meals, ingredients, dishes]);
 
   // Recepten delen
