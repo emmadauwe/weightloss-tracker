@@ -9,7 +9,6 @@ import {
   friendHighlights,
   useFriends,
   useFriendStats,
-  useHighFives,
   type ProfileRow,
 } from "@/lib/social";
 import { useNotifications } from "@/lib/notifications";
@@ -32,7 +31,6 @@ export const Route = createFileRoute("/account/vrienden")({
 
 function VriendenPage() {
   const { friends, incoming, outgoing, findByEmail, sendRequest, accept, removeLink, reload } = useFriends();
-  const { send, reload: reloadFives } = useHighFives();
   const { items: notifications, dismiss, highFive: highFiveFor } = useNotifications();
   const stats = useFriendStats(friends.map((f) => f.friendId));
 
@@ -40,7 +38,6 @@ function VriendenPage() {
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState<{ id: string; display_name: string | null; avatar_id: string | null } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [sentFives, setSentFives] = useState<Record<string, boolean>>({});
 
   const search = async () => {
     setMessage(null);
@@ -62,14 +59,6 @@ function VriendenPage() {
     setEmail("");
     setMessage(error ?? "Verzoek verstuurd.");
   };
-
-  const highFive = async (friendId: string) => {
-    await send(friendId, "high-five");
-    setSentFives((s) => ({ ...s, [friendId]: true }));
-    await reloadFives();
-  };
-
-
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -210,21 +199,12 @@ function VriendenPage() {
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </Link>
                     {highlights.length > 0 && (
-                      <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+                      <div className="border-t border-border px-3 py-2">
                         <ul className="min-w-0 space-y-0.5 text-xs text-muted-foreground">
                           {highlights.slice(0, 3).map((h, i) => (
                             <li key={i}>· {h}</li>
                           ))}
                         </ul>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={sentFives[f.friendId]}
-                          onClick={() => void highFive(f.friendId)}
-                        >
-                          <Hand className="mr-1 h-4 w-4 text-primary" />
-                          {sentFives[f.friendId] ? "Gegeven" : "High five"}
-                        </Button>
                       </div>
                     )}
                     <div className="flex justify-end border-t border-border px-3 py-1.5">

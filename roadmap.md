@@ -39,3 +39,6 @@
 - [x] Remove the Planning shopping button and the shopping-page back button.
 - [x] Rename the mobile shopping tab and page, and increase navigation height.
 - [x] Add sign-out confirmation and verify mobile behavior.
+- [x] Replace friend weight-change text with positive goal progress.
+- [x] Show a compact goal-progress meter below shared current and goal weights.
+- [x] Limit high fives to achievement notifications.

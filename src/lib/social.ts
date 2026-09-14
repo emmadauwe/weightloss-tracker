@@ -322,24 +322,27 @@ export function goalReached(stats?: StatsRow | null): boolean {
   return wantsGain ? stats.current_weight >= stats.goal_weight : stats.current_weight <= stats.goal_weight;
 }
 
+export function goalProgressPercent(stats?: StatsRow | null): number | null {
+  if (
+    !stats ||
+    stats.start_weight == null ||
+    stats.current_weight == null ||
+    stats.goal_weight == null ||
+    stats.start_weight === stats.goal_weight
+  ) return null;
+  const progress = ((stats.current_weight - stats.start_weight) / (stats.goal_weight - stats.start_weight)) * 100;
+  return Math.max(0, Math.min(100, progress));
+}
+
 export function friendHighlights(stats?: StatsRow | null): string[] {
   if (!stats) return [];
   const out: string[] = [];
   const unit = stats.unit ?? "kg";
-  const wantsGain = stats.goal_type === "bijkomen" || stats.goal_type === "spiermassa";
 
   if (goalReached(stats)) out.push("Doelgewicht bereikt 🎉");
 
-  const prog = progressKg(stats);
-  if (prog != null && Math.abs(prog) >= 0.1) {
-    out.push(
-      prog > 0
-        ? `Al ${prog.toFixed(1)} ${unit} ${wantsGain ? "bijgekomen" : "afgevallen"}`
-        : `${Math.abs(prog).toFixed(1)} ${unit} de andere kant op`,
-    );
-  } else if (stats.current_weight != null) {
-    out.push(`Weegt nu ${stats.current_weight.toFixed(1)} ${unit}`);
-  }
+  const progress = goalProgressPercent(stats);
+  if (progress != null && !goalReached(stats)) out.push(`${progress.toFixed(0)}% vooruitgang naar doel`);
 
   if (stats.current_weight != null && stats.goal_weight != null && !goalReached(stats)) {
     out.push(`Nog ${Math.abs(stats.current_weight - stats.goal_weight).toFixed(1)} ${unit} te gaan`);
