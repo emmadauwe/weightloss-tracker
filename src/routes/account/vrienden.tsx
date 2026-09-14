@@ -181,7 +181,7 @@ function VriendenPage() {
               </p>
             ) : (
               friends.map((f) => {
-                const highlights = friendHighlights(stats[f.friendId]);
+                const summary = friendSummary(stats[f.friendId], f.profile);
                 return (
                   <div key={f.id} className="rounded-lg border border-border">
                     <Link
@@ -192,21 +192,10 @@ function VriendenPage() {
                       <Avatar p={f.profile} />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{f.profile?.display_name ?? "Zonder naam"}</div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {highlights[0] ?? "Nog niets gedeeld"}
-                        </div>
+                        <div className="truncate text-xs text-muted-foreground">{summary}</div>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </Link>
-                    {highlights.length > 0 && (
-                      <div className="border-t border-border px-3 py-2">
-                        <ul className="min-w-0 space-y-0.5 text-xs text-muted-foreground">
-                          {highlights.slice(0, 3).map((h, i) => (
-                            <li key={i}>· {h}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                     <div className="flex justify-end border-t border-border px-3 py-1.5">
                       <Button
                         size="sm"
