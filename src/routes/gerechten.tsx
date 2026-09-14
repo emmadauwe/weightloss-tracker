@@ -169,7 +169,7 @@ function DishDetailDialog({
             </div>
           )}
 
-          <div className="space-y-1.5">
+          <div className={`space-y-1.5 ${dish.directMacros ? "hidden" : ""}`}>
             <div className="text-sm font-medium">Ingrediënten</div>
             {dish.items.length === 0 ? (
               <p className="text-xs text-muted-foreground">Geen ingrediënten.</p>
