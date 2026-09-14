@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { differenceInDays, parseISO } from "date-fns";
+import { addWeeks, differenceInDays, format, parseISO } from "date-fns";
 import { DateField } from "@/components/date-field";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,12 +34,32 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 ];
 
 function DoelPage() {
-  const { goal, setGoal, calc, settings, setSettings } = useGoalTargets();
+  const { goal, setGoal, calc, settings, setSettings, currentWeight } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
     return isNaN(n) ? undefined : n;
   };
+
+  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9). */
+  const suggestion = useMemo(() => {
+    const h = settings.heightCm;
+    if (!h || h < 100 || !currentWeight) return null;
+    const m = h / 100;
+    const ideal = 21.7 * m * m;
+    const target = settings.goalWeight ?? ideal;
+    const diff = Math.abs(currentWeight - target);
+    const weeks = diff >= 0.5 ? Math.ceil(diff / 0.5) : 0;
+    const start = settings.startDate ? parseISO(settings.startDate) : new Date();
+    return {
+      ideal,
+      min: 18.5 * m * m,
+      max: 24.9 * m * m,
+      weeks,
+      startDate: format(start, "yyyy-MM-dd"),
+      endDate: weeks > 0 ? format(addWeeks(start, weeks), "yyyy-MM-dd") : undefined,
+    };
+  }, [settings.heightCm, settings.goalWeight, settings.startDate, currentWeight]);
 
   const pace = useMemo(() => {
     const s = settings.startWeight;
@@ -52,6 +72,7 @@ function DoelPage() {
 
   const paceUnhealthy =
     !!pace && ((goal.type === "afvallen" && pace.perWeek < -0.5) || (goal.type === "bijkomen" && pace.perWeek > 0.5));
+
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
