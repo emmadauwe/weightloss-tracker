@@ -114,24 +114,37 @@ function IngredientDialog({
   onSave: (i: Ingredient) => void;
   newId: () => string;
 }) {
+  const perUnit = initial?.baseUnit === "stuk" || initial?.baseUnit === "portie";
+  const initGrams = perUnit ? initial?.unitGrams : undefined;
+  const back = (v?: number) => (v === undefined ? "" : initGrams ? String(Number(((v * 100) / initGrams).toFixed(1))) : String(v));
+
   const [name, setName] = useState(initial?.name ?? "");
   const [baseUnit, setBaseUnit] = useState<Unit>(initial?.baseUnit ?? "g");
-  const [kcal, setKcal] = useState(initial?.kcal.toString() ?? "");
-  const [protein, setProtein] = useState(initial?.protein.toString() ?? "");
-  const [carbs, setCarbs] = useState(initial?.carbs.toString() ?? "");
-  const [fat, setFat] = useState(initial?.fat.toString() ?? "");
+  const [unitGrams, setUnitGrams] = useState(initGrams ? String(initGrams) : "");
+  const [unitBase, setUnitBase] = useState<"g" | "ml">(initial?.unitBase ?? "g");
+  const [unitNote, setUnitNote] = useState(initial?.unitNote ?? "");
+  const [kcal, setKcal] = useState(back(initial?.kcal));
+  const [protein, setProtein] = useState(back(initial?.protein));
+  const [carbs, setCarbs] = useState(back(initial?.carbs));
+  const [fat, setFat] = useState(back(initial?.fat));
   const [category, setCategory] = useState<IngredientCategory>(initial?.category ?? "groenten en fruit");
   const [loading, setLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
+  const isPiece = baseUnit === "stuk" || baseUnit === "portie";
+  const grams = isPiece ? num(unitGrams) : 0;
+  const per100 = isPiece && grams > 0;
+  const factor = per100 ? grams / 100 : 1;
+  const inputUnit: Unit = per100 ? unitBase : baseUnit;
+
   const ask = async () => {
     if (!name.trim()) return;
     setLoading(true);
     setAiError(null);
     try {
-      const s = await suggestMacros({ data: { name: name.trim(), baseUnit } });
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: inputUnit } });
       setKcal(String(s.kcal));
       setProtein(String(s.protein));
       setCarbs(String(s.carbs));

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useCloudDoc } from "./cloud-store";
 
 export type Unit = "g" | "ml" | "stuk" | "portie";
