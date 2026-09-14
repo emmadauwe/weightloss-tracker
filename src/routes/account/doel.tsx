@@ -128,41 +128,21 @@ function DoelPage() {
               <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
                 onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
             </div>
-            {suggestion && (
+            {idealSuggestion && (
               <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
-                <div className="font-medium">
-                  Voorstel: {suggestion.ideal.toFixed(1)} kg
-                </div>
+                <div className="font-medium">Voorstel doelgewicht: {idealSuggestion.ideal.toFixed(1)} kg</div>
                 <div className="mt-0.5 text-muted-foreground">
                   Dat ligt precies in het midden van een gezonde BMI voor jouw lengte
-                  ({suggestion.min.toFixed(1)}–{suggestion.max.toFixed(1)} kg).
+                  ({idealSuggestion.min.toFixed(1)}–{idealSuggestion.max.toFixed(1)} kg).
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setSettings({ ...settings, goalWeight: Number(suggestion.ideal.toFixed(1)) })
-                    }
-                  >
-                    Gebruik dit doelgewicht
-                  </Button>
-                  {suggestion.endDate && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setSettings({
-                          ...settings,
-                          startDate: settings.startDate ?? suggestion.startDate,
-                          endDate: suggestion.endDate,
-                        })
-                      }
-                    >
-                      Stel einddag voor ({suggestion.weeks} weken)
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  className="mt-2"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSettings({ ...settings, goalWeight: Number(idealSuggestion.ideal.toFixed(1)) })}
+                >
+                  Gebruik dit doelgewicht
+                </Button>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -171,6 +151,47 @@ function DoelPage() {
               <DateField label="Einddag" value={settings.endDate}
                 onChange={(endDate) => setSettings({ ...settings, endDate })} />
             </div>
+            {endSuggestion && (
+              <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
+                <div className="font-medium">Voorstel einddag</div>
+                <div className="mt-0.5 text-muted-foreground">In welk tempo wil je je doel bereiken?</div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {PACES.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPaceChoice(p.id)}
+                      className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors ${
+                        paceChoice === p.id
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card hover:bg-accent"
+                      }`}
+                    >
+                      {p.label}
+                      <div className="text-[10px] font-normal opacity-80 tabular-nums">{p.kg} kg/week</div>
+                    </button>
+                  ))}
+                </div>
+                {endSuggestion.endDate ? (
+                  <Button
+                    className="mt-2"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        startDate: settings.startDate ?? endSuggestion.startDate,
+                        endDate: endSuggestion.endDate,
+                      })
+                    }
+                  >
+                    Stel einddag voor ({endSuggestion.weeks} weken)
+                  </Button>
+                ) : (
+                  <div className="mt-2 text-muted-foreground">Je zit al op je doelgewicht.</div>
+                )}
+              </div>
+            )}
             {pace && (
               <div
                 className="rounded-lg border px-3 py-2.5 text-xs"
