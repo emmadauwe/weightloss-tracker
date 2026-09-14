@@ -357,9 +357,9 @@ function DishDialog({
       steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
       categories: categories.length > 0 ? categories : undefined,
       items: direct ? [] : items,
-      directMacros: direct
-        ? { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) }
-        : undefined,
+      directMacros: direct ? directPerServing() : undefined,
+      portionAmount: direct && per100 ? portionGrams : undefined,
+      portionBase: direct && per100 ? portionBase : undefined,
     });
   };
 
