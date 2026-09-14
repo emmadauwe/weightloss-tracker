@@ -14,6 +14,7 @@ import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
 
 const VandaagRoute = VandaagRouteImport.update({
@@ -41,6 +42,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
   id: '/api/suggest-macros',
   path: '/api/suggest-macros',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/account/': typeof AccountIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/account': typeof AccountIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/ingredienten': typeof IngredientenRoute
   '/vandaag': typeof VandaagRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/account/': typeof AccountIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/ingredienten'
     | '/vandaag'
     | '/api/suggest-macros'
+    | '/account/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/ingredienten'
     | '/vandaag'
     | '/api/suggest-macros'
+    | '/account'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/ingredienten'
     | '/vandaag'
     | '/api/suggest-macros'
+    | '/account/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +118,7 @@ export interface RootRouteChildren {
   IngredientenRoute: typeof IngredientenRoute
   VandaagRoute: typeof VandaagRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
+  AccountIndexRoute: typeof AccountIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/': {
+      id: '/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/suggest-macros': {
       id: '/api/suggest-macros'
       path: '/api/suggest-macros'
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   IngredientenRoute: IngredientenRoute,
   VandaagRoute: VandaagRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
+  AccountIndexRoute: AccountIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,6 +5,8 @@ import type { MacroPriority } from "./planner";
 export type GoalSettings = {
   type: GoalType;
   age?: number;
+  /** Geboortedatum (YYYY-MM-DD); hieruit wordt de leeftijd afgeleid. */
+  birthDate?: string;
   sex: Sex;
   /** Legacy — kept for back-compat when lifestyle is not set. */
   activity: Activity;
