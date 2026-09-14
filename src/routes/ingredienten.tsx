@@ -206,6 +206,31 @@ function IngredientDialog({
             </Select>
             <p className="text-xs text-muted-foreground">Waardes hieronder gelden {perLabel}.</p>
           </div>
+
+          {isPiece && (
+            <div className="space-y-2 rounded-lg border border-border p-3">
+              <Label htmlFor="ugrams">Hoeveel weegt 1 {baseUnit}?</Label>
+              <div className="flex gap-2">
+                <Input id="ugrams" inputMode="decimal" placeholder="bv. 60" value={unitGrams}
+                  onChange={(e) => setUnitGrams(e.target.value)} className="flex-1" />
+                <Select value={unitBase} onValueChange={(v) => setUnitBase(v as "g" | "ml")}>
+                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">g</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Label htmlFor="unote">Wat bedoel je met 1 {baseUnit}?</Label>
+              <Input id="unote" placeholder="bv. 1 snee brood" value={unitNote}
+                onChange={(e) => setUnitNote(e.target.value)} />
+              <p className="text-xs text-muted-foreground">
+                {per100
+                  ? `Vul de macro's in per 100 ${unitBase}; we rekenen ze om naar 1 ${baseUnit} (${grams} ${unitBase}).`
+                  : `Vul het gewicht in, dan mag je de macro's per 100 g of ml ingeven. Laat je dit leeg, vul dan de macro's per 1 ${baseUnit} in.`}
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Type</Label>
             <Select value={category} onValueChange={(v) => setCategory(v as IngredientCategory)}>
