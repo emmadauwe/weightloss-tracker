@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { AppHeader } from "@/components/app-header";
@@ -34,6 +35,7 @@ function GerechtenPage() {
   const { items, upsert, remove, newId } = useDishes();
   const { items: ingredients } = useIngredients();
   const [q, setQ] = useState("");
+  const [viewing, setViewing] = useState<Dish | null>(null);
   const [editing, setEditing] = useState<Dish | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -62,8 +64,8 @@ function GerechtenPage() {
               const m = dishMacrosPerServing(d, ingredients);
               return (
                 <Card key={d.id}>
-                  <CardContent className="flex items-center gap-2 px-5 py-3.5">
-                    <button onClick={() => setEditing(d)} className="flex-1 text-left">
+                  <CardContent className="flex items-center gap-1 px-5 py-3.5">
+                    <button onClick={() => setViewing(d)} className="min-w-0 flex-1 text-left">
                       <div className="font-medium">{d.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {Math.round(m.kcal)} kcal · {Math.round(m.protein)}P · {Math.round(m.carbs)}K · {Math.round(m.fat)}V
@@ -80,15 +82,12 @@ function GerechtenPage() {
                       )}
                     </button>
                     {d.recipeUrl && (
-                      <a href={d.recipeUrl} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent">
+                      <a href={d.recipeUrl} target="_blank" rel="noreferrer" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-accent">
                         <ExternalLink className="h-4 w-4 text-primary" />
                       </a>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(d)} aria-label="Bewerken">
-                      <Pencil className="h-4 w-4 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(d.id)} aria-label="Verwijderen">
-                      <Trash2 className="h-4 w-4 text-primary" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing(d)} aria-label="Bewerken">
+                      <Pencil className="h-3.5 w-3.5 text-primary" />
                     </Button>
                   </CardContent>
                 </Card>
@@ -106,16 +105,153 @@ function GerechtenPage() {
         <Plus className="h-6 w-6" />
       </button>
 
+      {viewing && !editing && !creating && (
+        <DishDetailDialog
+          dish={viewing}
+          ingredients={ingredients}
+          onClose={() => setViewing(null)}
+          onEdit={() => { setEditing(viewing); }}
+          onDelete={() => { remove(viewing.id); setViewing(null); }}
+        />
+      )}
+
       {(editing || creating) && (
         <DishDialog
           initial={editing}
           ingredients={ingredients}
           onClose={() => { setEditing(null); setCreating(false); }}
-          onSave={(d) => { upsert(d); setEditing(null); setCreating(false); }}
+          onSave={(d) => { upsert(d); setEditing(null); setCreating(false); setViewing(null); }}
           newId={newId}
         />
       )}
     </div>
+  );
+}
+
+function DishDetailDialog({
+  dish, ingredients, onClose, onEdit, onDelete,
+}: {
+  dish: Dish;
+  ingredients: ReturnType<typeof useIngredients>["items"];
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const macros = dishMacrosPerServing(dish, ingredients);
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+            <span className="min-w-0 truncate">{dish.name}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onEdit} aria-label="Bewerken">
+              <Pencil className="h-3.5 w-3.5 text-primary" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-lg bg-secondary px-3 py-2 text-xs">
+            <div className="font-medium">Per portie ({dish.servings} porties)</div>
+            <div className="text-muted-foreground">
+              {Math.round(macros.kcal)} kcal · {Math.round(macros.protein)}P · {Math.round(macros.carbs)}K · {Math.round(macros.fat)}V
+            </div>
+          </div>
+
+          {dish.categories && dish.categories.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {dish.categories.map((c) => (
+                <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                  {MEALS.find((m) => m.id === c)?.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <div className="text-sm font-medium">Ingrediënten</div>
+            {dish.items.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Geen ingrediënten.</p>
+            ) : (
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {dish.items.map((it, i) => {
+                  const ing = ingredients.find((x) => x.id === it.ingredientId);
+                  return (
+                    <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                      <span className="min-w-0 truncate">{ing?.name ?? "—"}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                        {it.amount} {formatUnit(it.unit, it.amount)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {dish.steps && dish.steps.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Bereiding</div>
+              <ol className="space-y-2">
+                {dish.steps.map((s, i) => (
+                  <li key={i} className="flex gap-2 text-sm">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] font-semibold text-primary tabular-nums">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0">{s}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {dish.recipeUrl && (
+            <a href={dish.recipeUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-primary">
+              <ExternalLink className="h-4 w-4" /> Recept openen
+            </a>
+          )}
+
+          <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
+            <Trash2 className="mr-1 h-4 w-4" /> Gerecht verwijderen
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CategorySelect({ value, onChange }: { value: Meal[]; onChange: (v: Meal[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = value.length === 0
+    ? "Kies type maaltijd"
+    : MEALS.filter((m) => value.includes(m.id)).map((m) => m.label).join(", ");
+  const toggle = (id: Meal) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={`h-9 w-full justify-between px-3 font-normal shadow-sm ${value.length === 0 ? "text-muted-foreground" : ""}`}
+        >
+          <span className="min-w-0 truncate">{label}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+        {MEALS.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => toggle(m.id)}
+            className="flex w-full items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-accent"
+          >
+            {m.label}
+            {value.includes(m.id) && <Check className="h-4 w-4 text-primary" />}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -157,9 +293,6 @@ function DishDialog({
     setItems((p) => p.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const removeItem = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
 
-  const toggleCat = (c: Meal) =>
-    setCategories((p) => (p.includes(c) ? p.filter((x) => x !== c) : [...p, c]));
-
   const addStep = () => setSteps((p) => [...p, ""]);
   const setStep = (i: number, v: string) => setSteps((p) => p.map((x, idx) => (idx === i ? v : x)));
   const removeStep = (i: number) => setSteps((p) => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
@@ -181,7 +314,7 @@ function DishDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
+      <DialogContent className="max-h-[80vh] overflow-y-auto overflow-x-hidden">
         {picking !== null ? (
           <IngredientPicker
             ingredients={ingredients}
@@ -192,7 +325,7 @@ function DishDialog({
           <>
           <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_90px] gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-3">
             <div className="space-y-2">
               <Label htmlFor="dname">Naam</Label>
               <Input id="dname" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
@@ -204,24 +337,8 @@ function DishDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Categorieën</Label>
-            <div className="flex flex-wrap gap-2">
-              {MEALS.map((m) => {
-                const on = categories.includes(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => toggleCat(m.id)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-accent"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
+            <Label>Type maaltijd</Label>
+            <CategorySelect value={categories} onChange={setCategories} />
           </div>
 
           <div className="space-y-2">
@@ -230,20 +347,20 @@ function DishDialog({
               {items.map((it, i) => {
                 const ing = ingredients.find((x) => x.id === it.ingredientId);
                 return (
-                  <div key={i} className="grid grid-cols-[minmax(0,1fr)_64px_44px_36px] items-center gap-2">
+                  <div key={i} className="grid grid-cols-[minmax(0,1fr)_58px_38px_24px] items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setPicking(i)}
-                      className="min-w-0 truncate rounded-md border border-input bg-background px-3 py-2 text-left text-sm hover:bg-accent"
+                      className="min-w-0 truncate rounded-md border border-input bg-background px-2.5 py-2 text-left text-sm hover:bg-accent"
                     >
                       {ing?.name ?? "Kies ingrediënt…"}
                     </button>
-                    <Input className="w-full min-w-0 px-2" inputMode="decimal" value={it.amount}
+                    <Input className="w-full min-w-0 px-1.5 text-center" inputMode="decimal" value={it.amount}
                       onChange={(e) => setItem(i, { amount: parseFloat(e.target.value.replace(",", ".")) || 0 })} />
-                    <span className="truncate text-center text-xs text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
-                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(i)}>
-                      <X className="h-4 w-4 text-primary" />
-                    </Button>
+                    <span className="truncate text-center text-[11px] text-muted-foreground">{formatUnit(it.unit, it.amount)}</span>
+                    <button type="button" onClick={() => removeItem(i)} aria-label="Ingrediënt verwijderen" className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-accent">
+                      <X className="h-3.5 w-3.5 text-primary" />
+                    </button>
                   </div>
                 );
               })}
@@ -269,8 +386,8 @@ function DishDialog({
             <Label>Bereiding</Label>
             <div className="space-y-2">
               {steps.map((s, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <div className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
+                <div key={i} className="flex items-center gap-1.5">
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
                     {i + 1}
                   </div>
                   <Input
@@ -279,9 +396,15 @@ function DishDialog({
                     placeholder={`Stap ${i + 1}`}
                     className="min-w-0 flex-1"
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeStep(i)} disabled={steps.length <= 1}>
-                    <X className="h-4 w-4 text-primary" />
-                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => removeStep(i)}
+                    disabled={steps.length <= 1}
+                    aria-label="Stap verwijderen"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent disabled:opacity-40"
+                  >
+                    <X className="h-3.5 w-3.5 text-primary" />
+                  </button>
                 </div>
               ))}
               <Button type="button" variant="outline" size="sm" onClick={addStep} className="w-full">

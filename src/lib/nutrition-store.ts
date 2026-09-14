@@ -9,10 +9,12 @@ export const INGREDIENT_CATEGORIES = [
   "groenten en fruit",
   "vleesvervangers",
   "granen en deegwaren",
-  "kruiden",
+  "kruiden en sauzen",
   "vetten en oliën",
   "bereide maaltijden",
   "voedselkast",
+  "dranken",
+  "koekjes en snoepjes",
 ] as const;
 
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];
@@ -96,7 +98,9 @@ export function useIngredients() {
     if (loaded && value === undefined) setValue(SEED_INGREDIENTS);
   }, [loaded, value, setValue]);
 
-  const items = value ?? SEED_INGREDIENTS;
+  const items = (value ?? SEED_INGREDIENTS).map((ing) =>
+    (ing.category as string) === "kruiden" ? { ...ing, category: "kruiden en sauzen" as IngredientCategory } : ing,
+  );
 
   const upsert = useCallback(
     (ing: Ingredient) => {

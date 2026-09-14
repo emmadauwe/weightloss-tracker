@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Apple } from "lucide-react";
+import { Plus, Pencil, Trash2, Apple, Sparkles } from "lucide-react";
+import { suggestMacros } from "@/lib/ai.functions";
 import { INGREDIENT_CATEGORIES, useIngredients, type Ingredient, type IngredientCategory, type Unit } from "@/lib/nutrition-store";
 import { AppHeader } from "@/components/app-header";
 import { sentenceCase } from "@/lib/shopping-list";
@@ -120,8 +121,30 @@ function IngredientDialog({
   const [carbs, setCarbs] = useState(initial?.carbs.toString() ?? "");
   const [fat, setFat] = useState(initial?.fat.toString() ?? "");
   const [category, setCategory] = useState<IngredientCategory>(initial?.category ?? "groenten en fruit");
+  const [loading, setLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+
+  const ask = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    setAiError(null);
+    try {
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit } });
+      setKcal(String(s.kcal));
+      setProtein(String(s.protein));
+      setCarbs(String(s.carbs));
+      setFat(String(s.fat));
+      if ((INGREDIENT_CATEGORIES as readonly string[]).includes(s.category)) {
+        setCategory(s.category as IngredientCategory);
+      }
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "De AI-schatting is niet gelukt.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +193,11 @@ function IngredientDialog({
               </SelectContent>
             </Select>
           </div>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void ask()} disabled={loading || !name.trim()}>
+            <Sparkles className="mr-1 h-4 w-4 text-primary" />
+            {loading ? "Even zoeken…" : "Stel macro's voor met AI"}
+          </Button>
+          {aiError && <p className="text-xs text-destructive">{aiError}</p>}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="ikcal">Kcal</Label>
