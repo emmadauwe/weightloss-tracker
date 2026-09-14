@@ -61,7 +61,9 @@ function IngredientenPage() {
                       <div className="text-xs text-muted-foreground">
                         {i.kcal} kcal · {i.protein}P · {i.carbs}K · {i.fat}V
                         {" · "}
-                        per {i.baseUnit === "g" || i.baseUnit === "ml" ? `100 ${i.baseUnit}` : i.baseUnit}
+                        per {i.baseUnit === "g" || i.baseUnit === "ml"
+                          ? `100 ${i.baseUnit}`
+                          : `1 ${i.baseUnit}${i.unitGrams ? ` (${i.unitGrams} ${i.unitBase ?? "g"})` : ""}${i.unitNote ? ` — ${i.unitNote}` : ""}`}
                       </div>
                       <div className="mt-0.5 text-[11px] text-primary">{i.category ? sentenceCase(i.category) : "Nog geen type"}</div>
                     </div>
