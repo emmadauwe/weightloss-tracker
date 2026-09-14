@@ -411,6 +411,25 @@ function DishDialog({
 
           {direct ? (
             <div className="space-y-3">
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <Label htmlFor="dportion">Hoeveel weegt 1 portie? (optioneel)</Label>
+                <div className="flex gap-2">
+                  <Input id="dportion" inputMode="decimal" placeholder="bv. 350" value={portionAmount}
+                    onChange={(e) => setPortionAmount(e.target.value)} className="min-w-0 flex-1" />
+                  <Select value={portionBase} onValueChange={(v) => setPortionBase(v as "g" | "ml")}>
+                    <SelectTrigger className="w-20 shrink-0"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {per100
+                    ? `Vul de macro's in per 100 ${portionBase}; we rekenen ze om naar 1 portie (${portionGrams} ${portionBase}).`
+                    : "Laat je dit leeg, vul dan de macro's per 1 portie in."}
+                </p>
+              </div>
               <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void askAi()} disabled={aiLoading || !name.trim()}>
                 <Sparkles className="mr-1 h-4 w-4 text-primary" />
                 {aiLoading ? "Even zoeken…" : "Stel macro's voor met AI"}
@@ -418,7 +437,7 @@ function DishDialog({
               {aiError && <p className="text-xs text-destructive">{aiError}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="dkcal">Kcal per portie</Label>
+                  <Label htmlFor="dkcal">Kcal {per100 ? `per 100 ${portionBase}` : "per portie"}</Label>
                   <Input id="dkcal" inputMode="decimal" value={dKcal} onChange={(e) => setDKcal(e.target.value)} />
                 </div>
                 <div className="space-y-2">
