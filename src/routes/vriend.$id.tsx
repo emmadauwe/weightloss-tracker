@@ -72,15 +72,17 @@ function FriendPage() {
           </CardContent>
         </Card>
 
-        {s && (
+        {s && (s.current_weight != null || s.goal_weight != null || progress != null) && (
           <Card>
             <CardContent className="space-y-4 px-5 py-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                {s.current_weight != null && (
-                  <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
-                )}
-                {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
-              </div>
+              {(s.current_weight != null || s.goal_weight != null) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {s.current_weight != null && (
+                    <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
+                  )}
+                  {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
+                </div>
+              )}
               {progress != null && (
                 <div>
                   <div className="flex items-center justify-between">
@@ -93,12 +95,6 @@ function FriendPage() {
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  {s.start_weight != null && s.goal_weight != null && (
-                    <div className="mt-2 flex justify-between text-xs tabular-nums text-muted-foreground">
-                      <span>{s.start_weight.toFixed(1)} kg</span>
-                      <span>{s.goal_weight.toFixed(1)} kg doel</span>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
