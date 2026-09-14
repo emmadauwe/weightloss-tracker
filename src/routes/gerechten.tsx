@@ -274,21 +274,33 @@ function DishDialog({
   const [categories, setCategories] = useState<Meal[]>(initial?.categories ?? []);
   const [items, setItems] = useState<DishItem[]>(initial?.items ?? []);
   const [direct, setDirect] = useState(!!initial?.directMacros);
-  const [dKcal, setDKcal] = useState(initial?.directMacros ? String(initial.directMacros.kcal) : "");
-  const [dProt, setDProt] = useState(initial?.directMacros ? String(initial.directMacros.protein) : "");
-  const [dCarb, setDCarb] = useState(initial?.directMacros ? String(initial.directMacros.carbs) : "");
-  const [dFat, setDFat] = useState(initial?.directMacros ? String(initial.directMacros.fat) : "");
+  const initPortion = initial?.portionAmount;
+  // Bij een ingevuld portiegewicht tonen we de macro's terug per 100 g/ml.
+  const backMacro = (v?: number) =>
+    v === undefined ? "" : initPortion ? String(Number(((v * 100) / initPortion).toFixed(1))) : String(v);
+  const [portionAmount, setPortionAmount] = useState(initPortion ? String(initPortion) : "");
+  const [portionBase, setPortionBase] = useState<"g" | "ml">(initial?.portionBase ?? "g");
+  const [dKcal, setDKcal] = useState(backMacro(initial?.directMacros?.kcal));
+  const [dProt, setDProt] = useState(backMacro(initial?.directMacros?.protein));
+  const [dCarb, setDCarb] = useState(backMacro(initial?.directMacros?.carbs));
+  const [dFat, setDFat] = useState(backMacro(initial?.directMacros?.fat));
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+
+  const portionGrams = num(portionAmount);
+  const per100 = portionGrams > 0;
+  const macroFactor = per100 ? portionGrams / 100 : 1;
 
   const askAi = async () => {
     if (!name.trim()) return;
     setAiLoading(true);
     setAiError(null);
     try {
-      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: "portie" } });
+      const s = await suggestMacros({
+        data: { name: name.trim(), baseUnit: per100 ? portionBase : "portie" },
+      });
       setDKcal(String(s.kcal));
       setDProt(String(s.protein));
       setDCarb(String(s.carbs));
@@ -300,11 +312,19 @@ function DishDialog({
     }
   };
 
+  const round = (v: number) => Number(v.toFixed(2));
+  const directPerServing = () => ({
+    kcal: round(num(dKcal) * macroFactor),
+    protein: round(num(dProt) * macroFactor),
+    carbs: round(num(dCarb) * macroFactor),
+    fat: round(num(dFat) * macroFactor),
+  });
+
   const macros = useMemo(() => {
-    if (direct) return { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) };
+    if (direct) return directPerServing();
     const sNum = Math.max(1, parseInt(servings) || 1);
     return dishMacrosPerServing({ id: "", name: "", servings: sNum, items }, ingredients);
-  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat]);
+  }, [items, servings, ingredients, direct, dKcal, dProt, dCarb, dFat, macroFactor]);
 
   const [picking, setPicking] = useState<number | "new" | null>(null);
 
