@@ -5,6 +5,7 @@ import { useAuth } from "./auth";
 export type Privacy = {
   share_weight: boolean;
   share_goal: boolean;
+  share_progress: boolean;
   share_macros: boolean;
   share_streak: boolean;
   share_dishes: boolean;
@@ -25,6 +26,7 @@ export type StatsRow = {
   current_weight: number | null;
   goal_weight: number | null;
   change_kg: number | null;
+  progress_percent: number | null;
   streak_days: number | null;
   kcal_target: number | null;
   kcal_today: number | null;
