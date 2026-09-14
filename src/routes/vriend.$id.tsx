@@ -67,9 +67,7 @@ function FriendPage() {
               <div className="truncate text-lg font-semibold" style={{ fontFamily: "var(--font-display)" }}>
                 {profile?.display_name ?? "Zonder naam"}
               </div>
-              <div className="text-xs text-muted-foreground">
-                {highlights[0] ?? "Deelt nog niets"}
-              </div>
+              <div className="text-xs text-muted-foreground">{summary}</div>
             </div>
           </CardContent>
         </Card>
