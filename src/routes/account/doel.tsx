@@ -41,28 +41,31 @@ function DoelPage() {
     return isNaN(n) ? undefined : n;
   };
 
-  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9).
-   *  De termijn rekent vanaf startgewicht naar doelgewicht aan max 0,5 kg/week,
-   *  zowel voor afvallen (-0,5 kg/week) als bijkomen (+0,5 kg/week). */
-  const suggestion = useMemo(() => {
+  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9). */
+  const idealSuggestion = useMemo(() => {
     const h = settings.heightCm;
-    const startWeight = settings.startWeight ?? currentWeight;
-    if (!h || h < 100 || !startWeight) return null;
+    if (!h || h < 100) return null;
     const m = h / 100;
-    const ideal = 21.7 * m * m;
-    const target = settings.goalWeight ?? ideal;
+    return { ideal: 21.7 * m * m, min: 18.5 * m * m, max: 24.9 * m * m };
+  }, [settings.heightCm]);
+
+  /** Termijn op basis van het gekozen tempo (max 0,5 kg/week, op- of afwaarts). */
+  const [paceChoice, setPaceChoice] = useState<PaceChoice>("gemiddeld");
+  const endSuggestion = useMemo(() => {
+    const startWeight = settings.startWeight ?? currentWeight;
+    const target = settings.goalWeight ?? idealSuggestion?.ideal;
+    if (!startWeight || !target) return null;
+    const perWeek = PACES.find((p) => p.id === paceChoice)!.kg;
     const diff = Math.abs(startWeight - target);
-    const weeks = diff >= 0.5 ? Math.ceil(diff / 0.5) : 0;
+    const weeks = diff >= perWeek ? Math.ceil(diff / perWeek) : 0;
     const start = settings.startDate ? parseISO(settings.startDate) : new Date();
     return {
-      ideal,
-      min: 18.5 * m * m,
-      max: 24.9 * m * m,
+      perWeek,
       weeks,
       startDate: format(start, "yyyy-MM-dd"),
       endDate: weeks > 0 ? format(addWeeks(start, weeks), "yyyy-MM-dd") : undefined,
     };
-  }, [settings.heightCm, settings.startWeight, settings.goalWeight, settings.startDate, currentWeight]);
+  }, [settings.startWeight, settings.goalWeight, settings.startDate, currentWeight, idealSuggestion, paceChoice]);
 
   const pace = useMemo(() => {
     const s = settings.startWeight;
