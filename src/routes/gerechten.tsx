@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
