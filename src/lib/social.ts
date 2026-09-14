@@ -278,7 +278,15 @@ export function useHighFives() {
     await reload();
   }, [user, reload]);
 
-  return { received, unseen: received.filter((h) => !h.seen), send, markSeen, reload };
+  const markSeenOne = useCallback(
+    async (id: string) => {
+      setReceived((rows) => rows.map((r) => (r.id === id ? { ...r, seen: true } : r)));
+      await supabase.from("high_fives").update({ seen: true }).eq("id", id);
+    },
+    [],
+  );
+
+  return { received, unseen: received.filter((h) => !h.seen), send, markSeen, markSeenOne, reload };
 }
 
 /* ---------------- gedeelde gerechten ---------------- */
