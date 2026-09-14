@@ -31,12 +31,24 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 ];
 
 function DoelPage() {
-  const { goal, setGoal, calc } = useGoalTargets();
+  const { goal, setGoal, calc, settings, setSettings } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
     return isNaN(n) ? undefined : n;
   };
+
+  const pace = useMemo(() => {
+    const s = settings.startWeight;
+    const g = settings.goalWeight;
+    if (!s || !g || !settings.startDate || !settings.endDate) return null;
+    const days = differenceInDays(parseISO(settings.endDate), parseISO(settings.startDate));
+    if (days <= 0) return null;
+    return { perWeek: ((g - s) / days) * 7, days };
+  }, [settings]);
+
+  const paceUnhealthy =
+    !!pace && ((goal.type === "afvallen" && pace.perWeek < -0.5) || (goal.type === "bijkomen" && pace.perWeek > 0.5));
 
   const active = {
     kcal: goal.overrideKcal ?? calc?.kcal,
