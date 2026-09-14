@@ -16,6 +16,7 @@ import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
+import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
 import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
 import { Route as AccountDoelRouteImport } from './routes/account/doel'
 
@@ -54,6 +55,11 @@ const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
   path: '/api/suggest-macros',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountPrivacyRoute = AccountPrivacyRouteImport.update({
+  id: '/account/privacy',
+  path: '/account/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountGegevensRoute = AccountGegevensRouteImport.update({
   id: '/account/gegevens',
   path: '/account/gegevens',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account/': typeof AccountIndexRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account': typeof AccountIndexRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
+  '/account/privacy': typeof AccountPrivacyRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/account/': typeof AccountIndexRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
+    | '/account/privacy'
     | '/api/suggest-macros'
     | '/account/'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
+    | '/account/privacy'
     | '/api/suggest-macros'
     | '/account'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
+    | '/account/privacy'
     | '/api/suggest-macros'
     | '/account/'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   VandaagRoute: typeof VandaagRoute
   AccountDoelRoute: typeof AccountDoelRoute
   AccountGegevensRoute: typeof AccountGegevensRoute
+  AccountPrivacyRoute: typeof AccountPrivacyRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSuggestMacrosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/privacy': {
+      id: '/account/privacy'
+      path: '/account/privacy'
+      fullPath: '/account/privacy'
+      preLoaderRoute: typeof AccountPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/gegevens': {
       id: '/account/gegevens'
       path: '/account/gegevens'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   VandaagRoute: VandaagRoute,
   AccountDoelRoute: AccountDoelRoute,
   AccountGegevensRoute: AccountGegevensRoute,
+  AccountPrivacyRoute: AccountPrivacyRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
