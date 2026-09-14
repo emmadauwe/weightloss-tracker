@@ -19,9 +19,13 @@ export const Route = createFileRoute("/account/privacy")({
 });
 
 const OPTIONS: { key: keyof Privacy; label: string; hint: string }[] = [
-  { key: "share_weight", label: "Gewicht", hint: "Je huidige gewicht en hoeveel je al bent afgevallen of bijgekomen." },
-  { key: "share_goal", label: "Doel", hint: "Je doeltype en je doelgewicht." },
-  { key: "share_streak", label: "Streak", hint: "Hoeveel dagen op rij je bijhoudt." },
+  { key: "share_weight", label: "Huidig gewicht", hint: "Wat je vandaag weegt." },
+  { key: "share_goal", label: "Doelgewicht", hint: "Het gewicht dat je wil bereiken." },
+  {
+    key: "share_progress",
+    label: "Voortgangsmeter",
+    hint: "Alleen het percentage richting je doel — zonder gewichten.",
+  },
   { key: "share_dishes", label: "Recepten", hint: "Vrienden mogen je gerechten bekijken en overnemen." },
 ];
 
