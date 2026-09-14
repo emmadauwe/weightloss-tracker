@@ -2,16 +2,15 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Download, Hand, Search } from "lucide-react";
+import { Check, Download, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
 import {
   friendHighlights,
-  progressKg,
+  goalProgressPercent,
   useFriendDishes,
   useFriendStats,
-  useHighFives,
   type ProfileRow,
   type SharedDishRow,
 } from "@/lib/social";
@@ -37,8 +36,6 @@ function FriendPage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const stats = useFriendStats([id]);
   const { dishes, loading } = useFriendDishes(id);
-  const { send } = useHighFives();
-  const [fived, setFived] = useState(false);
   const [query, setQuery] = useState("");
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
@@ -51,8 +48,7 @@ function FriendPage() {
 
   const s = stats[id];
   const highlights = friendHighlights(s);
-  const prog = progressKg(s);
-  const wantsGain = s?.goal_type === "bijkomen" || s?.goal_type === "spiermassa";
+  const progress = goalProgressPercent(s);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -75,48 +71,38 @@ function FriendPage() {
                 {highlights[0] ?? "Deelt nog niets"}
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={fived}
-              onClick={async () => {
-                await send(id, "high-five");
-                setFived(true);
-              }}
-            >
-              <Hand className="mr-1 h-4 w-4 text-primary" /> {fived ? "Gegeven" : "High five"}
-            </Button>
           </CardContent>
         </Card>
 
-        {highlights.length > 0 && (
-          <Card>
-            <CardContent className="space-y-1 px-5 py-4">
-              <div className="text-sm font-medium">Hoe gaat het?</div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {highlights.map((h, i) => (
-                  <li key={i}>· {h}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
         {s && (
           <Card>
-            <CardContent className="grid grid-cols-2 gap-3 px-5 py-4 text-sm">
-              {s.current_weight != null && (
-                <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
+            <CardContent className="space-y-4 px-5 py-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                {s.current_weight != null && (
+                  <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
+                )}
+                {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
+              </div>
+              {progress != null && (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Vooruitgang naar doel</span>
+                    <span className="text-xs font-medium tabular-nums text-primary">{progress.toFixed(0)}%</span>
+                  </div>
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  {s.start_weight != null && s.goal_weight != null && (
+                    <div className="mt-2 flex justify-between text-xs tabular-nums text-muted-foreground">
+                      <span>{s.start_weight.toFixed(1)} kg</span>
+                      <span>{s.goal_weight.toFixed(1)} kg doel</span>
+                    </div>
+                  )}
+                </div>
               )}
-              {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
-              {prog != null && (
-                <Stat
-                  label={prog >= 0 ? (wantsGain ? "Bijgekomen" : "Afgevallen") : "Andere richting"}
-                  value={`${Math.abs(prog).toFixed(1)} kg`}
-                />
-              )}
-              {s.goal_type && <Stat label="Doel" value={s.goal_type} />}
-              {s.streak_days != null && <Stat label="Streak" value={`${s.streak_days} dagen`} />}
             </CardContent>
           </Card>
         )}
