@@ -19,9 +19,8 @@ export const Route = createFileRoute("/account/privacy")({
 });
 
 const OPTIONS: { key: keyof Privacy; label: string; hint: string }[] = [
-  { key: "share_weight", label: "Gewicht", hint: "Hoeveel je bent afgevallen of bijgekomen sinds je start." },
+  { key: "share_weight", label: "Gewicht", hint: "Je huidige gewicht en hoeveel je al bent afgevallen of bijgekomen." },
   { key: "share_goal", label: "Doel", hint: "Je doeltype en je doelgewicht." },
-  { key: "share_macros", label: "Macro's", hint: "Je calorie- en eiwitdoel en hoe je vandaag zit." },
   { key: "share_streak", label: "Streak", hint: "Hoeveel dagen op rij je bijhoudt." },
   { key: "share_dishes", label: "Recepten", hint: "Vrienden mogen je gerechten bekijken en overnemen." },
 ];
