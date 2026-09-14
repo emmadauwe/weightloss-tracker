@@ -336,7 +336,10 @@ function DishDialog({
       recipeUrl: recipeUrl.trim() || undefined,
       steps: cleanedSteps.length > 0 ? cleanedSteps : undefined,
       categories: categories.length > 0 ? categories : undefined,
-      items,
+      items: direct ? [] : items,
+      directMacros: direct
+        ? { kcal: num(dKcal), protein: num(dProt), carbs: num(dCarb), fat: num(dFat) }
+        : undefined,
     });
   };
 
