@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { addWeeks, differenceInDays, format, parseISO } from "date-fns";
 import { DateField } from "@/components/date-field";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,13 @@ export const Route = createFileRoute("/account/doel")({
   }),
   component: DoelPage,
 });
+
+type PaceChoice = "snel" | "gemiddeld" | "traag";
+const PACES: { id: PaceChoice; label: string; kg: number }[] = [
+  { id: "snel", label: "Snel", kg: 0.5 },
+  { id: "gemiddeld", label: "Gemiddeld", kg: 0.35 },
+  { id: "traag", label: "Rustig", kg: 0.25 },
+];
 
 const GOAL_TYPES: { id: GoalType; label: string }[] = [
   { id: "afvallen", label: "Afvallen" },
