@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles } from "lucide-react";
-import { formatUnit, useDishes, useIngredients, useMeals, type Meal, type Unit } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
+import { INGREDIENT_CATEGORIES } from "@/lib/nutrition-store";
+import { suggestMacros } from "@/lib/ai.functions";
+import { sentenceCase } from "@/lib/shopping-list";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
@@ -39,11 +42,13 @@ const UNITS: Unit[] = ["g", "ml", "stuk", "portie"];
 function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [view, setView] = useState<"dag" | "week">("dag");
-  const { items: ingredients } = useIngredients();
+  const { items: ingredients, upsert: upsertIngredient, newId: newIngredientId } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
   const { goal, target } = useGoalTargets();
   const [adding, setAdding] = useState<Meal | null>(null);
+  const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
+  const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
 
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
@@ -153,7 +158,7 @@ function VandaagPage() {
                         {format(parseISO(d), "EEEE d MMM", { locale: nl })}
                         {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
                       </div>
-                      <div className={`text-sm tabular-nums ${t.kcal > target.kcal * 1.05 ? "text-destructive" : "text-muted-foreground"}`}>
+                      <div className={`text-sm tabular-nums ${(goal.type === "bijkomen" ? t.kcal < target.kcal : t.kcal > target.kcal) && dayEntries.length > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                         {Math.round(t.kcal)} / {target.kcal} kcal
                       </div>
                     </div>
@@ -230,33 +235,31 @@ function VandaagPage() {
                             : dishes.find((d) => d.id === m.refId);
                           const macros = mealEntryMacros(m, ingredients, dishes);
                           return (
-                            <li key={m.id} className="flex items-center justify-between gap-2 text-sm">
-                               <span className="min-w-0 flex-1 truncate">
-                                {ref?.name ?? "—"}
-                                <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
-                              </span>
-                               <Input
-                                 aria-label={`Porties ${ref?.name ?? "maaltijd"}`}
-                                 className="h-7 w-14 px-2 text-xs"
-                                 inputMode="decimal"
-                                 value={m.amount}
-                                 onChange={(event) => {
-                                   const amount = parseFloat(event.target.value.replace(",", "."));
-                                   if (amount > 0) update(m.id, { amount });
-                                 }}
-                               />
-                               <span className="text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
-                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(m.id)} aria-label="Verwijderen">
-                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                               </Button>
+                            <li key={m.id}>
+                              <button
+                                type="button"
+                                onClick={() => setEditingEntry({ entry: m, name: ref?.name ?? "—" })}
+                                className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-sm hover:bg-accent"
+                              >
+                                <span className="min-w-0 flex-1 truncate">
+                                  {ref?.name ?? "—"}
+                                  <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
+                                </span>
+                                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
+                              </button>
                             </li>
                           );
                         })}
                       </ul>
                     )}
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => setAdding(meal)}>
-                      <Plus className="mr-1 h-4 w-4" /> Toevoegen
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setAdding(meal)}>
+                        <Plus className="mr-1 h-4 w-4" /> Toevoegen
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setQuickAdding(meal)}>
+                        <Sparkles className="mr-1 h-4 w-4 text-primary" /> Snel toevoegen
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -271,6 +274,29 @@ function VandaagPage() {
           date={date}
           onClose={() => setAdding(null)}
           onAdd={(entry) => { add(entry); setAdding(null); }}
+        />
+      )}
+
+      {quickAdding && (
+        <QuickAddDialog
+          meal={quickAdding}
+          onClose={() => setQuickAdding(null)}
+          onAdd={(ingredient, amount) => {
+            upsertIngredient(ingredient);
+            add({ date, meal: quickAdding, kind: "ingredient", refId: ingredient.id, amount, unit: ingredient.baseUnit });
+            setQuickAdding(null);
+          }}
+          newId={newIngredientId}
+        />
+      )}
+
+      {editingEntry && (
+        <EntryDialog
+          name={editingEntry.name}
+          entry={editingEntry.entry}
+          onClose={() => setEditingEntry(null)}
+          onSave={(amount) => { update(editingEntry.entry.id, { amount }); setEditingEntry(null); }}
+          onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
         />
       )}
 
@@ -300,7 +326,7 @@ function MacroSummary({
           <div>
             <div className="text-xs text-muted-foreground">{average ? "Gemiddelde calorieën per dag" : "Calorieën"}</div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-semibold tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>
+              <span className={`text-2xl font-semibold tabular-nums ${caloriesAgainstGoal ? "text-destructive" : "text-primary"}`} style={{ fontFamily: "var(--font-display)" }}>
                 {Math.round(totals.kcal)}
               </span>
               <span className="text-xs text-muted-foreground">/ {target.kcal} kcal</span>
@@ -329,7 +355,7 @@ function MacroBar({ label, cur, max, unit, favorableOver = false }: { label: str
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full rounded-full transition-all ${over ? (favorableOver ? "bg-success-strong" : "bg-destructive") : "bg-primary"}`}
+          className={`h-full rounded-full transition-all ${over && !favorableOver ? "bg-destructive" : "bg-primary"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -439,6 +465,169 @@ function AddMealDialog({
           )}
           <DialogFooter>
             <Button type="submit" className="w-full" disabled={!refId}>Toevoegen</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EntryDialog({
+  name, entry, onClose, onSave, onDelete,
+}: {
+  name: string;
+  entry: MealEntry;
+  onClose: () => void;
+  onSave: (amount: number) => void;
+  onDelete: () => void;
+}) {
+  const [amount, setAmount] = useState(String(entry.amount));
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const a = parseFloat(amount.replace(",", "."));
+    if (a > 0) onSave(a);
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="truncate pr-6">{name}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="eamt">{entry.unit === "portie" ? "Porties" : `Hoeveelheid (${entry.unit})`}</Label>
+            <Input id="eamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+          </div>
+          <Button type="submit" className="w-full">Opslaan</Button>
+          <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
+            <Trash2 className="mr-1 h-4 w-4" /> Verwijderen uit deze maaltijd
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function QuickAddDialog({
+  meal, onClose, onAdd, newId,
+}: {
+  meal: Meal;
+  onClose: () => void;
+  onAdd: (ingredient: Ingredient, amount: number) => void;
+  newId: () => string;
+}) {
+  const [name, setName] = useState("");
+  const [baseUnit, setBaseUnit] = useState<Unit>("portie");
+  const [kcal, setKcal] = useState("");
+  const [protein, setProtein] = useState("");
+  const [carbs, setCarbs] = useState("");
+  const [fat, setFat] = useState("");
+  const [category, setCategory] = useState<IngredientCategory>("bereide maaltijden");
+  const [amount, setAmount] = useState("1");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+  const perLabel = baseUnit === "g" || baseUnit === "ml" ? `per 100 ${baseUnit}` : `per 1 ${baseUnit}`;
+
+  const ask = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit } });
+      setKcal(String(s.kcal));
+      setProtein(String(s.protein));
+      setCarbs(String(s.carbs));
+      setFat(String(s.fat));
+      if ((INGREDIENT_CATEGORIES as readonly string[]).includes(s.category)) {
+        setCategory(s.category as IngredientCategory);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "De AI-schatting is niet gelukt.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const a = num(amount);
+    if (!name.trim() || !a) return;
+    onAdd(
+      {
+        id: newId(),
+        name: name.trim(),
+        baseUnit,
+        kcal: num(kcal),
+        protein: num(protein),
+        carbs: num(carbs),
+        fat: num(fat),
+        category,
+      },
+      a,
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Snel toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="qname">Wat heb je gegeten?</Label>
+            <Input id="qname" value={name} onChange={(e) => setName(e.target.value)} placeholder="bv. Falafelwrap" required autoFocus />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Eenheid</Label>
+              <Select value={baseUnit} onValueChange={(v) => setBaseUnit(v as Unit)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="qamt">Hoeveelheid</Label>
+              <Input id="qamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            </div>
+          </div>
+          <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void ask()} disabled={loading || !name.trim()}>
+            <Sparkles className="mr-1 h-4 w-4 text-primary" />
+            {loading ? "Even zoeken…" : "Stel macro's voor met AI"}
+          </Button>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <p className="text-xs text-muted-foreground">Waardes hieronder gelden {perLabel}.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="qkcal">Kcal</Label>
+              <Input id="qkcal" inputMode="decimal" value={kcal} onChange={(e) => setKcal(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="qprot">Eiwit (g)</Label>
+              <Input id="qprot" inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="qcarb">Koolhydraten (g)</Label>
+              <Input id="qcarb" inputMode="decimal" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="qfat">Vet (g)</Label>
+              <Input id="qfat" inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as IngredientCategory)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INGREDIENT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{sentenceCase(c)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="w-full">Toevoegen</Button>
           </DialogFooter>
         </form>
       </DialogContent>
