@@ -1,16 +1,26 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, User } from "lucide-react";
 
 export function AppHeader({
   title, subtitle, back,
 }: { title: string; subtitle?: string; back?: boolean }) {
+  const router = useRouter();
+
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 py-4">
         {back && (
-          <Link to=".." className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent">
+          <button
+            type="button"
+            aria-label="Terug"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) router.history.back();
+              else void router.navigate({ to: "/account" });
+            }}
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent"
+          >
             <ArrowLeft className="h-5 w-5 text-primary" />
-          </Link>
+          </button>
         )}
         <div className="flex-1">
           <h1 className="text-lg font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
