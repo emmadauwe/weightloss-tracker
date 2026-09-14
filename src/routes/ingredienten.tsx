@@ -159,6 +159,8 @@ function IngredientDialog({
     }
   };
 
+  const round = (v: number) => Number(v.toFixed(2));
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
@@ -166,15 +168,22 @@ function IngredientDialog({
       id: initial?.id ?? newId(),
       name: name.trim(),
       baseUnit,
-      kcal: num(kcal),
-      protein: num(protein),
-      carbs: num(carbs),
-      fat: num(fat),
+      kcal: round(num(kcal) * factor),
+      protein: round(num(protein) * factor),
+      carbs: round(num(carbs) * factor),
+      fat: round(num(fat) * factor),
       category,
+      ...(isPiece && grams > 0
+        ? { unitGrams: grams, unitBase, unitNote: unitNote.trim() || undefined }
+        : { unitGrams: undefined, unitBase: undefined, unitNote: unitNote.trim() || undefined }),
     });
   };
 
-  const perLabel = baseUnit === "g" || baseUnit === "ml" ? `per 100 ${baseUnit}` : `per 1 ${baseUnit}`;
+  const perLabel = per100
+    ? `per 100 ${unitBase}`
+    : baseUnit === "g" || baseUnit === "ml"
+      ? `per 100 ${baseUnit}`
+      : `per 1 ${baseUnit}`;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
