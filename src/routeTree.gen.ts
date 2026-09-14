@@ -15,6 +15,7 @@ import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as VriendIdRouteImport } from './routes/vriend.$id'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
 import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
 import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
@@ -49,6 +50,11 @@ const IndexRoute = IndexRouteImport.update({
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VriendIdRoute = VriendIdRouteImport.update({
+  id: '/vriend/$id',
+  path: '/vriend/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
   '/account/': typeof AccountIndexRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
   '/account': typeof AccountIndexRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/vriend/$id': typeof VriendIdRoute
   '/account/': typeof AccountIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
     | '/account/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
     | '/account'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/vriend/$id'
     | '/account/'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   AccountPrivacyRoute: typeof AccountPrivacyRoute
   AccountVriendenRoute: typeof AccountVriendenRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
+  VriendIdRoute: typeof VriendIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
@@ -215,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account/'
       preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vriend/$id': {
+      id: '/vriend/$id'
+      path: '/vriend/$id'
+      fullPath: '/vriend/$id'
+      preLoaderRoute: typeof VriendIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/suggest-macros': {
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountPrivacyRoute: AccountPrivacyRoute,
   AccountVriendenRoute: AccountVriendenRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
+  VriendIdRoute: VriendIdRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 export const routeTree = rootRouteImport
