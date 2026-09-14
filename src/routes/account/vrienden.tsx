@@ -113,18 +113,35 @@ function VriendenPage() {
           </CardContent>
         </Card>
 
-        {/* High fives */}
-        {recentFives.length > 0 && (
+        {/* Meldingen */}
+        {notifications.length > 0 && (
           <Card className="border-primary/40 bg-primary/5">
             <CardContent className="space-y-2 px-5 py-4">
               <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                <Hand className="h-4 w-4" /> High fives voor jou
+                <Bell className="h-4 w-4" /> Meldingen
               </div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {recentFives.map((h) => (
-                  <li key={h.id}>· {namesById.get(h.from_user) ?? "Een vriend"} gaf je een high five 🙌</li>
+              <div className="space-y-2">
+                {notifications.map((n) => (
+                  <div key={n.id} className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+                    <img
+                      src={avatarSrc(n.avatarId)}
+                      alt=""
+                      width={512}
+                      height={512}
+                      className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                    <div className="min-w-0 flex-1 text-xs">{n.text}</div>
+                    {n.kind !== "highfive" && (
+                      <Button size="sm" variant="outline" onClick={() => void highFiveFor(n)}>
+                        <Hand className="mr-1 h-4 w-4 text-primary" /> High five
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" aria-label="Melding sluiten" onClick={() => void dismiss(n)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </CardContent>
           </Card>
         )}
