@@ -307,28 +307,46 @@ export function useFriendDishes(ownerId: string | undefined) {
 
 /* ---------------- highlights voor de vriendenfeed ---------------- */
 
+/** Hoeveel iemand in de goede richting is opgeschoven (kg, altijd positief). */
+export function progressKg(stats?: StatsRow | null): number | null {
+  if (!stats || stats.change_kg == null) return null;
+  const gained = stats.change_kg > 0;
+  const wantsGain = stats.goal_type === "bijkomen" || stats.goal_type === "spiermassa";
+  const good = wantsGain ? gained : !gained;
+  return good ? Math.abs(stats.change_kg) : -Math.abs(stats.change_kg);
+}
+
+export function goalReached(stats?: StatsRow | null): boolean {
+  if (!stats || stats.current_weight == null || stats.goal_weight == null) return false;
+  const wantsGain = stats.goal_type === "bijkomen" || stats.goal_type === "spiermassa";
+  return wantsGain ? stats.current_weight >= stats.goal_weight : stats.current_weight <= stats.goal_weight;
+}
+
 export function friendHighlights(stats?: StatsRow | null): string[] {
   if (!stats) return [];
   const out: string[] = [];
   const unit = stats.unit ?? "kg";
-  if (stats.change_kg != null && Math.abs(stats.change_kg) >= 0.1) {
-    const gained = stats.change_kg > 0;
-    const good =
-      (stats.goal_type === "afvallen" && !gained) ||
-      ((stats.goal_type === "bijkomen" || stats.goal_type === "spiermassa") && gained);
+  const wantsGain = stats.goal_type === "bijkomen" || stats.goal_type === "spiermassa";
+
+  if (goalReached(stats)) out.push("Doelgewicht bereikt 🎉");
+
+  const prog = progressKg(stats);
+  if (prog != null && Math.abs(prog) >= 0.1) {
     out.push(
-      `${gained ? "+" : "−"}${Math.abs(stats.change_kg).toFixed(1)} ${unit} sinds de start${good ? " 🎉" : ""}`,
+      prog > 0
+        ? `Al ${prog.toFixed(1)} ${unit} ${wantsGain ? "bijgekomen" : "afgevallen"}`
+        : `${Math.abs(prog).toFixed(1)} ${unit} de andere kant op`,
     );
+  } else if (stats.current_weight != null) {
+    out.push(`Weegt nu ${stats.current_weight.toFixed(1)} ${unit}`);
   }
+
+  if (stats.current_weight != null && stats.goal_weight != null && !goalReached(stats)) {
+    out.push(`Nog ${Math.abs(stats.current_weight - stats.goal_weight).toFixed(1)} ${unit} te gaan`);
+  }
+
   if (stats.streak_days != null && stats.streak_days >= 3) {
     out.push(`${stats.streak_days} dagen op rij bijgehouden`);
-  }
-  if (stats.kcal_target && stats.kcal_today != null && stats.kcal_today > 0) {
-    const diff = Math.abs(stats.kcal_today - stats.kcal_target) / stats.kcal_target;
-    if (diff <= 0.1) out.push("Zit vandaag netjes op het caloriedoel");
-  }
-  if (stats.protein_target && stats.protein_today != null && stats.protein_today >= stats.protein_target) {
-    out.push("Eiwitdoel van vandaag gehaald");
   }
   return out;
 }
