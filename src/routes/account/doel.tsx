@@ -41,14 +41,17 @@ function DoelPage() {
     return isNaN(n) ? undefined : n;
   };
 
-  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9). */
+  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9).
+   *  De termijn rekent vanaf startgewicht naar doelgewicht aan max 0,5 kg/week,
+   *  zowel voor afvallen (-0,5 kg/week) als bijkomen (+0,5 kg/week). */
   const suggestion = useMemo(() => {
     const h = settings.heightCm;
-    if (!h || h < 100 || !currentWeight) return null;
+    const startWeight = settings.startWeight ?? currentWeight;
+    if (!h || h < 100 || !startWeight) return null;
     const m = h / 100;
     const ideal = 21.7 * m * m;
     const target = settings.goalWeight ?? ideal;
-    const diff = Math.abs(currentWeight - target);
+    const diff = Math.abs(startWeight - target);
     const weeks = diff >= 0.5 ? Math.ceil(diff / 0.5) : 0;
     const start = settings.startDate ? parseISO(settings.startDate) : new Date();
     return {
@@ -59,7 +62,7 @@ function DoelPage() {
       startDate: format(start, "yyyy-MM-dd"),
       endDate: weeks > 0 ? format(addWeeks(start, weeks), "yyyy-MM-dd") : undefined,
     };
-  }, [settings.heightCm, settings.goalWeight, settings.startDate, currentWeight]);
+  }, [settings.heightCm, settings.startWeight, settings.goalWeight, settings.startDate, currentWeight]);
 
   const pace = useMemo(() => {
     const s = settings.startWeight;
