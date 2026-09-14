@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, Check, ChevronRight, Hand, Search, Trash2, UserPlus, X } from "lucide-react";
 import { avatarSrc } from "@/lib/profile-store";
 import {
-  friendHighlights,
+  friendSummary,
   useFriends,
   useFriendStats,
   type ProfileRow,

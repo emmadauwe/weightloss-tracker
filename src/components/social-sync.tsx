@@ -53,15 +53,24 @@ export function SocialSync() {
 
     const start = toKg(settings.startWeight);
     const current = toKg(currentWeight);
+    const goalW = toKg(settings.goalWeight);
+
+    // Percentage richting het doel — zo kan de meter gedeeld worden zonder gewichten.
+    let progress: number | null = null;
+    if (start != null && current != null && goalW != null && start !== goalW) {
+      const p = ((current - start) / (goalW - start)) * 100;
+      progress = Number(Math.max(0, Math.min(100, p)).toFixed(1));
+    }
 
     const row = {
       user_id: user.id,
-      goal_type: profile.share_goal ? goal.type ?? null : null,
+      goal_type: profile.share_goal || profile.share_progress ? goal.type ?? null : null,
       unit: "kg",
       start_weight: profile.share_weight ? start : null,
       current_weight: profile.share_weight ? current : null,
-      goal_weight: profile.share_goal ? toKg(settings.goalWeight) : null,
+      goal_weight: profile.share_goal ? goalW : null,
       change_kg: profile.share_weight && start != null && current != null ? Number((current - start).toFixed(2)) : null,
+      progress_percent: profile.share_progress ? progress : null,
       streak_days: profile.share_streak ? streak : null,
       kcal_target: null,
       kcal_today: null,
