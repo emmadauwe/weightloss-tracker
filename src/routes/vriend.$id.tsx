@@ -2,7 +2,8 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Download, Hand } from "lucide-react";
+import { Check, Download, Hand, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
 import {
@@ -37,6 +38,8 @@ function FriendPage() {
   const { dishes, loading } = useFriendDishes(id);
   const { send } = useHighFives();
   const [fived, setFived] = useState(false);
+  const [query, setQuery] = useState("");
+  const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   useEffect(() => {
     void (async () => {
