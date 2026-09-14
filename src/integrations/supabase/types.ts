@@ -75,6 +75,7 @@ export type Database = {
           share_dishes: boolean
           share_goal: boolean
           share_macros: boolean
+          share_progress: boolean
           share_streak: boolean
           share_weight: boolean
           updated_at: string
@@ -88,6 +89,7 @@ export type Database = {
           share_dishes?: boolean
           share_goal?: boolean
           share_macros?: boolean
+          share_progress?: boolean
           share_streak?: boolean
           share_weight?: boolean
           updated_at?: string
@@ -101,6 +103,7 @@ export type Database = {
           share_dishes?: boolean
           share_goal?: boolean
           share_macros?: boolean
+          share_progress?: boolean
           share_streak?: boolean
           share_weight?: boolean
           updated_at?: string
@@ -178,6 +181,7 @@ export type Database = {
           goal_weight: number | null
           kcal_target: number | null
           kcal_today: number | null
+          progress_percent: number | null
           protein_target: number | null
           protein_today: number | null
           start_weight: number | null
@@ -193,6 +197,7 @@ export type Database = {
           goal_weight?: number | null
           kcal_target?: number | null
           kcal_today?: number | null
+          progress_percent?: number | null
           protein_target?: number | null
           protein_today?: number | null
           start_weight?: number | null
@@ -208,6 +213,7 @@ export type Database = {
           goal_weight?: number | null
           kcal_target?: number | null
           kcal_today?: number | null
+          progress_percent?: number | null
           protein_target?: number | null
           protein_today?: number | null
           start_weight?: number | null

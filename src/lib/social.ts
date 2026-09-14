@@ -5,6 +5,7 @@ import { useAuth } from "./auth";
 export type Privacy = {
   share_weight: boolean;
   share_goal: boolean;
+  share_progress: boolean;
   share_macros: boolean;
   share_streak: boolean;
   share_dishes: boolean;
@@ -25,6 +26,7 @@ export type StatsRow = {
   current_weight: number | null;
   goal_weight: number | null;
   change_kg: number | null;
+  progress_percent: number | null;
   streak_days: number | null;
   kcal_target: number | null;
   kcal_today: number | null;
@@ -334,22 +336,20 @@ export function goalProgressPercent(stats?: StatsRow | null): number | null {
   return Math.max(0, Math.min(100, progress));
 }
 
-export function friendHighlights(stats?: StatsRow | null): string[] {
-  if (!stats) return [];
-  const out: string[] = [];
-  const unit = stats.unit ?? "kg";
+/** Voortgang die een vriend deelt: het meegedeelde percentage, of afgeleid uit gewichten. */
+export function sharedProgressPercent(stats?: StatsRow | null): number | null {
+  if (!stats) return null;
+  if (stats.progress_percent != null) return Math.max(0, Math.min(100, stats.progress_percent));
+  return goalProgressPercent(stats);
+}
 
-  if (goalReached(stats)) out.push("Doelgewicht bereikt 🎉");
-
-  const progress = goalProgressPercent(stats);
-  if (progress != null && !goalReached(stats)) out.push(`${progress.toFixed(0)}% vooruitgang naar doel`);
-
-  if (stats.current_weight != null && stats.goal_weight != null && !goalReached(stats)) {
-    out.push(`Nog ${Math.abs(stats.current_weight - stats.goal_weight).toFixed(1)} ${unit} te gaan`);
+/** Eén vriendelijk zinnetje onder de naam in de vriendenlijst. */
+export function friendSummary(stats?: StatsRow | null, profile?: ProfileRow | null): string {
+  const progress = profile?.share_progress === false ? null : sharedProgressPercent(stats);
+  if (progress != null) {
+    if (goalReached(stats)) return "Doelgewicht bereikt 🎉";
+    return `${progress.toFixed(0)}% vooruitgang naar doel`;
   }
-
-  if (stats.streak_days != null && stats.streak_days >= 3) {
-    out.push(`${stats.streak_days} dagen op rij bijgehouden`);
-  }
-  return out;
+  if (profile?.share_dishes) return "Deelt lekkere gerechten met je";
+  return "Houdt de voortgang liever voor zichzelf";
 }

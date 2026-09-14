@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { addWeeks, differenceInDays, format, parseISO } from "date-fns";
 import { DateField } from "@/components/date-field";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,13 @@ export const Route = createFileRoute("/account/doel")({
   component: DoelPage,
 });
 
+type PaceChoice = "snel" | "gemiddeld" | "traag";
+const PACES: { id: PaceChoice; label: string; kg: number }[] = [
+  { id: "snel", label: "Snel", kg: 0.5 },
+  { id: "gemiddeld", label: "Gemiddeld", kg: 0.35 },
+  { id: "traag", label: "Rustig", kg: 0.25 },
+];
+
 const GOAL_TYPES: { id: GoalType; label: string }[] = [
   { id: "afvallen", label: "Afvallen" },
   { id: "behouden", label: "Op gewicht" },
@@ -41,28 +48,31 @@ function DoelPage() {
     return isNaN(n) ? undefined : n;
   };
 
-  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9).
-   *  De termijn rekent vanaf startgewicht naar doelgewicht aan max 0,5 kg/week,
-   *  zowel voor afvallen (-0,5 kg/week) als bijkomen (+0,5 kg/week). */
-  const suggestion = useMemo(() => {
+  /** Ideaal gewicht = midden van de gezonde BMI-zone (18,5–24,9). */
+  const idealSuggestion = useMemo(() => {
     const h = settings.heightCm;
-    const startWeight = settings.startWeight ?? currentWeight;
-    if (!h || h < 100 || !startWeight) return null;
+    if (!h || h < 100) return null;
     const m = h / 100;
-    const ideal = 21.7 * m * m;
-    const target = settings.goalWeight ?? ideal;
+    return { ideal: 21.7 * m * m, min: 18.5 * m * m, max: 24.9 * m * m };
+  }, [settings.heightCm]);
+
+  /** Termijn op basis van het gekozen tempo (max 0,5 kg/week, op- of afwaarts). */
+  const [paceChoice, setPaceChoice] = useState<PaceChoice>("gemiddeld");
+  const endSuggestion = useMemo(() => {
+    const startWeight = settings.startWeight ?? currentWeight;
+    const target = settings.goalWeight ?? idealSuggestion?.ideal;
+    if (!startWeight || !target) return null;
+    const perWeek = PACES.find((p) => p.id === paceChoice)!.kg;
     const diff = Math.abs(startWeight - target);
-    const weeks = diff >= 0.5 ? Math.ceil(diff / 0.5) : 0;
+    const weeks = diff >= perWeek ? Math.ceil(diff / perWeek) : 0;
     const start = settings.startDate ? parseISO(settings.startDate) : new Date();
     return {
-      ideal,
-      min: 18.5 * m * m,
-      max: 24.9 * m * m,
+      perWeek,
       weeks,
       startDate: format(start, "yyyy-MM-dd"),
       endDate: weeks > 0 ? format(addWeeks(start, weeks), "yyyy-MM-dd") : undefined,
     };
-  }, [settings.heightCm, settings.startWeight, settings.goalWeight, settings.startDate, currentWeight]);
+  }, [settings.startWeight, settings.goalWeight, settings.startDate, currentWeight, idealSuggestion, paceChoice]);
 
   const pace = useMemo(() => {
     const s = settings.startWeight;
@@ -118,41 +128,21 @@ function DoelPage() {
               <Input id="gw" inputMode="decimal" value={settings.goalWeight ?? ""}
                 onChange={(e) => setSettings({ ...settings, goalWeight: numOrUndef(e.target.value) })} />
             </div>
-            {suggestion && (
+            {idealSuggestion && (
               <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
-                <div className="font-medium">
-                  Voorstel: {suggestion.ideal.toFixed(1)} kg
-                </div>
+                <div className="font-medium">Voorstel doelgewicht: {idealSuggestion.ideal.toFixed(1)} kg</div>
                 <div className="mt-0.5 text-muted-foreground">
                   Dat ligt precies in het midden van een gezonde BMI voor jouw lengte
-                  ({suggestion.min.toFixed(1)}–{suggestion.max.toFixed(1)} kg).
+                  ({idealSuggestion.min.toFixed(1)}–{idealSuggestion.max.toFixed(1)} kg).
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setSettings({ ...settings, goalWeight: Number(suggestion.ideal.toFixed(1)) })
-                    }
-                  >
-                    Gebruik dit doelgewicht
-                  </Button>
-                  {suggestion.endDate && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setSettings({
-                          ...settings,
-                          startDate: settings.startDate ?? suggestion.startDate,
-                          endDate: suggestion.endDate,
-                        })
-                      }
-                    >
-                      Stel einddag voor ({suggestion.weeks} weken)
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  className="mt-2"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSettings({ ...settings, goalWeight: Number(idealSuggestion.ideal.toFixed(1)) })}
+                >
+                  Gebruik dit doelgewicht
+                </Button>
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -161,6 +151,47 @@ function DoelPage() {
               <DateField label="Einddag" value={settings.endDate}
                 onChange={(endDate) => setSettings({ ...settings, endDate })} />
             </div>
+            {endSuggestion && (
+              <div className="rounded-lg border border-border bg-secondary px-3 py-2.5 text-xs">
+                <div className="font-medium">Voorstel einddag</div>
+                <div className="mt-0.5 text-muted-foreground">In welk tempo wil je je doel bereiken?</div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {PACES.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPaceChoice(p.id)}
+                      className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors ${
+                        paceChoice === p.id
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card hover:bg-accent"
+                      }`}
+                    >
+                      {p.label}
+                      <div className="text-[10px] font-normal opacity-80 tabular-nums">{p.kg} kg/week</div>
+                    </button>
+                  ))}
+                </div>
+                {endSuggestion.endDate ? (
+                  <Button
+                    className="mt-2"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        startDate: settings.startDate ?? endSuggestion.startDate,
+                        endDate: endSuggestion.endDate,
+                      })
+                    }
+                  >
+                    Stel einddag voor ({endSuggestion.weeks} weken)
+                  </Button>
+                ) : (
+                  <div className="mt-2 text-muted-foreground">Je zit al op je doelgewicht.</div>
+                )}
+              </div>
+            )}
             {pace && (
               <div
                 className="rounded-lg border px-3 py-2.5 text-xs"
