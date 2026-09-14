@@ -118,12 +118,25 @@ function FriendPage() {
         <Card>
           <CardContent className="space-y-3 px-5 py-4">
             <div className="text-sm font-medium">Recepten</div>
+            {dishes.length > 0 && (
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Zoek een recept…"
+                  className="pl-9"
+                />
+              </div>
+            )}
             {loading ? (
               <p className="text-xs text-muted-foreground">Laden…</p>
             ) : dishes.length === 0 ? (
               <p className="text-xs text-muted-foreground">Deze vriend deelt (nog) geen recepten.</p>
+            ) : filtered.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Geen recept gevonden voor “{query}”.</p>
             ) : (
-              dishes.map((d) => <SharedDish key={d.id} dish={d} />)
+              filtered.map((d) => <SharedDish key={d.id} dish={d} />)
             )}
           </CardContent>
         </Card>
