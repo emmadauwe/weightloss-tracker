@@ -205,8 +205,94 @@ function AccountPage() {
             </AlertDialog>
           </CardContent>
         </Card>
+
+        <DeleteAccountCard />
       </main>
     </div>
+  );
+}
+
+function DeleteAccountCard() {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const remove = useServerFn(deleteMyAccount);
+
+  const handleDelete = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await remove();
+      await signOut();
+      window.location.href = "/";
+    } catch {
+      setError("Verwijderen is niet gelukt. Probeer het later opnieuw.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="space-y-3 px-5 py-4">
+        <div>
+          <div className="text-sm font-medium text-destructive">Account verwijderen</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Je profiel, gewichten, gerechten, ingrediënten, planning en vrienden worden permanent gewist. Dit kan niet
+            ongedaan gemaakt worden. Je kunt later wel opnieuw een leeg account maken met hetzelfde e-mailadres.
+          </p>
+        </div>
+        {!open ? (
+          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setOpen(true)}>
+            <Trash2 className="mr-1 h-4 w-4" /> Account permanent verwijderen
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <label htmlFor="confirm-delete" className="block text-xs font-medium">
+              Typ <span className="font-semibold">VERWIJDER</span> om te bevestigen
+            </label>
+            <Input
+              id="confirm-delete"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="VERWIJDER"
+              autoComplete="off"
+            />
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={() => { setOpen(false); setConfirm(""); }}>
+                Annuleren
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="flex-1"
+                    disabled={confirm.trim().toUpperCase() !== "VERWIJDER" || busy}
+                  >
+                    {busy ? "Bezig…" : "Verwijderen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-[calc(100vw-2rem)] rounded-lg">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Alles definitief verwijderen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Al je gegevens verdwijnen voorgoed: gewichten, doel, gerechten, ingrediënten, planning, vrienden
+                      en je profiel. Dit kan echt niet meer teruggedraaid worden.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Nee, behouden</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => void handleDelete()}>Ja, alles verwijderen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
