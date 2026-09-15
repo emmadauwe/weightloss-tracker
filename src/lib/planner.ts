@@ -276,6 +276,7 @@ export function picksToEntries(picks: PlanPick[]): Omit<MealEntry, "id">[] {
     refId: p.dishId,
     amount: 1,
     unit: "portie" as const,
+    leftoverFrom: p.leftoverFrom,
   }));
 }
 
