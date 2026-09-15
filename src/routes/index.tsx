@@ -316,7 +316,7 @@ function Index() {
       {/* Floating add button */}
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
-      <BmiDialog open={showBmi} onOpenChange={setShowBmi} bmi={bmi} />
+      <BmiDialog open={showBmi} onOpenChange={setShowBmi} bmi={bmi} heightCm={settings.heightCm} unit={unit} />
 
     </div>
   );
