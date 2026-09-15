@@ -153,6 +153,7 @@ export function generatePlan(opts: {
     // Lunch en diner met kook-/restjesritme.
     let leftoverDish: Dish | undefined;
     let leftoverCount = 0;
+    let leftoverCookDate: string | undefined;
     // Hoe vaak elk lunch-/dinergerecht deze week al gebruikt is (max. 3).
     const useCount = new Map<string, number>();
     const countOf = (id: string) => useCount.get(id) ?? 0;
