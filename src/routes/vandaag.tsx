@@ -180,7 +180,8 @@ function VandaagPage() {
                                 <span className="text-muted-foreground">
                                   {entriesForMeal.map((entry) => {
                                     const ref = entry.kind === "dish" ? dishes.find((item) => item.id === entry.refId) : ingredients.find((item) => item.id === entry.refId);
-                                    return `${ref?.name ?? "—"} · ${entry.amount} ${formatUnit(entry.unit, entry.amount)}`;
+                                    const leftover = entry.leftoverFrom ? " (restje)" : "";
+                                    return `${ref?.name ?? "—"} · ${entry.amount} ${formatUnit(entry.unit, entry.amount)}${leftover}`;
                                   }).join(", ")}
                                 </span>
                               </div>
