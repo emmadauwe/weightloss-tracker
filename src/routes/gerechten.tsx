@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Plus, Minus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { suggestMacros } from "@/lib/ai.functions";
@@ -206,7 +206,7 @@ function DishDetailDialog({
                     <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                       <span className="min-w-0 truncate">{ing?.name ?? "—"}</span>
                       <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                        {it.amount} {formatUnit(it.unit, it.amount)}
+                        {round(it.amount * factor)} {formatUnit(it.unit, round(it.amount * factor))}
                       </span>
                     </li>
                   );
