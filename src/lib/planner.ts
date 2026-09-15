@@ -189,7 +189,7 @@ export function generatePlan(opts: {
 
       // Diner: nieuwe kookbeurt zolang er geen restjes meer zijn.
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
-        push(date, "diner", leftoverDish);
+        push(date, "diner", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
         leftoverCount -= 1;
