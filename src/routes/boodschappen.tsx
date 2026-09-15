@@ -58,10 +58,26 @@ function BoodschappenPage() {
           <ShoppingBasket className="h-5 w-5 text-primary" />
         </div>
 
+        <Card>
+          <CardContent className="flex items-start gap-3 px-5 py-3">
+            <Checkbox
+              id="include-done"
+              checked={includeDone}
+              onCheckedChange={(value) => setIncludeDone(value === true)}
+            />
+            <label htmlFor="include-done" className="cursor-pointer text-xs leading-snug">
+              <span className="font-medium">Toon ook maaltijden die al bereid zijn</span>
+              <span className="block text-muted-foreground">
+                Standaard laten we maaltijden weg die al gegeten zijn of waarvan je al gekookt hebt (restjes).
+              </span>
+            </label>
+          </CardContent>
+        </Card>
+
         {groups.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              Genereer of vul eerst een weekplanning.
+              Niets meer te kopen voor deze week.
             </CardContent>
           </Card>
         ) : (
