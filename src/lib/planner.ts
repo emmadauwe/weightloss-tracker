@@ -165,7 +165,7 @@ export function generatePlan(opts: {
 
       // Lunch: bij voorkeur restjes van gisteren.
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
-        push(date, "lunch", leftoverDish);
+        push(date, "lunch", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
         leftoverCount -= 1;
