@@ -344,8 +344,34 @@ function MiniStat({
   return <Card className={onClick ? "transition-colors hover:bg-accent/40" : undefined}>{onClick ? <button type="button" className="w-full text-left" onClick={onClick}>{content}</button> : content}</Card>;
 }
 
-function BmiDialog({ open, onOpenChange, bmi }: { open: boolean; onOpenChange: (open: boolean) => void; bmi: number | null }) {
+function BmiDialog({
+  open, onOpenChange, bmi, heightCm, unit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  bmi: number | null;
+  heightCm?: number;
+  unit: string;
+}) {
   const position = bmi ? Math.max(0, Math.min(100, ((bmi - 15) / 25) * 100)) : 0;
+  // Gewicht dat hoort bij een BMI-grens, in de gekozen eenheid.
+  const weightAt = (value: number) => {
+    if (!heightCm) return null;
+    const kg = value * Math.pow(heightCm / 100, 2);
+    return unit === "lb" ? kg / 0.453592 : kg;
+  };
+  const bounds = [
+    { bmi: 18.5, left: 14 },
+    { bmi: 25, left: 40 },
+    { bmi: 30, left: 60 },
+  ];
+  const segments = [
+    { label: "Ondergewicht", left: 0, width: 14, color: "text-destructive" },
+    { label: "Gezond", left: 14, width: 26, color: "text-success" },
+    { label: "Overgewicht", left: 40, width: 20, color: "text-destructive" },
+    { label: "Obesitas", left: 60, width: 40, color: "text-destructive-strong" },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -355,20 +381,53 @@ function BmiDialog({ open, onOpenChange, bmi }: { open: boolean; onOpenChange: (
             <span className="text-4xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{bmi?.toFixed(1)}</span>
             <div className="text-sm font-medium" style={{ color: bmi ? bmiCategory(bmi).color : undefined }}>{bmi ? bmiCategory(bmi).label : "—"}</div>
           </div>
-          <div className="relative pt-4">
+
+          <div className="relative pt-5">
             <div className="flex h-3 overflow-hidden rounded-full">
               <div className="w-[14%] bg-destructive/70" />
               <div className="w-[26%] bg-success" />
               <div className="w-[20%] bg-destructive" />
               <div className="w-[40%] bg-destructive-strong" />
             </div>
-            {bmi && <div className="absolute top-0 -translate-x-1/2 text-primary" style={{ left: `${position}%` }}>▼</div>}
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <span className="text-destructive">Ondergewicht · &lt;18,5</span>
-            <span className="text-success">Gezond · 18,5–24,9</span>
-            <span className="text-destructive">Overgewicht · 25–29,9</span>
-            <span className="text-destructive-strong">Obesitas · ≥30</span>
+            {bmi && (
+              <div
+                className="absolute top-0 -translate-x-1/2 text-sm leading-none"
+                style={{ left: `${position}%`, color: "var(--icon-hover, #C9C0B7)" }}
+                aria-hidden
+              >
+                ▼
+              </div>
+            )}
+
+            {/* Grenswaarden onder de balk */}
+            <div className="relative mt-1 h-8">
+              {bounds.map((bound) => {
+                const weight = weightAt(bound.bmi);
+                return (
+                  <div
+                    key={bound.bmi}
+                    className="absolute -translate-x-1/2 text-center text-[10px] leading-tight text-muted-foreground"
+                    style={{ left: `${bound.left}%` }}
+                  >
+                    <div className="tabular-nums">{String(bound.bmi).replace(".", ",")}</div>
+                    {weight !== null && <div className="tabular-nums">{weight.toFixed(0)} {unit}</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Namen van de zones */}
+            <div className="relative mt-1 h-7">
+              {segments.map((segment) => (
+                <div
+                  key={segment.label}
+                  className={`absolute px-0.5 text-center text-[10px] leading-tight ${segment.color}`}
+                  style={{ left: `${segment.left}%`, width: `${segment.width}%` }}
+                >
+                  {segment.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </DialogContent>
