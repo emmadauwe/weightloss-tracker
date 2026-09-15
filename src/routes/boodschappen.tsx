@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import { ShoppingBasket } from "lucide-react";
@@ -40,7 +41,7 @@ function BoodschappenPage() {
   const { items: dishes } = useDishes();
   const { items: meals } = useMeals();
   const { value: checks, setValue: setChecks } = useCloudDoc<Record<string, boolean>>(SHOPPING_CHECKS_KEY, {});
-  const groups = buildShoppingList(dates, meals, ingredients, dishes);
+  const groups = buildShoppingList(dates, meals, ingredients, dishes, { includeDone });
   const isCurrentWeek = format(monday, "yyyy-MM-dd") === format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   return (
