@@ -493,15 +493,24 @@ function EntryDialog({
   name: string;
   entry: MealEntry;
   onClose: () => void;
-  onSave: (amount: number) => void;
+  onSave: (patch: Partial<MealEntry>) => void;
   onDelete: () => void;
 }) {
   const [amount, setAmount] = useState(String(entry.amount));
+  const [onList, setOnList] = useState(!entry.skipShopping);
+  const [leftover, setLeftover] = useState(Boolean(entry.leftoverFrom));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const a = parseFloat(amount.replace(",", "."));
-    if (a > 0) onSave(a);
+    if (a > 0)
+      onSave({
+        amount: a,
+        skipShopping: onList ? undefined : true,
+        leftoverFrom: leftover
+          ? entry.leftoverFrom ?? format(addDays(parseISO(entry.date), -1), "yyyy-MM-dd")
+          : undefined,
+      });
   };
 
   return (
@@ -512,6 +521,28 @@ function EntryDialog({
           <div className="space-y-2">
             <Label htmlFor="eamt">{entry.unit === "portie" ? "Porties" : `Hoeveelheid (${entry.unit})`}</Label>
             <Input id="eamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+          </div>
+          <div className="space-y-2 rounded-lg border border-border p-3">
+            <label className="flex items-start gap-3 text-sm">
+              <Checkbox checked={onList} onCheckedChange={(v) => setOnList(v === true)} className="mt-0.5" />
+              <span>
+                Op boodschappenlijstje
+                <span className="block text-xs text-muted-foreground">
+                  Zet uit als je dit al hebt of van thuis meekrijgt.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 text-sm">
+              <Checkbox checked={leftover} onCheckedChange={(v) => setLeftover(v === true)} className="mt-0.5" />
+              <span>
+                Restje van eerder bereid gerecht
+                <span className="block text-xs text-muted-foreground">
+                  {entry.leftoverFrom
+                    ? `Bereid op ${format(parseISO(entry.leftoverFrom), "EEEE d MMM", { locale: nl })}.`
+                    : "De ingrediënten koop je bij de dag waarop je kookt."}
+                </span>
+              </span>
+            </label>
           </div>
           <Button type="submit" className="w-full">Opslaan</Button>
           <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
