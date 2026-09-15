@@ -242,9 +242,23 @@ function VandaagPage() {
                                 onClick={() => setEditingEntry({ entry: m, name: ref?.name ?? "—" })}
                                 className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-sm hover:bg-accent"
                               >
-                                <span className="min-w-0 flex-1 truncate">
-                                  {ref?.name ?? "—"}
-                                  <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate">
+                                    {ref?.name ?? "—"}
+                                    <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
+                                  </span>
+                                  <span className="mt-0.5 flex flex-wrap gap-1">
+                                    {m.leftoverFrom && (
+                                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                                        Restje · bereid {format(parseISO(m.leftoverFrom), "EEEE d MMM", { locale: nl })}
+                                      </span>
+                                    )}
+                                    {m.skipShopping && (
+                                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                        Niet op lijstje
+                                      </span>
+                                    )}
+                                  </span>
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
                               </button>
@@ -296,7 +310,7 @@ function VandaagPage() {
           name={editingEntry.name}
           entry={editingEntry.entry}
           onClose={() => setEditingEntry(null)}
-          onSave={(amount) => { update(editingEntry.entry.id, { amount }); setEditingEntry(null); }}
+          onSave={(patch) => { update(editingEntry.entry.id, patch); setEditingEntry(null); }}
           onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
         />
       )}
