@@ -5,7 +5,7 @@ export type MacroPriority = "balans" | "eiwit" | "vet";
 
 export const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 
-export type PlanPick = { date: string; meal: Meal; dishId: string };
+export type PlanPick = { date: string; meal: Meal; dishId: string; leftoverFrom?: string };
 
 const ZERO: Macros = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
