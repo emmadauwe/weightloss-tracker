@@ -78,6 +78,8 @@ function Index() {
         : Math.abs(weightChange) <= 0.2
   );
   const changeIsUnhealthy = weightChange !== 0 && !changeMatchesGoal;
+  /** Is een verandering goed (groen) of slecht (rood) gezien het gekozen doel? */
+  const diffIsGood = (diff: number) => diffMatchesGoal(diff, goalSettings.type);
   const progressPct =
     start && goal && latest && start !== goal
       ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100))
