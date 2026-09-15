@@ -123,7 +123,7 @@ function VriendenPage() {
                       </Button>
                     )}
                     <Button size="sm" variant="ghost" aria-label="Melding sluiten" onClick={() => void dismiss(n)}>
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 text-primary" />
                     </Button>
                   </div>
                 ))}

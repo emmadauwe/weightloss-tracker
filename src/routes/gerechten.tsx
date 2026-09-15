@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, ChevronDown, Plus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Plus, Minus, Pencil, Trash2, ChefHat, ExternalLink, X, ChevronLeft, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { suggestMacros } from "@/lib/ai.functions";
@@ -140,6 +140,10 @@ function DishDetailDialog({
   onDelete: () => void;
 }) {
   const macros = dishMacrosPerServing(dish, ingredients);
+  const baseServings = Math.max(1, dish.servings);
+  const [portions, setPortions] = useState(baseServings);
+  const factor = portions / baseServings;
+  const round = (v: number) => Number(v.toFixed(1));
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
@@ -154,11 +158,31 @@ function DishDetailDialog({
 
         <div className="space-y-4">
           <div className="rounded-lg bg-secondary px-3 py-2 text-xs">
-            <div className="font-medium">Per portie ({dish.servings} porties)</div>
+            <div className="font-medium">Per portie (recept voor {dish.servings} porties)</div>
             <div className="text-muted-foreground">
               {Math.round(macros.kcal)} kcal · {Math.round(macros.protein)}P · {Math.round(macros.carbs)}K · {Math.round(macros.fat)}V
             </div>
           </div>
+
+          {!dish.directMacros && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-sm font-medium">Porties bereiden</div>
+                <div className="text-xs text-muted-foreground">Hoeveelheden passen zich aan.</div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button type="button" variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setPortions((p) => Math.max(1, p - 1))} aria-label="Minder porties">
+                  <Minus className="h-3.5 w-3.5 text-primary" />
+                </Button>
+                <span className="w-7 text-center text-sm font-semibold tabular-nums">{portions}</span>
+                <Button type="button" variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setPortions((p) => Math.min(20, p + 1))} aria-label="Meer porties">
+                  <Plus className="h-3.5 w-3.5 text-primary" />
+                </Button>
+              </div>
+            </div>
+          )}
 
           {dish.categories && dish.categories.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -182,7 +206,7 @@ function DishDetailDialog({
                     <li key={i} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                       <span className="min-w-0 truncate">{ing?.name ?? "—"}</span>
                       <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                        {it.amount} {formatUnit(it.unit, it.amount)}
+                        {round(it.amount * factor)} {formatUnit(it.unit, round(it.amount * factor))}
                       </span>
                     </li>
                   );

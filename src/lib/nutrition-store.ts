@@ -69,6 +69,10 @@ export type MealEntry = {
   refId: string;
   amount: number;
   unit: Unit;
+  /** Datum (YYYY-MM-DD) waarop dit gerecht bereid werd; gezet bij restjes. */
+  leftoverFrom?: string;
+  /** Niet meenemen op het boodschappenlijstje (bv. eten van thuis meegekregen). */
+  skipShopping?: boolean;
 };
 
 const ING_KEY = "nutrition-ingredients-v1";

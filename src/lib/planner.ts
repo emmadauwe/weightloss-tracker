@@ -5,7 +5,7 @@ export type MacroPriority = "balans" | "eiwit" | "vet";
 
 export const MEAL_ORDER: Meal[] = ["ontbijt", "lunch", "diner", "snack"];
 
-export type PlanPick = { date: string; meal: Meal; dishId: string };
+export type PlanPick = { date: string; meal: Meal; dishId: string; leftoverFrom?: string };
 
 const ZERO: Macros = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
@@ -132,8 +132,8 @@ export function generatePlan(opts: {
     const picks: PlanPick[] = [];
     const dayMacrosMap = new Map<string, Macros>();
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
-    const push = (date: string, meal: Meal, dish: Dish) => {
-      picks.push({ date, meal, dishId: dish.id });
+    const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
+      picks.push({ date, meal, dishId: dish.id, leftoverFrom });
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
     };
 
@@ -153,6 +153,7 @@ export function generatePlan(opts: {
     // Lunch en diner met kook-/restjesritme.
     let leftoverDish: Dish | undefined;
     let leftoverCount = 0;
+    let leftoverCookDate: string | undefined;
     // Hoe vaak elk lunch-/dinergerecht deze week al gebruikt is (max. 3).
     const useCount = new Map<string, number>();
     const countOf = (id: string) => useCount.get(id) ?? 0;
@@ -164,7 +165,7 @@ export function generatePlan(opts: {
 
       // Lunch: bij voorkeur restjes van gisteren.
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
-        push(date, "lunch", leftoverDish);
+        push(date, "lunch", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
         leftoverCount -= 1;
@@ -188,7 +189,7 @@ export function generatePlan(opts: {
 
       // Diner: nieuwe kookbeurt zolang er geen restjes meer zijn.
       if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
-        push(date, "diner", leftoverDish);
+        push(date, "diner", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
         leftoverCount -= 1;
@@ -211,19 +212,30 @@ export function generatePlan(opts: {
           registerUse(dish);
           leftoverDish = dish;
           leftoverCount = portions - 1;
+          leftoverCookDate = date;
         }
       }
 
-      // Snack sluit de dag af en vult het resterende budget aan.
-      const snack = pickForSlot({
-        candidates: candidatesFor("snack", dishes),
-        existing: dayOf(date),
-        ingredients,
-        target,
-        priority,
-        remainingSlots: 1,
-      });
-      if (snack) push(date, "snack", snack);
+      // Snacks sluiten de dag af en vullen het resterende budget aan. Er mogen
+      // meerdere (lichte) snacks zijn zolang ze de dag dichter bij het doel brengen.
+      const snackCandidates = candidatesFor("snack", dishes);
+      const usedSnacks = new Set<string>();
+      for (let s = 0; s < 3; s++) {
+        const before = dayScore(dayOf(date), target, priority);
+        const snack = pickForSlot({
+          candidates: snackCandidates.filter((d) => !usedSnacks.has(d.id)),
+          existing: dayOf(date),
+          ingredients,
+          target,
+          priority,
+          remainingSlots: 1,
+        });
+        if (!snack) break;
+        const after = dayScore(sum(dayOf(date), dishMacrosPerServing(snack, ingredients)), target, priority);
+        if (s > 0 && after >= before) break;
+        push(date, "snack", snack);
+        usedSnacks.add(snack.id);
+      }
     }
 
     return picks;
@@ -264,6 +276,7 @@ export function picksToEntries(picks: PlanPick[]): Omit<MealEntry, "id">[] {
     refId: p.dishId,
     amount: 1,
     unit: "portie" as const,
+    leftoverFrom: p.leftoverFrom,
   }));
 }
 

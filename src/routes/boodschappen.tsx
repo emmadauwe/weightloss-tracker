@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import { ShoppingBasket } from "lucide-react";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/boodschappen")({
 });
 
 function BoodschappenPage() {
+  const [includeDone, setIncludeDone] = useState(false);
   const { week } = Route.useSearch();
   const selected = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? parseISO(week) : new Date();
   const monday = startOfWeek(selected, { weekStartsOn: 1 });
@@ -39,7 +41,7 @@ function BoodschappenPage() {
   const { items: dishes } = useDishes();
   const { items: meals } = useMeals();
   const { value: checks, setValue: setChecks } = useCloudDoc<Record<string, boolean>>(SHOPPING_CHECKS_KEY, {});
-  const groups = buildShoppingList(dates, meals, ingredients, dishes);
+  const groups = buildShoppingList(dates, meals, ingredients, dishes, { includeDone });
   const isCurrentWeek = format(monday, "yyyy-MM-dd") === format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   return (
@@ -56,10 +58,26 @@ function BoodschappenPage() {
           <ShoppingBasket className="h-5 w-5 text-primary" />
         </div>
 
+        <Card>
+          <CardContent className="flex items-start gap-3 px-5 py-3">
+            <Checkbox
+              id="include-done"
+              checked={includeDone}
+              onCheckedChange={(value) => setIncludeDone(value === true)}
+            />
+            <label htmlFor="include-done" className="cursor-pointer text-xs leading-snug">
+              <span className="font-medium">Toon ook maaltijden die al bereid zijn</span>
+              <span className="block text-muted-foreground">
+                Standaard laten we maaltijden weg die al gegeten zijn of waarvan je al gekookt hebt (restjes).
+              </span>
+            </label>
+          </CardContent>
+        </Card>
+
         {groups.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              Genereer of vul eerst een weekplanning.
+              Niets meer te kopen voor deze week.
             </CardContent>
           </Card>
         ) : (
