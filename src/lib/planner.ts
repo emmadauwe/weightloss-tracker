@@ -212,19 +212,30 @@ export function generatePlan(opts: {
           registerUse(dish);
           leftoverDish = dish;
           leftoverCount = portions - 1;
+          leftoverCookDate = date;
         }
       }
 
-      // Snack sluit de dag af en vult het resterende budget aan.
-      const snack = pickForSlot({
-        candidates: candidatesFor("snack", dishes),
-        existing: dayOf(date),
-        ingredients,
-        target,
-        priority,
-        remainingSlots: 1,
-      });
-      if (snack) push(date, "snack", snack);
+      // Snacks sluiten de dag af en vullen het resterende budget aan. Er mogen
+      // meerdere (lichte) snacks zijn zolang ze de dag dichter bij het doel brengen.
+      const snackCandidates = candidatesFor("snack", dishes);
+      const usedSnacks = new Set<string>();
+      for (let s = 0; s < 3; s++) {
+        const before = dayScore(dayOf(date), target, priority);
+        const snack = pickForSlot({
+          candidates: snackCandidates.filter((d) => !usedSnacks.has(d.id)),
+          existing: dayOf(date),
+          ingredients,
+          target,
+          priority,
+          remainingSlots: 1,
+        });
+        if (!snack) break;
+        const after = dayScore(sum(dayOf(date), dishMacrosPerServing(snack, ingredients)), target, priority);
+        if (s > 0 && after >= before) break;
+        push(date, "snack", snack);
+        usedSnacks.add(snack.id);
+      }
     }
 
     return picks;
