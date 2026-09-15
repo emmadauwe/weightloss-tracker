@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles } from "lucide-react";
 import { formatUnit, useDishes, useIngredients, useMeals, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
 import { INGREDIENT_CATEGORIES } from "@/lib/nutrition-store";
