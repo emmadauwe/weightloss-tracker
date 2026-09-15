@@ -132,8 +132,8 @@ export function generatePlan(opts: {
     const picks: PlanPick[] = [];
     const dayMacrosMap = new Map<string, Macros>();
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
-    const push = (date: string, meal: Meal, dish: Dish) => {
-      picks.push({ date, meal, dishId: dish.id });
+    const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
+      picks.push({ date, meal, dishId: dish.id, leftoverFrom });
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
     };
 
