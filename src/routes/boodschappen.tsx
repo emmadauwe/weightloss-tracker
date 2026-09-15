@@ -31,6 +31,7 @@ export const Route = createFileRoute("/boodschappen")({
 });
 
 function BoodschappenPage() {
+  const [includeDone, setIncludeDone] = useState(false);
   const { week } = Route.useSearch();
   const selected = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? parseISO(week) : new Date();
   const monday = startOfWeek(selected, { weekStartsOn: 1 });
