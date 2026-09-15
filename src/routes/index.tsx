@@ -308,7 +308,7 @@ function Index() {
             <Button variant="ghost" size="sm" onClick={() => setTab("dashboard")}>
               <ChevronLeft className="h-4 w-4 text-primary" /> Terug naar overzicht
             </Button>
-            <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} />
+            <HistoryView sorted={sorted} unit={unit} onRemove={removeEntry} onUpdate={updateEntry} diffIsGood={diffIsGood} />
           </div>
         )}
       </main>
@@ -562,6 +562,13 @@ function AddEntryDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Kleurt een gewichtsverandering goed of slecht, afhankelijk van het doel. */
+function diffMatchesGoal(diff: number, goalType: string | undefined): boolean {
+  if (goalType === "bijkomen" || goalType === "spiermassa") return diff > 0;
+  if (goalType === "afvallen") return diff < 0;
+  return Math.abs(diff) <= 0.2;
 }
 
 function bmiCategory(bmi: number): { label: string; color: string } {
