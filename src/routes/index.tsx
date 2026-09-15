@@ -211,13 +211,11 @@ function Index() {
                 }
                 unit={thisWeekDiff === null ? undefined : unit}
                 valueColor={
-                  thisWeekDiff === null
+                  thisWeekDiff === null || thisWeekDiff === 0
                     ? undefined
-                    : thisWeekDiff < 0
+                    : diffIsGood(thisWeekDiff)
                       ? "var(--success)"
-                      : thisWeekDiff > 0
-                        ? "var(--destructive)"
-                        : undefined
+                      : "var(--destructive)"
                 }
                 onClick={() => setTab("history")}
               />
