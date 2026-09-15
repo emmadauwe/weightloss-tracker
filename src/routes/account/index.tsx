@@ -14,7 +14,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Check, ChevronRight, LogOut, Pencil, ShieldCheck, Target, Users, UserRound } from "lucide-react";
+import { Check, ChevronRight, LogOut, Pencil, ShieldCheck, Target, Trash2, Users, UserRound } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteMyAccount } from "@/lib/account.functions";
 import { AVATAR_CHOICES, avatarSrc, useProfile } from "@/lib/profile-store";
 import { useAuth, signOut } from "@/lib/auth";
 import { useFriends } from "@/lib/social";
