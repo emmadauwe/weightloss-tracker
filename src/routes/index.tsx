@@ -392,7 +392,7 @@ function BmiDialog({
             {bmi && (
               <div
                 className="absolute top-0 -translate-x-1/2 text-sm leading-none"
-                style={{ left: `${position}%`, color: "var(--icon-hover, #C9C0B7)" }}
+                style={{ left: `${position}%`, color: "#C3BBB1" }}
                 aria-hidden
               >
                 ▼
