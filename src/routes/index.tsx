@@ -377,8 +377,8 @@ function BmiDialog({ open, onOpenChange, bmi }: { open: boolean; onOpenChange: (
 }
 
 function HistoryView({
-  sorted, unit, onRemove, onUpdate,
-}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void; onUpdate: (originalDate: string, e: Entry) => void }) {
+  sorted, unit, onRemove, onUpdate, diffIsGood,
+}: { sorted: Entry[]; unit: string; onRemove: (d: string) => void; onUpdate: (originalDate: string, e: Entry) => void; diffIsGood: (diff: number) => boolean }) {
   const [editing, setEditing] = useState<Entry | null>(null);
 
   if (sorted.length === 0) {
@@ -421,7 +421,7 @@ function HistoryView({
                   {prev && (
                     <span
                       className={`text-xs tabular-nums font-medium ${
-                        diff < 0 ? "text-success" : diff > 0 ? "text-destructive" : "text-muted-foreground"
+                        diff === 0 ? "text-muted-foreground" : diffIsGood(diff) ? "text-success" : "text-destructive"
                       }`}
                     >
                       {diff > 0 ? "+" : ""}
