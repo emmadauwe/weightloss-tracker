@@ -152,8 +152,11 @@ export function generatePlan(opts: {
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
     };
 
+    const isFree = (date: string, meal: Meal) => !occupied.has(`${date}|${meal}`);
+
     // Ontbijt eerst: vast deel van het dagbudget.
     for (const date of dates) {
+      if (!isFree(date, "ontbijt")) continue;
       const dish = pickForSlot({
         candidates: candidatesFor("ontbijt", dishes),
         existing: dayOf(date),
@@ -173,13 +176,20 @@ export function generatePlan(opts: {
     const useCount = new Map<string, number>();
     const countOf = (id: string) => useCount.get(id) ?? 0;
     const registerUse = (dish: Dish) => useCount.set(dish.id, countOf(dish.id) + 1);
+    for (const e of existing) if (e.dishId) registerUse({ id: e.dishId } as Dish);
 
     for (let i = 0; i < dates.length; i++) {
       const date = dates[i];
-      const usedToday = new Set(picks.filter((p) => p.date === date).map((p) => p.dishId));
+      const usedToday = new Set([
+        ...picks.filter((p) => p.date === date).map((p) => p.dishId),
+        ...(baseDishes.get(date) ?? []),
+      ]);
 
       // Lunch: bij voorkeur restjes van gisteren.
-      if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+      if (!isFree(date, "lunch")) {
+        // Deze lunch staat al ingevuld; niet overschrijven.
+      } else if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+
         push(date, "lunch", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
