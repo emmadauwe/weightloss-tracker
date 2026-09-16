@@ -213,7 +213,9 @@ export function generatePlan(opts: {
       }
 
       // Diner: nieuwe kookbeurt zolang er geen restjes meer zijn.
-      if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+      if (!isFree(date, "diner")) {
+        // Dit diner staat al ingevuld; niet overschrijven.
+      } else if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
         push(date, "diner", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
