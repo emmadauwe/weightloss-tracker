@@ -59,7 +59,15 @@ function VandaagPage() {
   }, [date]);
 
   const generateFor = (dates: string[]) => {
-    meals.filter((m) => dates.includes(m.date)).forEach((m) => remove(m.id));
+    // Al ingevulde maaltijden blijven staan; de generator vult enkel de rest aan.
+    const existing = meals
+      .filter((m) => dates.includes(m.date))
+      .map((m) => ({
+        date: m.date,
+        meal: m.meal,
+        dishId: m.kind === "dish" ? m.refId : undefined,
+        macros: mealEntryMacros(m, ingredients, dishes),
+      }));
     const picks = generatePlan({
       dates,
       dishes,
@@ -67,6 +75,7 @@ function VandaagPage() {
       target,
       priority: "eiwit",
       cookCount: dates.length === 1 ? undefined : Math.round((cookPerWeek * dates.length) / 7),
+      existing,
     });
     picksToEntries(picks).forEach((e) => add(e));
   };

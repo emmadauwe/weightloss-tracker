@@ -113,10 +113,25 @@ export function generatePlan(opts: {
   priority: MacroPriority;
   cookCount?: number;
   attempts?: number;
+  /** Maaltijden die al ingevuld zijn; deze blijven staan en tellen mee. */
+  existing?: { date: string; meal: Meal; dishId?: string; macros: Macros }[];
 }): PlanPick[] {
   const { dates, dishes, ingredients, target, priority } = opts;
   const attempts = opts.attempts ?? 140;
   if (dates.length === 0) return [];
+
+  const existing = opts.existing ?? [];
+  const occupied = new Set(existing.map((e) => `${e.date}|${e.meal}`));
+  const baseMacros = new Map<string, Macros>();
+  const baseDishes = new Map<string, Set<string>>();
+  for (const e of existing) {
+    baseMacros.set(e.date, sum(baseMacros.get(e.date) ?? ZERO, e.macros));
+    if (e.dishId) {
+      const set = baseDishes.get(e.date) ?? new Set<string>();
+      set.add(e.dishId);
+      baseDishes.set(e.date, set);
+    }
+  }
 
   const slots = dates.length * 2; // lunch + diner
   const cookCount = Math.max(1, Math.min(opts.cookCount ?? dates.length, slots));
@@ -130,15 +145,18 @@ export function generatePlan(opts: {
 
   const buildAttempt = (): PlanPick[] => {
     const picks: PlanPick[] = [];
-    const dayMacrosMap = new Map<string, Macros>();
+    const dayMacrosMap = new Map<string, Macros>(baseMacros);
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
     const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
       picks.push({ date, meal, dishId: dish.id, leftoverFrom });
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
     };
 
+    const isFree = (date: string, meal: Meal) => !occupied.has(`${date}|${meal}`);
+
     // Ontbijt eerst: vast deel van het dagbudget.
     for (const date of dates) {
+      if (!isFree(date, "ontbijt")) continue;
       const dish = pickForSlot({
         candidates: candidatesFor("ontbijt", dishes),
         existing: dayOf(date),
@@ -158,13 +176,20 @@ export function generatePlan(opts: {
     const useCount = new Map<string, number>();
     const countOf = (id: string) => useCount.get(id) ?? 0;
     const registerUse = (dish: Dish) => useCount.set(dish.id, countOf(dish.id) + 1);
+    for (const e of existing) if (e.dishId) registerUse({ id: e.dishId } as Dish);
 
     for (let i = 0; i < dates.length; i++) {
       const date = dates[i];
-      const usedToday = new Set(picks.filter((p) => p.date === date).map((p) => p.dishId));
+      const usedToday = new Set([
+        ...picks.filter((p) => p.date === date).map((p) => p.dishId),
+        ...(baseDishes.get(date) ?? []),
+      ]);
 
       // Lunch: bij voorkeur restjes van gisteren.
-      if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+      if (!isFree(date, "lunch")) {
+        // Deze lunch staat al ingevuld; niet overschrijven.
+      } else if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+
         push(date, "lunch", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
@@ -188,7 +213,9 @@ export function generatePlan(opts: {
       }
 
       // Diner: nieuwe kookbeurt zolang er geen restjes meer zijn.
-      if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
+      if (!isFree(date, "diner")) {
+        // Dit diner staat al ingevuld; niet overschrijven.
+      } else if (leftoverDish && leftoverCount > 0 && !usedToday.has(leftoverDish.id)) {
         push(date, "diner", leftoverDish, leftoverCookDate);
         usedToday.add(leftoverDish.id);
         registerUse(leftoverDish);
@@ -218,6 +245,7 @@ export function generatePlan(opts: {
 
       // Snacks sluiten de dag af en vullen het resterende budget aan. Er mogen
       // meerdere (lichte) snacks zijn zolang ze de dag dichter bij het doel brengen.
+      if (!isFree(date, "snack")) continue;
       const snackCandidates = candidatesFor("snack", dishes);
       const usedSnacks = new Set<string>();
       for (let s = 0; s < 3; s++) {
@@ -247,7 +275,7 @@ export function generatePlan(opts: {
     const byDate = macrosForPicks(picks, dishes, ingredients);
     let score = 0;
     for (const date of dates) {
-      score += dayScore(byDate.get(date) ?? ZERO, target, priority);
+      score += dayScore(sum(baseMacros.get(date) ?? ZERO, byDate.get(date) ?? ZERO), target, priority);
     }
     const signature = picks.map((pick) => `${pick.date}:${pick.meal}:${pick.dishId}`).join("|");
     const previous = finalists.get(signature);
