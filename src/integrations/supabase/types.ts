@@ -78,6 +78,7 @@ export type Database = {
           share_progress: boolean
           share_streak: boolean
           share_weight: boolean
+          share_workouts: boolean
           updated_at: string
         }
         Insert: {
@@ -92,6 +93,7 @@ export type Database = {
           share_progress?: boolean
           share_streak?: boolean
           share_weight?: boolean
+          share_workouts?: boolean
           updated_at?: string
         }
         Update: {
@@ -106,6 +108,7 @@ export type Database = {
           share_progress?: boolean
           share_streak?: boolean
           share_weight?: boolean
+          share_workouts?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -219,6 +222,54 @@ export type Database = {
           start_weight?: number | null
           streak_days?: number | null
           unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workouts: {
+        Row: {
+          avg_speed: number | null
+          created_at: string
+          date: string
+          distance_km: number | null
+          duration_min: number | null
+          exercises: Json
+          id: string
+          intensity: string | null
+          max_speed: number | null
+          note: string | null
+          sport: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_speed?: number | null
+          created_at?: string
+          date: string
+          distance_km?: number | null
+          duration_min?: number | null
+          exercises?: Json
+          id?: string
+          intensity?: string | null
+          max_speed?: number | null
+          note?: string | null
+          sport: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_speed?: number | null
+          created_at?: string
+          date?: string
+          distance_km?: number | null
+          duration_min?: number | null
+          exercises?: Json
+          id?: string
+          intensity?: string | null
+          max_speed?: number | null
+          note?: string | null
+          sport?: string
           updated_at?: string
           user_id?: string
         }
