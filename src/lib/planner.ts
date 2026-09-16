@@ -245,6 +245,7 @@ export function generatePlan(opts: {
 
       // Snacks sluiten de dag af en vullen het resterende budget aan. Er mogen
       // meerdere (lichte) snacks zijn zolang ze de dag dichter bij het doel brengen.
+      if (!isFree(date, "snack")) continue;
       const snackCandidates = candidatesFor("snack", dishes);
       const usedSnacks = new Set<string>();
       for (let s = 0; s < 3; s++) {
