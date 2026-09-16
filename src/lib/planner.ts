@@ -275,7 +275,7 @@ export function generatePlan(opts: {
     const byDate = macrosForPicks(picks, dishes, ingredients);
     let score = 0;
     for (const date of dates) {
-      score += dayScore(byDate.get(date) ?? ZERO, target, priority);
+      score += dayScore(sum(baseMacros.get(date) ?? ZERO, byDate.get(date) ?? ZERO), target, priority);
     }
     const signature = picks.map((pick) => `${pick.date}:${pick.meal}:${pick.dishId}`).join("|");
     const previous = finalists.get(signature);
