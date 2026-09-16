@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VandaagRouteImport } from './routes/vandaag'
+import { Route as SportRouteImport } from './routes/sport'
 import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
@@ -25,6 +26,11 @@ import { Route as AccountDoelRouteImport } from './routes/account/doel'
 const VandaagRoute = VandaagRouteImport.update({
   id: '/vandaag',
   path: '/vandaag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportRoute = SportRouteImport.update({
+  id: '/sport',
+  path: '/sport',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IngredientenRoute = IngredientenRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
+  '/sport': typeof SportRoute
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
+  '/sport': typeof SportRoute
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
+  '/sport': typeof SportRoute
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
+    | '/sport'
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
+    | '/sport'
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
+    | '/sport'
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   BoodschappenRoute: typeof BoodschappenRoute
   GerechtenRoute: typeof GerechtenRoute
   IngredientenRoute: typeof IngredientenRoute
+  SportRoute: typeof SportRoute
   VandaagRoute: typeof VandaagRoute
   AccountDoelRoute: typeof AccountDoelRoute
   AccountGegevensRoute: typeof AccountGegevensRoute
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/vandaag'
       fullPath: '/vandaag'
       preLoaderRoute: typeof VandaagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sport': {
+      id: '/sport'
+      path: '/sport'
+      fullPath: '/sport'
+      preLoaderRoute: typeof SportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ingredienten': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   BoodschappenRoute: BoodschappenRoute,
   GerechtenRoute: GerechtenRoute,
   IngredientenRoute: IngredientenRoute,
+  SportRoute: SportRoute,
   VandaagRoute: VandaagRoute,
   AccountDoelRoute: AccountDoelRoute,
   AccountGegevensRoute: AccountGegevensRoute,
