@@ -113,10 +113,25 @@ export function generatePlan(opts: {
   priority: MacroPriority;
   cookCount?: number;
   attempts?: number;
+  /** Maaltijden die al ingevuld zijn; deze blijven staan en tellen mee. */
+  existing?: { date: string; meal: Meal; dishId?: string; macros: Macros }[];
 }): PlanPick[] {
   const { dates, dishes, ingredients, target, priority } = opts;
   const attempts = opts.attempts ?? 140;
   if (dates.length === 0) return [];
+
+  const existing = opts.existing ?? [];
+  const occupied = new Set(existing.map((e) => `${e.date}|${e.meal}`));
+  const baseMacros = new Map<string, Macros>();
+  const baseDishes = new Map<string, Set<string>>();
+  for (const e of existing) {
+    baseMacros.set(e.date, sum(baseMacros.get(e.date) ?? ZERO, e.macros));
+    if (e.dishId) {
+      const set = baseDishes.get(e.date) ?? new Set<string>();
+      set.add(e.dishId);
+      baseDishes.set(e.date, set);
+    }
+  }
 
   const slots = dates.length * 2; // lunch + diner
   const cookCount = Math.max(1, Math.min(opts.cookCount ?? dates.length, slots));
@@ -130,7 +145,7 @@ export function generatePlan(opts: {
 
   const buildAttempt = (): PlanPick[] => {
     const picks: PlanPick[] = [];
-    const dayMacrosMap = new Map<string, Macros>();
+    const dayMacrosMap = new Map<string, Macros>(baseMacros);
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
     const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
       picks.push({ date, meal, dishId: dish.id, leftoverFrom });
