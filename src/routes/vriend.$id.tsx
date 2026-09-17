@@ -40,6 +40,8 @@ function FriendPage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const stats = useFriendStats([id]);
   const { dishes, loading } = useFriendDishes(id);
+  const friendWorkouts = useFriendWorkouts([id]);
+  const workouts = friendWorkouts[id] ?? [];
   const [query, setQuery] = useState("");
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
@@ -101,6 +103,33 @@ function FriendPage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {workouts.length > 0 && (
+          <Card>
+            <CardContent className="space-y-2 px-5 py-4">
+              <div className="text-sm font-medium">Sportprestaties</div>
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {workouts.slice(0, 8).map((w) => {
+                  const pr = personalRecord(w, workouts);
+                  return (
+                    <li key={w.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">
+                          {sportOf(w.sport).label}
+                          {pr && <span className="ml-1 text-xs text-primary">· record {pr.kind}</span>}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">{workoutSummary(w)}</div>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {format(parseISO(w.date), "d MMM", { locale: nl })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </CardContent>
           </Card>
         )}
