@@ -27,6 +27,11 @@ const OPTIONS: { key: keyof Privacy; label: string; hint: string }[] = [
     hint: "Alleen het percentage richting je doel — zonder gewichten.",
   },
   { key: "share_dishes", label: "Recepten", hint: "Vrienden mogen je gerechten bekijken en overnemen." },
+  {
+    key: "share_workouts",
+    label: "Sportprestaties",
+    hint: "Je trainingen en records zijn zichtbaar voor vrienden.",
+  },
 ];
 
 function PrivacyPage() {

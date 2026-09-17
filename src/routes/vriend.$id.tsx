@@ -14,7 +14,11 @@ import {
   type ProfileRow,
   type SharedDishRow,
 } from "@/lib/social";
-import { useDishes, useIngredients, type Ingredient, type Unit } from "@/lib/nutrition-store";
+import { useDishes, useIngredients } from "@/lib/nutrition-store";
+import { sharedDishToLocal } from "@/lib/shared-recipes";
+import { useFriendWorkouts, sportOf, workoutSummary, personalRecord } from "@/lib/workouts";
+import { format, parseISO } from "date-fns";
+import { nl } from "date-fns/locale";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vriend/$id")({
@@ -36,6 +40,8 @@ function FriendPage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const stats = useFriendStats([id]);
   const { dishes, loading } = useFriendDishes(id);
+  const friendWorkouts = useFriendWorkouts([id]);
+  const workouts = friendWorkouts[id] ?? [];
   const [query, setQuery] = useState("");
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
@@ -101,6 +107,33 @@ function FriendPage() {
           </Card>
         )}
 
+        {workouts.length > 0 && (
+          <Card>
+            <CardContent className="space-y-2 px-5 py-4">
+              <div className="text-sm font-medium">Sportprestaties</div>
+              <ul className="divide-y divide-border rounded-md border border-border">
+                {workouts.slice(0, 8).map((w) => {
+                  const pr = personalRecord(w, workouts);
+                  return (
+                    <li key={w.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium">
+                          {sportOf(w.sport).label}
+                          {pr && <span className="ml-1 text-xs text-primary">· record {pr.kind}</span>}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">{workoutSummary(w)}</div>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {format(parseISO(w.date), "d MMM", { locale: nl })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="space-y-3 px-5 py-4">
             <div className="text-sm font-medium">Recepten</div>
@@ -122,7 +155,9 @@ function FriendPage() {
             ) : filtered.length === 0 ? (
               <p className="text-xs text-muted-foreground">Geen recept gevonden voor “{query}”.</p>
             ) : (
-              filtered.map((d) => <SharedDish key={d.id} dish={d} />)
+              filtered.map((d) => (
+                <SharedDish key={d.id} dish={d} ownerName={profile?.display_name ?? "een vriend"} />
+              ))
             )}
           </CardContent>
         </Card>
@@ -140,44 +175,21 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SharedDish({ dish }: { dish: SharedDishRow }) {
+function SharedDish({ dish, ownerName }: { dish: SharedDishRow; ownerName: string }) {
   const { items: myIngredients, upsert: upsertIngredient, newId: newIngId } = useIngredients();
-  const { upsert: upsertDish, newId: newDishId } = useDishes();
+  const { items: myDishes, upsert: upsertDish, newId: newDishId } = useDishes();
   const [open, setOpen] = useState(false);
+  const already = myDishes.some(
+    (d) => d.source?.ownerId === dish.owner_id && d.source?.localId === (dish.local_id ?? dish.id),
+  );
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
-    const dishItems = dish.items.map((it) => {
-      const existing = myIngredients.find(
-        (m) => m.name.trim().toLowerCase() === it.name.trim().toLowerCase(),
-      );
-      let ingredientId = existing?.id;
-      if (!ingredientId) {
-        const ing: Ingredient = {
-          id: newIngId(),
-          name: it.name,
-          baseUnit: (it.baseUnit as Unit) ?? "g",
-          kcal: it.kcal,
-          protein: it.protein,
-          carbs: it.carbs,
-          fat: it.fat,
-          category: (it.category as Ingredient["category"]) ?? undefined,
-        };
-        upsertIngredient(ing);
-        ingredientId = ing.id;
-      }
-      return { ingredientId, amount: it.amount, unit: (it.unit as Unit) ?? "g" };
-    });
-
-    upsertDish({
-      id: newDishId(),
-      name: dish.name,
-      servings: dish.servings || 1,
-      recipeUrl: dish.recipe_url ?? undefined,
-      steps: dish.steps ?? [],
-      categories: (dish.categories ?? []) as never,
-      items: dishItems,
-    });
+    upsertDish(
+      sharedDishToLocal(dish, ownerName, { items: myIngredients, upsert: upsertIngredient, newId: newIngId }, {
+        id: newDishId(),
+      }),
+    );
     setCopied(true);
   };
 
@@ -221,9 +233,13 @@ function SharedDish({ dish }: { dish: SharedDishRow }) {
         </div>
       )}
       <div className="flex justify-end border-t border-border px-3 py-1.5">
-        <Button size="sm" variant="ghost" onClick={copy} disabled={copied}>
-          {copied ? <Check className="mr-1 h-4 w-4 text-primary" /> : <Download className="mr-1 h-4 w-4 text-primary" />}
-          {copied ? "Toegevoegd" : "Overnemen"}
+        <Button size="sm" variant="ghost" onClick={copy} disabled={copied || already}>
+          {copied || already ? (
+            <Check className="mr-1 h-4 w-4 text-primary" />
+          ) : (
+            <Download className="mr-1 h-4 w-4 text-primary" />
+          )}
+          {copied || already ? "In jouw gerechten" : "Overnemen"}
         </Button>
       </div>
     </div>

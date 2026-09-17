@@ -9,6 +9,7 @@ export type Privacy = {
   share_macros: boolean;
   share_streak: boolean;
   share_dishes: boolean;
+  share_workouts: boolean;
 };
 
 export type ProfileRow = Privacy & {
@@ -45,6 +46,10 @@ export type SharedDishRow = {
   steps: string[];
   items: SharedDishItem[];
   categories: string[];
+  updated_at?: string;
+  direct_macros?: { kcal: number; protein: number; carbs: number; fat: number } | null;
+  portion_amount?: number | null;
+  portion_base?: "g" | "ml" | null;
 };
 
 export type SharedDishItem = {

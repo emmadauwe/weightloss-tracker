@@ -59,6 +59,15 @@ export type Dish = {
   portionAmount?: number;
   /** Of portionAmount in gram of milliliter is. */
   portionBase?: "g" | "ml";
+  /** Overgenomen van een vriend: blijft automatisch meeveranderen tot je het eigen maakt. */
+  source?: {
+    ownerId: string;
+    localId: string;
+    /** Naam van de vriend; wordt bijgewerkt als die zijn naam aanpast. */
+    name: string;
+    /** Laatste versie die we van de vriend overnamen. */
+    syncedAt?: string;
+  };
 };
 
 export type MealEntry = {
