@@ -3,7 +3,8 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { format, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { useMyProfile } from "@/lib/social";
+import { useMyProfile, type SharedDishRow } from "@/lib/social";
+import { sharedDishToLocal } from "@/lib/shared-recipes";
 import { useGoalTargets } from "@/lib/goal-targets";
 import { useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import { dayMacros } from "@/lib/nutrition-math";
@@ -17,8 +18,8 @@ export function SocialSync() {
   const { profile, loaded } = useMyProfile();
   const { settings, goal, target, calc, currentWeight } = useGoalTargets();
   const { items: meals } = useMeals();
-  const { items: dishes } = useDishes();
-  const { items: ingredients } = useIngredients();
+  const { items: dishes, upsert: upsertDish } = useDishes();
+  const { items: ingredients, upsert: upsertIngredient, newId: newIngId } = useIngredients();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -142,6 +143,46 @@ export function SocialSync() {
       await del;
     })();
   }, [user, profile, dishes, ingredients]);
+
+  // Overgenomen recepten van vrienden up-to-date houden
+  const imported = dishes.filter((d) => d.source);
+  const importedSig = imported
+    .map((d) => `${d.source?.ownerId}:${d.source?.localId}:${d.source?.syncedAt ?? ""}:${d.source?.name ?? ""}`)
+    .join("|");
+
+  useEffect(() => {
+    if (!user || imported.length === 0) return;
+    void (async () => {
+      const ownerIds = [...new Set(imported.map((d) => d.source!.ownerId))];
+      const [{ data: sharedRows }, { data: profileRows }] = await Promise.all([
+        supabase.from("shared_dishes").select("*").in("owner_id", ownerIds),
+        supabase.from("profiles").select("id, display_name").in("id", ownerIds),
+      ]);
+      const shared = (sharedRows ?? []) as unknown as SharedDishRow[];
+      const names = new Map(
+        (profileRows ?? []).map((p) => [p.id as string, (p.display_name as string | null) ?? "een vriend"]),
+      );
+      const tools = { items: ingredients, upsert: upsertIngredient, newId: newIngId };
+
+      for (const dish of imported) {
+        const src = dish.source!;
+        const row = shared.find((r) => r.owner_id === src.ownerId && (r.local_id ?? r.id) === src.localId);
+        const ownerName = names.get(src.ownerId) ?? src.name;
+        if (!row) {
+          // De vriend deelt dit recept niet meer: het blijft staan als je eigen recept.
+          if (src.name !== ownerName) upsertDish({ ...dish, source: { ...src, name: ownerName } });
+          continue;
+        }
+        const changed = (row.updated_at ?? "") !== (src.syncedAt ?? "");
+        if (!changed && ownerName === src.name) continue;
+        const next = changed
+          ? sharedDishToLocal(row, ownerName, tools, { id: dish.id })
+          : { ...dish, source: { ...src, name: ownerName } };
+        upsertDish(next);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, importedSig]);
 
   return null;
 }
