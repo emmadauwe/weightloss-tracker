@@ -126,7 +126,9 @@ function FriendPage() {
             ) : filtered.length === 0 ? (
               <p className="text-xs text-muted-foreground">Geen recept gevonden voor “{query}”.</p>
             ) : (
-              filtered.map((d) => <SharedDish key={d.id} dish={d} />)
+              filtered.map((d) => (
+                <SharedDish key={d.id} dish={d} ownerName={profile?.display_name ?? "een vriend"} />
+              ))
             )}
           </CardContent>
         </Card>
