@@ -101,7 +101,8 @@ export function SocialSync() {
         await supabase.from("shared_dishes").delete().eq("owner_id", user.id);
         return;
       }
-      const rows = dishes.map((d) => ({
+      const own = dishes.filter((d) => !d.source);
+      const rows = own.map((d) => ({
         owner_id: user.id,
         local_id: d.id,
         name: d.name,
@@ -109,6 +110,9 @@ export function SocialSync() {
         recipe_url: d.recipeUrl ?? null,
         steps: d.steps ?? [],
         categories: d.categories ?? [],
+        direct_macros: d.directMacros ?? null,
+        portion_amount: d.portionAmount ?? null,
+        portion_base: d.portionBase ?? null,
         items: d.items
           .map((it) => {
             const ing = ingredients.find((i) => i.id === it.ingredientId);
@@ -132,7 +136,7 @@ export function SocialSync() {
       if (sig === dishSig.current) return;
       dishSig.current = sig;
       if (rows.length) await supabase.from("shared_dishes").upsert(rows, { onConflict: "owner_id,local_id" });
-      const ids = dishes.map((d) => d.id);
+      const ids = own.map((d) => d.id);
       let del = supabase.from("shared_dishes").delete().eq("owner_id", user.id);
       if (ids.length) del = del.not("local_id", "in", `(${ids.join(",")})`);
       await del;
