@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Scale, UtensilsCrossed, ChefHat, Apple, ShoppingBasket } from "lucide-react";
+import { Scale, UtensilsCrossed, ChefHat, Apple, ShoppingBasket, Dumbbell } from "lucide-react";
 
 const items = [
   { to: "/", label: "Gewicht", icon: Scale },
   { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
+  { to: "/sport", label: "Sport", icon: Dumbbell },
   { to: "/gerechten", label: "Gerechten", icon: ChefHat },
   { to: "/ingredienten", label: "Ingrediënten", icon: Apple },
   { to: "/boodschappen", label: "Lijstje", icon: ShoppingBasket },
