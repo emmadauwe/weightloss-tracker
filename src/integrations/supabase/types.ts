@@ -117,11 +117,14 @@ export type Database = {
         Row: {
           categories: Json
           created_at: string
+          direct_macros: Json | null
           id: string
           items: Json
           local_id: string | null
           name: string
           owner_id: string
+          portion_amount: number | null
+          portion_base: string | null
           recipe_url: string | null
           servings: number
           steps: Json
@@ -130,11 +133,14 @@ export type Database = {
         Insert: {
           categories?: Json
           created_at?: string
+          direct_macros?: Json | null
           id?: string
           items?: Json
           local_id?: string | null
           name: string
           owner_id: string
+          portion_amount?: number | null
+          portion_base?: string | null
           recipe_url?: string | null
           servings?: number
           steps?: Json
@@ -143,11 +149,14 @@ export type Database = {
         Update: {
           categories?: Json
           created_at?: string
+          direct_macros?: Json | null
           id?: string
           items?: Json
           local_id?: string | null
           name?: string
           owner_id?: string
+          portion_amount?: number | null
+          portion_base?: string | null
           recipe_url?: string | null
           servings?: number
           steps?: Json
