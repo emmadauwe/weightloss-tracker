@@ -140,44 +140,21 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SharedDish({ dish }: { dish: SharedDishRow }) {
+function SharedDish({ dish, ownerName }: { dish: SharedDishRow; ownerName: string }) {
   const { items: myIngredients, upsert: upsertIngredient, newId: newIngId } = useIngredients();
-  const { upsert: upsertDish, newId: newDishId } = useDishes();
+  const { items: myDishes, upsert: upsertDish, newId: newDishId } = useDishes();
   const [open, setOpen] = useState(false);
+  const already = myDishes.some(
+    (d) => d.source?.ownerId === dish.owner_id && d.source?.localId === (dish.local_id ?? dish.id),
+  );
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
-    const dishItems = dish.items.map((it) => {
-      const existing = myIngredients.find(
-        (m) => m.name.trim().toLowerCase() === it.name.trim().toLowerCase(),
-      );
-      let ingredientId = existing?.id;
-      if (!ingredientId) {
-        const ing: Ingredient = {
-          id: newIngId(),
-          name: it.name,
-          baseUnit: (it.baseUnit as Unit) ?? "g",
-          kcal: it.kcal,
-          protein: it.protein,
-          carbs: it.carbs,
-          fat: it.fat,
-          category: (it.category as Ingredient["category"]) ?? undefined,
-        };
-        upsertIngredient(ing);
-        ingredientId = ing.id;
-      }
-      return { ingredientId, amount: it.amount, unit: (it.unit as Unit) ?? "g" };
-    });
-
-    upsertDish({
-      id: newDishId(),
-      name: dish.name,
-      servings: dish.servings || 1,
-      recipeUrl: dish.recipe_url ?? undefined,
-      steps: dish.steps ?? [],
-      categories: (dish.categories ?? []) as never,
-      items: dishItems,
-    });
+    upsertDish(
+      sharedDishToLocal(dish, ownerName, { items: myIngredients, upsert: upsertIngredient, newId: newIngId }, {
+        id: newDishId(),
+      }),
+    );
     setCopied(true);
   };
 
