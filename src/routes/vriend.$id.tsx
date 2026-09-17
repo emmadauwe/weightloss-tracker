@@ -14,7 +14,11 @@ import {
   type ProfileRow,
   type SharedDishRow,
 } from "@/lib/social";
-import { useDishes, useIngredients, type Ingredient, type Unit } from "@/lib/nutrition-store";
+import { useDishes, useIngredients } from "@/lib/nutrition-store";
+import { sharedDishToLocal } from "@/lib/shared-recipes";
+import { useFriendWorkouts, sportOf, workoutSummary, personalRecord } from "@/lib/workouts";
+import { format, parseISO } from "date-fns";
+import { nl } from "date-fns/locale";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/vriend/$id")({
@@ -198,9 +202,13 @@ function SharedDish({ dish, ownerName }: { dish: SharedDishRow; ownerName: strin
         </div>
       )}
       <div className="flex justify-end border-t border-border px-3 py-1.5">
-        <Button size="sm" variant="ghost" onClick={copy} disabled={copied}>
-          {copied ? <Check className="mr-1 h-4 w-4 text-primary" /> : <Download className="mr-1 h-4 w-4 text-primary" />}
-          {copied ? "Toegevoegd" : "Overnemen"}
+        <Button size="sm" variant="ghost" onClick={copy} disabled={copied || already}>
+          {copied || already ? (
+            <Check className="mr-1 h-4 w-4 text-primary" />
+          ) : (
+            <Download className="mr-1 h-4 w-4 text-primary" />
+          )}
+          {copied || already ? "In jouw gerechten" : "Overnemen"}
         </Button>
       </div>
     </div>
