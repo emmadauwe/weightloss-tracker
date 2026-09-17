@@ -1,7 +1,5 @@
 # weightloss tracker
 
-Ik wil app om gewichtsverlies bij te houden. Maak van deze spreadsheet dus een app: https://docs.google.com/spreadsheets/d/10RPcmjd1z52ynTDaM8nGctvhfXj2WmE6wNfH0e8HwDQ/edit?usp=sharing
-
 This project was built with [Lovable](https://lovable.dev).
 
 **Live app**: https://weightloss-tracker.lovable.app
