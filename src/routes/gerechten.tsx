@@ -15,10 +15,10 @@ import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/gerechten")({
   head: () => ({ meta: [
-    { title: "Gerechten | Lichter" },
-    { name: "description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
-    { property: "og:title", content: "Gerechten | Lichter" },
-    { property: "og:description", content: "Beheer gerechten, ingrediënten en bereidingsstappen." },
+    { title: "Recepten | Lichter" },
+    { name: "description", content: "Beheer recepten, ingrediënten en bereidingsstappen." },
+    { property: "og:title", content: "Recepten | Lichter" },
+    { property: "og:description", content: "Beheer recepten, ingrediënten en bereidingsstappen." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -36,6 +36,7 @@ const MEALS: { id: Meal; label: string }[] = [
 function GerechtenPage() {
   const { items, upsert, remove, newId } = useDishes();
   const { items: ingredients } = useIngredients();
+  const [tab, setTab] = useState<"recepten" | "ingredienten">("recepten");
   const [q, setQ] = useState("");
   const [viewing, setViewing] = useState<Dish | null>(null);
   const [editing, setEditing] = useState<Dish | null>(null);
@@ -49,15 +50,34 @@ function GerechtenPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AppHeader title="Gerechten" subtitle="Jouw eigen gerechtenbibliotheek" />
+      <AppHeader title="Recepten" subtitle="Jouw recepten en ingrediënten" />
       <main className="mx-auto max-w-2xl px-4 pt-4 space-y-3">
-        <Input placeholder="Zoek gerecht…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
+          {([["recepten", "Recepten"], ["ingredienten", "Ingrediënten"]] as const).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                tab === id ? "bg-card text-primary shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "ingredienten" ? (
+          <IngredientLibrary />
+        ) : (
+          <>
+        <Input placeholder="Zoek recept…" value={q} onChange={(e) => setQ(e.target.value)} />
         {filtered.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center py-12 text-center">
               <ChefHat className="mb-2 h-7 w-7 text-primary" />
-              <p className="text-sm font-medium">Nog geen gerechten</p>
-              <p className="mt-1 text-xs text-muted-foreground">Tik op + om je eerste gerecht toe te voegen.</p>
+              <p className="text-sm font-medium">Nog geen recepten</p>
+              <p className="mt-1 text-xs text-muted-foreground">Tik op + om je eerste recept toe te voegen.</p>
             </CardContent>
           </Card>
         ) : (
@@ -68,11 +88,14 @@ function GerechtenPage() {
                 <Card key={d.id}>
                   <CardContent className="flex items-center gap-1 px-5 py-3.5">
                     <button onClick={() => setViewing(d)} className="min-w-0 flex-1 text-left">
-                      <div className="font-medium">{d.name}</div>
+                      <div className="break-words font-medium">{d.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {Math.round(m.kcal)} kcal · {Math.round(m.protein)}P · {Math.round(m.carbs)}K · {Math.round(m.fat)}V
                         {" · "}per portie ({d.servings})
                       </div>
+                      {d.source && (
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">Van {d.source.name}</div>
+                      )}
                       {d.categories && d.categories.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {d.categories.map((c) => (
@@ -97,23 +120,25 @@ function GerechtenPage() {
             })}
           </ul>
         )}
+          </>
+        )}
       </main>
 
-      <button
-        onClick={() => setCreating(true)}
-        aria-label="Nieuw gerecht"
-        className="fixed bottom-20 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
+      {tab === "recepten" && (
+        <button
+          onClick={() => setCreating(true)}
+          aria-label="Nieuw recept"
+          className="fixed bottom-20 right-5 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
 
       {viewing && !editing && !creating && (
         <DishDetailDialog
           dish={viewing}
           ingredients={ingredients}
           onClose={() => setViewing(null)}
-          onEdit={() => { setEditing(viewing); }}
-          onDelete={() => { remove(viewing.id); setViewing(null); }}
         />
       )}
 
@@ -123,6 +148,7 @@ function GerechtenPage() {
           ingredients={ingredients}
           onClose={() => { setEditing(null); setCreating(false); }}
           onSave={(d) => { upsert(d); setEditing(null); setCreating(false); setViewing(null); }}
+          onDelete={editing ? () => { remove(editing.id); setEditing(null); setViewing(null); } : undefined}
           newId={newId}
         />
       )}
