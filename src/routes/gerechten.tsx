@@ -157,13 +157,11 @@ function GerechtenPage() {
 }
 
 function DishDetailDialog({
-  dish, ingredients, onClose, onEdit, onDelete,
+  dish, ingredients, onClose,
 }: {
   dish: Dish;
   ingredients: ReturnType<typeof useIngredients>["items"];
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
 }) {
   const macros = dishMacrosPerServing(dish, ingredients);
   const baseServings = Math.max(1, dish.servings);
@@ -172,14 +170,12 @@ function DishDetailDialog({
   const round = (v: number) => Number(v.toFixed(1));
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-2 pr-6">
-            <span className="min-w-0 truncate">{dish.name}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onEdit} aria-label="Bewerken">
-              <Pencil className="h-3.5 w-3.5 text-primary" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle className="break-words pr-6">{dish.name}</DialogTitle>
+          {dish.source && (
+            <p className="text-xs text-muted-foreground">Recept van {dish.source.name}</p>
+          )}
         </DialogHeader>
 
         <div className="space-y-4">
