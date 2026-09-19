@@ -258,10 +258,6 @@ function DishDetailDialog({
               <ExternalLink className="h-4 w-4" /> Recept openen
             </a>
           )}
-
-          <Button variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
-            <Trash2 className="mr-1 h-4 w-4" /> Gerecht verwijderen
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -304,12 +300,13 @@ function CategorySelect({ value, onChange }: { value: Meal[]; onChange: (v: Meal
 }
 
 function DishDialog({
-  initial, ingredients, onClose, onSave, newId,
+  initial, ingredients, onClose, onSave, onDelete, newId,
 }: {
   initial: Dish | null;
   ingredients: ReturnType<typeof useIngredients>["items"];
   onClose: () => void;
   onSave: (d: Dish) => void;
+  onDelete?: (() => void) | undefined;
   newId: () => string;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
