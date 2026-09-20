@@ -256,6 +256,56 @@ function DoelPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Welke sporten doe je?</Label>
+              <p className="text-xs text-muted-foreground">
+                Alleen deze sporten zie je terug op de sportpagina.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {SPORTS.map((s) => {
+                  const on = (goal.sports ?? []).includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() =>
+                        setGoal({
+                          ...goal,
+                          sports: on
+                            ? (goal.sports ?? []).filter((x) => x !== s.id)
+                            : [...(goal.sports ?? []), s.id],
+                        })
+                      }
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                        on ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {(goal.sports ?? []).includes("lopen") && (
+              <div className="space-y-2">
+                <Label>Focusafstand bij lopen</Label>
+                <Select
+                  value={goal.runFocusKm ? String(goal.runFocusKm) : "geen"}
+                  onValueChange={(v) =>
+                    setGoal({ ...goal, runFocusKm: v === "geen" ? undefined : Number(v) })
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geen">Geen focus</SelectItem>
+                    <SelectItem value="1">1 km</SelectItem>
+                    <SelectItem value="5">5 km</SelectItem>
+                    <SelectItem value="10">10 km</SelectItem>
+                    <SelectItem value="21.1">Halve marathon</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 
