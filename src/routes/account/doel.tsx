@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { useGoalTargets } from "@/lib/goal-targets";
 import type { GoalType, Intensity, Lifestyle } from "@/lib/nutrition-math";
+import { SPORTS } from "@/lib/workouts";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/account/doel")({
