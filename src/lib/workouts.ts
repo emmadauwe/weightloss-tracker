@@ -50,6 +50,8 @@ export type Workout = {
   distance_km: number | null;
   avg_speed: number | null;
   max_speed: number | null;
+  min_speed: number | null;
+  plan_id: string | null;
   intensity: string | null;
   note: string | null;
   exercises: WorkoutExercise[];
@@ -61,6 +63,8 @@ export type WorkoutInput = Omit<Workout, "id" | "user_id" | "created_at"> & { id
 function normalise(row: Record<string, unknown>): Workout {
   return {
     ...(row as unknown as Workout),
+    min_speed: (row["min_speed"] as number | null) ?? null,
+    plan_id: (row["plan_id"] as string | null) ?? null,
     exercises: Array.isArray(row["exercises"]) ? (row["exercises"] as WorkoutExercise[]) : [],
   };
 }
@@ -101,6 +105,8 @@ export function useWorkouts() {
         distance_km: input.distance_km,
         avg_speed: input.avg_speed,
         max_speed: input.max_speed,
+        min_speed: input.min_speed,
+        plan_id: input.plan_id,
         intensity: input.intensity,
         note: input.note,
         exercises: input.exercises,

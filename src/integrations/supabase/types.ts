@@ -236,6 +236,48 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_plans: {
+        Row: {
+          created_at: string
+          exercises: Json
+          id: string
+          name: string
+          sort_order: number
+          source_name: string | null
+          source_owner: string | null
+          source_plan: string | null
+          source_synced_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercises?: Json
+          id?: string
+          name: string
+          sort_order?: number
+          source_name?: string | null
+          source_owner?: string | null
+          source_plan?: string | null
+          source_synced_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercises?: Json
+          id?: string
+          name?: string
+          sort_order?: number
+          source_name?: string | null
+          source_owner?: string | null
+          source_plan?: string | null
+          source_synced_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workouts: {
         Row: {
           avg_speed: number | null
@@ -247,7 +289,9 @@ export type Database = {
           id: string
           intensity: string | null
           max_speed: number | null
+          min_speed: number | null
           note: string | null
+          plan_id: string | null
           sport: string
           updated_at: string
           user_id: string
@@ -262,7 +306,9 @@ export type Database = {
           id?: string
           intensity?: string | null
           max_speed?: number | null
+          min_speed?: number | null
           note?: string | null
+          plan_id?: string | null
           sport: string
           updated_at?: string
           user_id: string
@@ -277,7 +323,9 @@ export type Database = {
           id?: string
           intensity?: string | null
           max_speed?: number | null
+          min_speed?: number | null
           note?: string | null
+          plan_id?: string | null
           sport?: string
           updated_at?: string
           user_id?: string

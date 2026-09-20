@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { Check, ChevronDown, Plus, Minus, Pencil, Trash2, ChefHat, ExternalLink,
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { suggestMacros } from "@/lib/ai.functions";
+import { IngredientLibrary } from "@/components/ingredient-library";
+import { Textarea } from "@/components/ui/textarea";
 import { AppHeader } from "@/components/app-header";
 
 export const Route = createFileRoute("/gerechten")({
@@ -330,6 +332,8 @@ function DishDialog({
   const [dFat, setDFat] = useState(backMacro(initial?.directMacros?.fat));
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [detachOk, setDetachOk] = useState(false);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
@@ -404,12 +408,14 @@ function DishDialog({
       directMacros: direct ? directPerServing() : undefined,
       portionAmount: direct && per100 ? portionGrams : undefined,
       portionBase: direct && per100 ? portionBase : undefined,
+      // Zodra je een overgenomen recept zelf aanpast, wordt het je eigen recept.
+      source: undefined,
     });
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="max-h-[80vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         {picking !== null ? (
           <IngredientPicker
             ingredients={ingredients}
@@ -418,7 +424,22 @@ function DishDialog({
           />
         ) : (
           <>
-          <DialogHeader><DialogTitle>{initial ? "Gerecht aanpassen" : "Nieuw gerecht"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="break-words pr-6">{initial ? "Recept aanpassen" : "Nieuw recept"}</DialogTitle></DialogHeader>
+          {initial?.source && !detachOk ? (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-secondary px-3 py-3 text-sm">
+                <p className="font-medium">Dit recept komt van {initial.source.name}.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Als je het aanpast, wordt het jouw eigen recept. Latere wijzigingen van {initial.source.name} worden
+                  dan niet meer overgenomen.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" onClick={onClose}>Annuleren</Button>
+                <Button type="button" onClick={() => setDetachOk(true)}>Toch aanpassen</Button>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-[minmax(0,1fr)_80px] gap-3">
             <div className="space-y-2">
@@ -547,22 +568,21 @@ function DishDialog({
                 <Label>Bereiding</Label>
                 <div className="space-y-2">
                   {steps.map((s, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
+                    <div key={i} className="flex items-start gap-1.5">
+                      <div className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary tabular-nums">
                         {i + 1}
                       </div>
-                      <Input
+                      <AutoTextarea
                         value={s}
-                        onChange={(e) => setStep(i, e.target.value)}
+                        onChange={(v) => setStep(i, v)}
                         placeholder={`Stap ${i + 1}`}
-                        className="min-w-0 flex-1"
                       />
                       <button
                         type="button"
                         onClick={() => removeStep(i)}
                         disabled={steps.length <= 1}
                         aria-label="Stap verwijderen"
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent disabled:opacity-40"
+                        className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent disabled:opacity-40"
                       >
                         <X className="h-3.5 w-3.5 text-primary" />
                       </button>
@@ -579,7 +599,38 @@ function DishDialog({
           <DialogFooter>
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
+
+          {onDelete && (
+            <div className="border-t border-border pt-3">
+              {confirmDelete ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Weet je zeker dat je “{initial?.name}” definitief wil verwijderen?
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+                      Annuleren
+                    </Button>
+                    <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                      Ja, verwijderen
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" /> Recept verwijderen
+                </Button>
+              )}
+            </div>
+          )}
           </form>
+          )}
           </>
         )}
       </DialogContent>
@@ -637,5 +688,28 @@ export function IngredientPicker({
           )}
         </div>
       </div>
+  );
+}
+
+/** Tekstvak dat automatisch meegroeit met de inhoud. */
+function AutoTextarea({
+  value, onChange, placeholder,
+}: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <Textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      placeholder={placeholder ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="min-h-0 min-w-0 flex-1 resize-none overflow-hidden py-2"
+    />
   );
 }

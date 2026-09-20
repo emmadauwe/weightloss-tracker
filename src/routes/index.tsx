@@ -365,12 +365,6 @@ function BmiDialog({
     { bmi: 25, left: 40 },
     { bmi: 30, left: 60 },
   ];
-  const segments = [
-    { label: "Ondergewicht", left: 0, width: 14, color: "text-destructive" },
-    { label: "Gezond", left: 14, width: 26, color: "text-success" },
-    { label: "Overgewicht", left: 40, width: 20, color: "text-destructive" },
-    { label: "Obesitas", left: 60, width: 40, color: "text-destructive-strong" },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -382,7 +376,7 @@ function BmiDialog({
             <div className="text-sm font-medium" style={{ color: bmi ? bmiCategory(bmi).color : undefined }}>{bmi ? bmiCategory(bmi).label : "—"}</div>
           </div>
 
-          <div className="relative pt-5">
+          <div className="relative px-1 pb-4 pt-7">
             <div className="flex h-3 overflow-hidden rounded-full">
               <div className="w-[14%] bg-destructive/70" />
               <div className="w-[26%] bg-success" />
@@ -391,7 +385,7 @@ function BmiDialog({
             </div>
             {bmi && (
               <div
-                className="absolute top-0 -translate-x-1/2 text-sm leading-none"
+                className="absolute top-1 -translate-x-1/2 text-sm leading-none"
                 style={{ left: `${position}%`, color: "#C3BBB1" }}
                 aria-hidden
               >
@@ -400,13 +394,13 @@ function BmiDialog({
             )}
 
             {/* Grenswaarden onder de balk */}
-            <div className="relative mt-1 h-8">
+            <div className="relative mt-3 h-12">
               {bounds.map((bound) => {
                 const weight = weightAt(bound.bmi);
                 return (
                   <div
                     key={bound.bmi}
-                    className="absolute -translate-x-1/2 text-center text-[10px] leading-tight text-muted-foreground"
+                    className="absolute -translate-x-1/2 space-y-1 text-center text-[11px] leading-tight text-muted-foreground"
                     style={{ left: `${bound.left}%` }}
                   >
                     <div className="tabular-nums">{String(bound.bmi).replace(".", ",")}</div>
@@ -414,19 +408,6 @@ function BmiDialog({
                   </div>
                 );
               })}
-            </div>
-
-            {/* Namen van de zones */}
-            <div className="relative mt-1 h-7">
-              {segments.map((segment) => (
-                <div
-                  key={segment.label}
-                  className={`absolute px-0.5 text-center text-[10px] leading-tight ${segment.color}`}
-                  style={{ left: `${segment.left}%`, width: `${segment.width}%` }}
-                >
-                  {segment.label}
-                </div>
-              ))}
             </div>
           </div>
         </div>

@@ -22,6 +22,10 @@ export type GoalSettings = {
   macroPriority?: MacroPriority;
   /** How many different cooked meals (lunch/diner) you want to make per week. */
   cookPerWeek?: number;
+  /** Welke sporten je actief bijhoudt. */
+  sports?: string[];
+  /** Focusafstand voor lopen (km), bv. 1, 5 of 10. */
+  runFocusKm?: number;
 };
 
 export const GOAL_KEY = "goal-settings-v1";
