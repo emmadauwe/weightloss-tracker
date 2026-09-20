@@ -11,6 +11,7 @@ import { Check, ChevronDown, Plus, Minus, Pencil, Trash2, ChefHat, ExternalLink,
 import { formatUnit, useDishes, useIngredients, type Dish, type DishItem, type Meal } from "@/lib/nutrition-store";
 import { dishMacrosPerServing } from "@/lib/nutrition-math";
 import { suggestMacros } from "@/lib/ai.functions";
+import { IngredientLibrary } from "@/components/ingredient-library";
 import { Textarea } from "@/components/ui/textarea";
 import { AppHeader } from "@/components/app-header";
 
