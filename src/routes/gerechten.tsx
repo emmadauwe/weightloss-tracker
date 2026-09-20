@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -687,5 +687,28 @@ export function IngredientPicker({
           )}
         </div>
       </div>
+  );
+}
+
+/** Tekstvak dat automatisch meegroeit met de inhoud. */
+function AutoTextarea({
+  value, onChange, placeholder,
+}: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return (
+    <Textarea
+      ref={ref}
+      rows={1}
+      value={value}
+      placeholder={placeholder ?? ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="min-h-0 min-w-0 flex-1 resize-none overflow-hidden py-2"
+    />
   );
 }
