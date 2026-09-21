@@ -15,8 +15,10 @@ import { Route as IngredientenRouteImport } from './routes/ingredienten'
 import { Route as GerechtenRouteImport } from './routes/gerechten'
 import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SportIndexRouteImport } from './routes/sport.index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as VriendIdRouteImport } from './routes/vriend.$id'
+import { Route as SportIdRouteImport } from './routes/sport.$id'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
 import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
 import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
@@ -53,6 +55,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SportIndexRoute = SportIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SportRoute,
+} as any)
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
@@ -62,6 +69,11 @@ const VriendIdRoute = VriendIdRouteImport.update({
   id: '/vriend/$id',
   path: '/vriend/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SportIdRoute = SportIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => SportRoute,
 } as any)
 const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
   id: '/api/suggest-macros',
@@ -94,30 +106,33 @@ export interface FileRoutesByFullPath {
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
-  '/sport': typeof SportRoute
+  '/sport': typeof SportRouteWithChildren
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
   '/account/': typeof AccountIndexRoute
+  '/sport/': typeof SportIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
-  '/sport': typeof SportRoute
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
   '/account': typeof AccountIndexRoute
+  '/sport': typeof SportIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,15 +140,17 @@ export interface FileRoutesById {
   '/boodschappen': typeof BoodschappenRoute
   '/gerechten': typeof GerechtenRoute
   '/ingredienten': typeof IngredientenRoute
-  '/sport': typeof SportRoute
+  '/sport': typeof SportRouteWithChildren
   '/vandaag': typeof VandaagRoute
   '/account/doel': typeof AccountDoelRoute
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
+  '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
   '/account/': typeof AccountIndexRoute
+  '/sport/': typeof SportIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -149,23 +166,26 @@ export interface FileRouteTypes {
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/sport/$id'
     | '/vriend/$id'
     | '/account/'
+    | '/sport/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/boodschappen'
     | '/gerechten'
     | '/ingredienten'
-    | '/sport'
     | '/vandaag'
     | '/account/doel'
     | '/account/gegevens'
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/sport/$id'
     | '/vriend/$id'
     | '/account'
+    | '/sport'
   id:
     | '__root__'
     | '/'
@@ -179,8 +199,10 @@ export interface FileRouteTypes {
     | '/account/privacy'
     | '/account/vrienden'
     | '/api/suggest-macros'
+    | '/sport/$id'
     | '/vriend/$id'
     | '/account/'
+    | '/sport/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,7 +210,7 @@ export interface RootRouteChildren {
   BoodschappenRoute: typeof BoodschappenRoute
   GerechtenRoute: typeof GerechtenRoute
   IngredientenRoute: typeof IngredientenRoute
-  SportRoute: typeof SportRoute
+  SportRoute: typeof SportRouteWithChildren
   VandaagRoute: typeof VandaagRoute
   AccountDoelRoute: typeof AccountDoelRoute
   AccountGegevensRoute: typeof AccountGegevensRoute
@@ -243,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sport/': {
+      id: '/sport/'
+      path: '/'
+      fullPath: '/sport/'
+      preLoaderRoute: typeof SportIndexRouteImport
+      parentRoute: typeof SportRoute
+    }
     '/account/': {
       id: '/account/'
       path: '/account'
@@ -256,6 +285,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/vriend/$id'
       preLoaderRoute: typeof VriendIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/sport/$id': {
+      id: '/sport/$id'
+      path: '/$id'
+      fullPath: '/sport/$id'
+      preLoaderRoute: typeof SportIdRouteImport
+      parentRoute: typeof SportRoute
     }
     '/api/suggest-macros': {
       id: '/api/suggest-macros'
@@ -295,12 +331,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SportRouteChildren {
+  SportIdRoute: typeof SportIdRoute
+  SportIndexRoute: typeof SportIndexRoute
+}
+
+const SportRouteChildren: SportRouteChildren = {
+  SportIdRoute: SportIdRoute,
+  SportIndexRoute: SportIndexRoute,
+}
+
+const SportRouteWithChildren = SportRoute._addFileChildren(SportRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BoodschappenRoute: BoodschappenRoute,
   GerechtenRoute: GerechtenRoute,
   IngredientenRoute: IngredientenRoute,
-  SportRoute: SportRoute,
+  SportRoute: SportRouteWithChildren,
   VandaagRoute: VandaagRoute,
   AccountDoelRoute: AccountDoelRoute,
   AccountGegevensRoute: AccountGegevensRoute,
