@@ -65,6 +65,23 @@ export function useNotifications() {
           text: `${nameOf(f.friendId)} is al ${reached} kg ${wantsGain ? "bijgekomen" : "afgevallen"}!`,
         });
       }
+
+      // Nieuw persoonlijk sportrecord
+      const history = friendWorkouts[f.friendId] ?? [];
+      const latest = history.find((w) => personalRecord(w, history));
+      if (latest && (ack[f.friendId]?.record ?? "") !== latest.id) {
+        const pr = personalRecord(latest, history)!;
+        const unit = pr.kind === "afstand" ? "km" : pr.kind === "gewicht" ? "kg" : "min";
+        out.push({
+          id: `pr-${latest.id}`,
+          kind: "record",
+          friendId: f.friendId,
+          name: nameOf(f.friendId),
+          avatarId: avatarOf(f.friendId),
+          recordId: latest.id,
+          text: `${nameOf(f.friendId)} zette een nieuw record bij ${sportOf(latest.sport).label.toLowerCase()}: ${pr.value} ${unit} 💪`,
+        });
+      }
     }
 
     for (const h of received.filter((r) => !r.seen)) {
