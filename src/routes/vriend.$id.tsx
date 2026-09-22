@@ -137,6 +137,17 @@ function FriendPage() {
           </Card>
         )}
 
+        {plans.length > 0 && (
+          <Card>
+            <CardContent className="space-y-3 px-5 py-4">
+              <div className="text-sm font-medium">Fitnessschema's</div>
+              {plans.map((p) => (
+                <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="space-y-3 px-5 py-4">
             <div className="text-sm font-medium">Recepten</div>
