@@ -96,7 +96,7 @@ function SportOverview() {
                       <div className="min-w-0 flex-1">
                         <div className="break-words text-sm font-medium">{s.label}</div>
                         <div className="text-xs text-muted-foreground">
-                          {own.length} sessies
+                          {own.length} {own.length === 1 ? "sessie" : "sessies"}
                           {km > 0 ? ` · ${km.toFixed(1)} km` : ""}
                           {min > 0 ? ` · ${Math.round(min)} min` : ""}
                         </div>
