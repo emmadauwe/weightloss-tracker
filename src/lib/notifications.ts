@@ -26,6 +26,7 @@ export function useNotifications() {
   const { friends } = useFriends();
   const stats = useFriendStats(friends.map((f) => f.friendId));
   const { received, markSeenOne, send } = useHighFives();
+  const friendWorkouts = useFriendWorkouts(friends.map((f) => f.friendId));
   const { value: ack, setValue: setAck } = useCloudDoc<Ack>(ACK_KEY, {});
 
   const items = useMemo<Notification[]>(() => {
