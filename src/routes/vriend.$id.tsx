@@ -17,6 +17,7 @@ import {
 import { useDishes, useIngredients } from "@/lib/nutrition-store";
 import { sharedDishToLocal } from "@/lib/shared-recipes";
 import { useFriendWorkouts, sportOf, workoutSummary, personalRecord } from "@/lib/workouts";
+import { useFriendWorkoutPlans, useWorkoutPlans, type WorkoutPlan } from "@/lib/workout-plans";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { AppHeader } from "@/components/app-header";
@@ -42,6 +43,8 @@ function FriendPage() {
   const { dishes, loading } = useFriendDishes(id);
   const friendWorkouts = useFriendWorkouts([id]);
   const workouts = friendWorkouts[id] ?? [];
+  const friendPlans = useFriendWorkoutPlans([id]);
+  const plans = (friendPlans[id] ?? []).filter((p) => !p.source_owner);
   const [query, setQuery] = useState("");
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
