@@ -122,7 +122,7 @@ export function useNotifications() {
 
   const highFive = useCallback(
     async (n: Notification) => {
-      await send(n.friendId, n.kind === "goal" ? "goal" : "milestone");
+      await send(n.friendId, n.kind === "goal" ? "goal" : n.kind === "record" ? "record" : "milestone");
       await dismiss(n);
     },
     [send, dismiss],
