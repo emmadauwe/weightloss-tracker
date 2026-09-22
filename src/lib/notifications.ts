@@ -1,11 +1,12 @@
 import { useCallback, useMemo } from "react";
 import { useCloudDoc } from "./cloud-store";
 import { goalReached, progressKg, useFriends, useFriendStats, useHighFives } from "./social";
+import { personalRecord, sportOf, useFriendWorkouts } from "./workouts";
 
 export type Notification = {
   /** Stabiele sleutel voor de lijst. */
   id: string;
-  kind: "milestone" | "goal" | "highfive";
+  kind: "milestone" | "goal" | "highfive" | "record";
   friendId: string;
   name: string;
   avatarId: string | null;
@@ -13,9 +14,11 @@ export type Notification = {
   /** Interne waarde die bij het sluiten wordt onthouden. */
   kg?: number;
   highFiveId?: string;
+  /** Sessie-id van een sportrecord. */
+  recordId?: string;
 };
 
-type Ack = Record<string, { kg?: number; goal?: boolean }>;
+type Ack = Record<string, { kg?: number; goal?: boolean; record?: string }>;
 
 const ACK_KEY = "friend-milestones-v1";
 
