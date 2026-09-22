@@ -42,3 +42,5 @@
 - [x] Replace friend weight-change text with positive goal progress.
 - [x] Show a compact goal-progress meter below shared current and goal weights.
 - [x] Limit high fives to achievement notifications.
+- [x] Show and adopt friends' workout plans on the friend profile.
+- [x] Add high-five notifications for new personal sport records.
