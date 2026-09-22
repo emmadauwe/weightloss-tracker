@@ -97,7 +97,7 @@ export function useNotifications() {
     }
 
     return out;
-  }, [friends, stats, ack, received]);
+  }, [friends, stats, ack, received, friendWorkouts]);
 
   const dismiss = useCallback(
     async (n: Notification) => {
@@ -109,7 +109,11 @@ export function useNotifications() {
         ...prev,
         [n.friendId]: {
           ...(prev[n.friendId] ?? {}),
-          ...(n.kind === "goal" ? { goal: true } : { kg: n.kg }),
+          ...(n.kind === "goal"
+            ? { goal: true }
+            : n.kind === "record"
+              ? { record: n.recordId }
+              : { kg: n.kg }),
         },
       }));
     },
