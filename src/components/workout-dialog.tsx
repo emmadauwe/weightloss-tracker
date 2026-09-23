@@ -39,7 +39,7 @@ export function WorkoutDialog({
   const [duration, setDuration] = useState(initial?.duration_min?.toString() ?? "");
   const [distance, setDistance] = useState(initial?.distance_km?.toString() ?? "");
   const [maxSpeed, setMaxSpeed] = useState(initial?.max_speed?.toString() ?? "");
-  const [minSpeed, setMinSpeed] = useState(initial?.min_speed?.toString() ?? "");
+  const [avgSpeedInput, setAvgSpeedInput] = useState(initial?.avg_speed?.toString() ?? "");
   const [intensity, setIntensity] = useState(initial?.intensity ?? "gemiddeld");
   const [planId, setPlanId] = useState<string>(initial?.plan_id ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
@@ -48,7 +48,9 @@ export function WorkoutDialog({
   const kind = sportOf(sport).kind;
   const dist = num(distance);
   const dur = num(duration);
-  const avgSpeed = dist != null && dur != null && dur > 0 ? Number(((dist / dur) * 60).toFixed(2)) : null;
+  // Zelf ingevulde gemiddelde snelheid heeft voorrang; anders uit afstand en duur.
+  const avgSpeed =
+    num(avgSpeedInput) ?? (dist != null && dur != null && dur > 0 ? Number(((dist / dur) * 60).toFixed(2)) : null);
 
   const applyPlan = (id: string) => {
     setPlanId(id);
