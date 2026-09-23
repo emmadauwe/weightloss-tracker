@@ -88,16 +88,16 @@ function GerechtenPage() {
                         {Math.round(m.kcal)} kcal · {Math.round(m.protein)}P · {Math.round(m.carbs)}K · {Math.round(m.fat)}V
                         {" · "}per portie ({d.servings})
                       </div>
-                      {d.source && (
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">Van {d.source.name}</div>
-                      )}
                       {d.categories && d.categories.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {d.categories.map((c) => (
-                            <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-                              {MEALS.find((m) => m.id === c)?.label}
-                            </span>
-                          ))}
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          {d.categories.map((c) => MEALS.find((m) => m.id === c)?.label).join(" · ")}
+                        </div>
+                      )}
+                      {d.source && (
+                        <div className="mt-1">
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                            Van {d.source.name}
+                          </span>
                         </div>
                       )}
                     </button>
