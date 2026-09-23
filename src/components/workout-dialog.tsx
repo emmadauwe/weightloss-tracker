@@ -146,24 +146,23 @@ export function WorkoutDialog({
           </div>
 
           {kind === "cardio" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="min-w-0 space-y-2">
-                  <Label>Max. snelheid (km/u)</Label>
-                  <Input inputMode="decimal" value={maxSpeed} onChange={(e) => setMaxSpeed(e.target.value)} />
-                </div>
-                <div className="min-w-0 space-y-2">
-                  <Label>Min. snelheid (km/u)</Label>
-                  <Input inputMode="decimal" value={minSpeed} onChange={(e) => setMinSpeed(e.target.value)} />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-2">
+                <Label>Gem. snelheid (km/u)</Label>
+                <Input
+                  inputMode="decimal"
+                  placeholder={
+                    dist != null && dur != null && dur > 0 ? ((dist / dur) * 60).toFixed(1) : "bv. 11,5"
+                  }
+                  value={avgSpeedInput}
+                  onChange={(e) => setAvgSpeedInput(e.target.value)}
+                />
               </div>
               <div className="min-w-0 space-y-2">
-                <Label>Gem. snelheid</Label>
-                <div className="flex h-9 items-center rounded-md bg-secondary px-3 text-sm tabular-nums">
-                  {avgSpeed != null ? `${avgSpeed.toFixed(1)} km/u` : "—"}
-                </div>
+                <Label>Max. snelheid (km/u)</Label>
+                <Input inputMode="decimal" value={maxSpeed} onChange={(e) => setMaxSpeed(e.target.value)} />
               </div>
-            </>
+            </div>
           )}
 
           {kind === "kracht" && (
