@@ -206,12 +206,8 @@ function DishDetailDialog({
           )}
 
           {dish.categories && dish.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {dish.categories.map((c) => (
-                <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-                  {MEALS.find((m) => m.id === c)?.label}
-                </span>
-              ))}
+            <div className="text-xs text-muted-foreground">
+              {dish.categories.map((c) => MEALS.find((m) => m.id === c)?.label).join(" · ")}
             </div>
           )}
 
