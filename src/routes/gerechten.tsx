@@ -169,7 +169,11 @@ function DishDetailDialog({
         <DialogHeader>
           <DialogTitle className="break-words pr-6">{dish.name}</DialogTitle>
           {dish.source && (
-            <p className="text-xs text-muted-foreground">Recept van {dish.source.name}</p>
+            <div>
+              <span className="inline-block rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-primary">
+                Recept van {dish.source.name}
+              </span>
+            </div>
           )}
         </DialogHeader>
 
