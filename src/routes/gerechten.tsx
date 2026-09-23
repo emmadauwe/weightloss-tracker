@@ -54,18 +54,11 @@ function GerechtenPage() {
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title="Recepten" subtitle="Jouw recepten en ingrediënten" />
       <main className="mx-auto max-w-2xl px-4 pt-4 space-y-3">
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
+        <div className="grid grid-cols-2 gap-2">
           {([["recepten", "Recepten"], ["ingredienten", "Ingrediënten"]] as const).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === id ? "bg-card text-primary shadow-sm" : "text-muted-foreground"
-              }`}
-            >
+            <Button key={id} size="sm" variant={tab === id ? "default" : "outline"} onClick={() => setTab(id)}>
               {label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -95,16 +88,16 @@ function GerechtenPage() {
                         {Math.round(m.kcal)} kcal · {Math.round(m.protein)}P · {Math.round(m.carbs)}K · {Math.round(m.fat)}V
                         {" · "}per portie ({d.servings})
                       </div>
-                      {d.source && (
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">Van {d.source.name}</div>
-                      )}
                       {d.categories && d.categories.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {d.categories.map((c) => (
-                            <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-                              {MEALS.find((m) => m.id === c)?.label}
-                            </span>
-                          ))}
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          {d.categories.map((c) => MEALS.find((m) => m.id === c)?.label).join(" · ")}
+                        </div>
+                      )}
+                      {d.source && (
+                        <div className="mt-1">
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
+                            Van {d.source.name}
+                          </span>
                         </div>
                       )}
                     </button>
@@ -176,7 +169,11 @@ function DishDetailDialog({
         <DialogHeader>
           <DialogTitle className="break-words pr-6">{dish.name}</DialogTitle>
           {dish.source && (
-            <p className="text-xs text-muted-foreground">Recept van {dish.source.name}</p>
+            <div>
+              <span className="inline-block rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-primary">
+                Recept van {dish.source.name}
+              </span>
+            </div>
           )}
         </DialogHeader>
 
@@ -209,12 +206,8 @@ function DishDetailDialog({
           )}
 
           {dish.categories && dish.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {dish.categories.map((c) => (
-                <span key={c} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-primary">
-                  {MEALS.find((m) => m.id === c)?.label}
-                </span>
-              ))}
+            <div className="text-xs text-muted-foreground">
+              {dish.categories.map((c) => MEALS.find((m) => m.id === c)?.label).join(" · ")}
             </div>
           )}
 

@@ -39,7 +39,7 @@ export function WorkoutDialog({
   const [duration, setDuration] = useState(initial?.duration_min?.toString() ?? "");
   const [distance, setDistance] = useState(initial?.distance_km?.toString() ?? "");
   const [maxSpeed, setMaxSpeed] = useState(initial?.max_speed?.toString() ?? "");
-  const [minSpeed, setMinSpeed] = useState(initial?.min_speed?.toString() ?? "");
+  const [avgSpeedInput, setAvgSpeedInput] = useState(initial?.avg_speed?.toString() ?? "");
   const [intensity, setIntensity] = useState(initial?.intensity ?? "gemiddeld");
   const [planId, setPlanId] = useState<string>(initial?.plan_id ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
@@ -48,7 +48,9 @@ export function WorkoutDialog({
   const kind = sportOf(sport).kind;
   const dist = num(distance);
   const dur = num(duration);
-  const avgSpeed = dist != null && dur != null && dur > 0 ? Number(((dist / dur) * 60).toFixed(2)) : null;
+  // Zelf ingevulde gemiddelde snelheid heeft voorrang; anders uit afstand en duur.
+  const avgSpeed =
+    num(avgSpeedInput) ?? (dist != null && dur != null && dur > 0 ? Number(((dist / dur) * 60).toFixed(2)) : null);
 
   const applyPlan = (id: string) => {
     setPlanId(id);
@@ -73,7 +75,7 @@ export function WorkoutDialog({
       distance_km: kind === "cardio" ? dist : null,
       avg_speed: kind === "cardio" ? avgSpeed : null,
       max_speed: kind === "cardio" ? num(maxSpeed) : null,
-      min_speed: kind === "cardio" ? num(minSpeed) : null,
+      min_speed: null,
       plan_id: kind === "kracht" && planId ? planId : null,
       intensity,
       note: note.trim() || null,
@@ -144,24 +146,23 @@ export function WorkoutDialog({
           </div>
 
           {kind === "cardio" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="min-w-0 space-y-2">
-                  <Label>Max. snelheid (km/u)</Label>
-                  <Input inputMode="decimal" value={maxSpeed} onChange={(e) => setMaxSpeed(e.target.value)} />
-                </div>
-                <div className="min-w-0 space-y-2">
-                  <Label>Min. snelheid (km/u)</Label>
-                  <Input inputMode="decimal" value={minSpeed} onChange={(e) => setMinSpeed(e.target.value)} />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 space-y-2">
+                <Label>Gem. snelheid (km/u)</Label>
+                <Input
+                  inputMode="decimal"
+                  placeholder={
+                    dist != null && dur != null && dur > 0 ? ((dist / dur) * 60).toFixed(1) : "bv. 11,5"
+                  }
+                  value={avgSpeedInput}
+                  onChange={(e) => setAvgSpeedInput(e.target.value)}
+                />
               </div>
               <div className="min-w-0 space-y-2">
-                <Label>Gem. snelheid</Label>
-                <div className="flex h-9 items-center rounded-md bg-secondary px-3 text-sm tabular-nums">
-                  {avgSpeed != null ? `${avgSpeed.toFixed(1)} km/u` : "—"}
-                </div>
+                <Label>Max. snelheid (km/u)</Label>
+                <Input inputMode="decimal" value={maxSpeed} onChange={(e) => setMaxSpeed(e.target.value)} />
               </div>
-            </>
+            </div>
           )}
 
           {kind === "kracht" && (
