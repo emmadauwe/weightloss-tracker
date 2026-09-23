@@ -75,7 +75,7 @@ export function WorkoutDialog({
       distance_km: kind === "cardio" ? dist : null,
       avg_speed: kind === "cardio" ? avgSpeed : null,
       max_speed: kind === "cardio" ? num(maxSpeed) : null,
-      min_speed: kind === "cardio" ? num(minSpeed) : null,
+      min_speed: null,
       plan_id: kind === "kracht" && planId ? planId : null,
       intensity,
       note: note.trim() || null,
