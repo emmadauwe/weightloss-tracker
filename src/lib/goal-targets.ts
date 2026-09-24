@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useGoal } from "./goal-store";
 import { useEntries, useSettings } from "./weight-store";
 import { computeGoal } from "./nutrition-math";
+import { sportOf } from "./workouts";
 
 /**
  * Eén bron van waarheid voor de doelberekening en de actieve macro's
@@ -31,9 +32,10 @@ export function useGoalTargets() {
       sex: goal.sex,
       activity: goal.activity,
       lifestyle: goal.lifestyle,
-      sessionsPerWeek: goal.sessionsPerWeek,
-      minutesPerSession: goal.minutesPerSession,
-      intensity: goal.intensity,
+      // Sport wordt per dag bijgeteld op basis van gelogde trainingen.
+      sessionsPerWeek: 0,
+      minutesPerSession: 0,
+      strength: (goal.sports ?? []).some((id) => sportOf(id).kind === "kracht"),
       startDate: settings.startDate,
       endDate: settings.endDate,
     });
