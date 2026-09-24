@@ -114,8 +114,6 @@ function SportDetail() {
                   />
                 )}
               </>
-            ) : sport.kind === "kracht" ? (
-<Stat label="Zwaarste set" value={totals.heavy != null ? `${totals.heavy} kg` : "—"} />
             ) : (
               <Stat
                 label="Gem. duur"
