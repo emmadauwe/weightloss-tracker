@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { useGoalTargets } from "@/lib/goal-targets";
-import type { GoalType, Intensity, Lifestyle } from "@/lib/nutrition-math";
+import type { GoalType, Lifestyle } from "@/lib/nutrition-math";
 import { SPORTS } from "@/lib/workouts";
 import { AppHeader } from "@/components/app-header";
 
@@ -234,29 +234,9 @@ function DoelPage() {
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
             <div className="text-sm font-medium">Sport &amp; beweging</div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="spw">Sessies per week</Label>
-                <Input id="spw" inputMode="numeric" value={goal.sessionsPerWeek ?? ""}
-                  onChange={(e) => setGoal({ ...goal, sessionsPerWeek: numOrUndef(e.target.value) })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mps">Minuten per sessie</Label>
-                <Input id="mps" inputMode="numeric" value={goal.minutesPerSession ?? ""}
-                  onChange={(e) => setGoal({ ...goal, minutesPerSession: numOrUndef(e.target.value) })} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Intensiteit</Label>
-              <Select value={goal.intensity ?? "matig"} onValueChange={(v) => setGoal({ ...goal, intensity: v as Intensity })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="laag">Laag (yoga, rustig wandelen)</SelectItem>
-                  <SelectItem value="matig">Matig (fitness, fietsen, dansen)</SelectItem>
-                  <SelectItem value="hoog">Hoog (hardlopen, HIIT, voetbal)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Verbrande energie wordt automatisch bijgeteld op de dagen waarop je een training logt bij Sport. Je sporttype bepaalt wel je eiwitbehoefte.
+            </p>
             <div className="space-y-2">
               <Label>Welke sporten doe je?</Label>
               <p className="text-xs text-muted-foreground">

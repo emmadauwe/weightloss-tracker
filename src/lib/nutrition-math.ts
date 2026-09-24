@@ -158,6 +158,8 @@ export function computeGoal(opts: {
   intensity?: Intensity;
   startDate?: string;
   endDate?: string;
+  /** Krachtsporters krijgen een hogere eiwitbehoefte. */
+  strength?: boolean;
 }): GoalCalc | null {
   const { type, weightKg, goalKg, heightCm, age, sex, startDate, endDate } = opts;
   if (!weightKg || !heightCm || !age) return null;
@@ -175,7 +177,7 @@ export function computeGoal(opts: {
   else if (type === "bijkomen") kcal = t + (perWeekKg ? (perWeekKg * 7700) / 7 : 300);
   else if (type === "spiermassa") kcal = t + 300;
 
-  const proteinPerKg = type === "spiermassa" ? 2.0 : 1.8;
+  const proteinPerKg = type === "spiermassa" || opts.strength ? 2.0 : 1.8;
   const protein = Math.round(proteinPerKg * weightKg);
   const fatKcal = kcal * 0.28;
   const fat = Math.round(fatKcal / 9);
