@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Dumbbell, Pencil, Plus, Trash2, Trophy } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { WorkoutDialog } from "@/components/workout-dialog";
+import { StrengthSection } from "@/components/strength-section";
 import { useGoal } from "@/lib/goal-store";
 import { useWorkoutPlans } from "@/lib/workout-plans";
 import { heaviestSet, personalRecord, sportOf, useWorkouts, workoutSummary, type Workout } from "@/lib/workouts";
@@ -93,6 +94,10 @@ function SportDetail() {
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title={sport.label} subtitle={focusKm ? `Focus ${focusKm} km` : "Prestaties en voortgang"} back />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
+        {sport.kind === "kracht" ? (
+          <StrengthSection sportId={sport.id} workouts={own} plans={plans} save={save} remove={remove} />
+        ) : (
+        <>
         <Card>
           <CardContent className="grid grid-cols-2 gap-3 px-5 py-4 sm:grid-cols-4">
             <Stat label="Sessies" value={String(totals.sessions)} />
@@ -110,10 +115,7 @@ function SportDetail() {
                 )}
               </>
             ) : sport.kind === "kracht" ? (
-              <>
-                <Stat label="Zwaarste set" value={totals.heavy != null ? `${totals.heavy} kg` : "—"} />
-                <Stat label="Schema's" value={String(plans.items.length)} />
-              </>
+<Stat label="Zwaarste set" value={totals.heavy != null ? `${totals.heavy} kg` : "—"} />
             ) : (
               <Stat
                 label="Gem. duur"
@@ -237,6 +239,8 @@ function SportDetail() {
               </Card>
             );
           })
+        )}
+        </>
         )}
       </main>
 
