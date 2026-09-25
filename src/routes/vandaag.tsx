@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, Lock, LockOpen } from "lucide-react";
+import { useWorkouts } from "@/lib/workouts";
+import { extraMacrosForDate } from "@/lib/workout-energy";
 import { formatUnit, useDishes, useIngredients, useMeals, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
 import { INGREDIENT_CATEGORIES } from "@/lib/nutrition-store";
 import { suggestMacros } from "@/lib/ai.functions";
@@ -46,7 +48,14 @@ function VandaagPage() {
   const { items: ingredients, upsert: upsertIngredient, newId: newIngredientId } = useIngredients();
   const { items: dishes } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
-  const { goal, target } = useGoalTargets();
+  const { goal, target, currentWeight } = useGoalTargets();
+  const { items: workouts } = useWorkouts();
+  const losing = goal.type === "afvallen";
+  const extraFor = (d: string) => extraMacrosForDate(d, workouts, currentWeight ?? 0, losing);
+  const withExtra = (d: string) => {
+    const e = extraFor(d);
+    return { kcal: target.kcal + e.kcal, protein: target.protein + e.protein, carbs: target.carbs + e.carbs, fat: target.fat + e.fat };
+  };
   const [adding, setAdding] = useState<Meal | null>(null);
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
@@ -59,9 +68,11 @@ function VandaagPage() {
   }, [date]);
 
   const generateFor = (dates: string[]) => {
-    // Al ingevulde maaltijden blijven staan; de generator vult enkel de rest aan.
-    const existing = meals
-      .filter((m) => dates.includes(m.date))
+    // Vastgezette maaltijden blijven staan; de rest wordt opnieuw gegenereerd.
+    const inRange = meals.filter((m) => dates.includes(m.date));
+    inRange.filter((m) => !m.locked).forEach((m) => remove(m.id));
+    const existing = inRange
+      .filter((m) => m.locked)
       .map((m) => ({
         date: m.date,
         meal: m.meal,
@@ -79,6 +90,13 @@ function VandaagPage() {
     });
     picksToEntries(picks).forEach((e) => add(e));
   };
+  // Gemiddelde (standaard + extra door sport) doel per dag over de week.
+  const weekTarget = useMemo(() => {
+    const acc = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    for (const d of weekDates) { const t = withExtra(d); acc.kcal += t.kcal; acc.protein += t.protein; acc.carbs += t.carbs; acc.fat += t.fat; }
+    return { kcal: Math.round(acc.kcal / 7), protein: Math.round(acc.protein / 7), carbs: Math.round(acc.carbs / 7), fat: Math.round(acc.fat / 7) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekDates, workouts, target, currentWeight, losing]);
 
   const totals = dayMacros(date, meals, ingredients, dishes);
   const weekAverage = useMemo(() => {
@@ -151,13 +169,15 @@ function VandaagPage() {
 
         {view === "week" ? (
           <div className="space-y-2">
-            <MacroSummary totals={weekAverage} target={target} goalType={goal.type} average />
+            <MacroSummary totals={weekAverage} target={weekTarget} base={target} goalType={goal.type} average />
             <Button type="button" variant="outline" size="sm" className="h-8 w-full text-xs" onClick={() => generateFor(weekDates)}>
               <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
               Genereer week
             </Button>
+            <p className="px-1 text-[11px] text-muted-foreground">Zet gerechten vast met het slotje in de dagplanning; opnieuw genereren vervangt enkel de rest.</p>
             {weekDates.map((d) => {
               const t = dayMacros(d, meals, ingredients, dishes);
+              const dayTarget = withExtra(d);
               const dayEntries = meals.filter((m) => m.date === d);
               const isToday = d === format(new Date(), "yyyy-MM-dd");
               return (
@@ -168,8 +188,8 @@ function VandaagPage() {
                         {format(parseISO(d), "EEEE d MMM", { locale: nl })}
                         {isToday && <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">Vandaag</span>}
                       </div>
-                      <div className={`text-sm tabular-nums ${(goal.type === "bijkomen" ? t.kcal < target.kcal : t.kcal > target.kcal) && dayEntries.length > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {Math.round(t.kcal)} / {target.kcal} kcal
+                      <div className={`text-sm tabular-nums ${(goal.type === "bijkomen" ? t.kcal < dayTarget.kcal : t.kcal > dayTarget.kcal) && dayEntries.length > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {Math.round(t.kcal)} / {dayTarget.kcal} kcal
                       </div>
                     </div>
                     <button
@@ -190,7 +210,7 @@ function VandaagPage() {
                                 <span className="text-muted-foreground">
                                   {entriesForMeal.map((entry) => {
                                     const ref = entry.kind === "dish" ? dishes.find((item) => item.id === entry.refId) : ingredients.find((item) => item.id === entry.refId);
-                                    const leftover = entry.leftoverFrom ? " (restje)" : "";
+                                    const leftover = (entry.leftoverFrom ? " (restje)" : "") + (entry.locked ? " 🔒" : "");
                                     return `${ref?.name ?? "—"} · ${entry.amount} ${formatUnit(entry.unit, entry.amount)}${leftover}`;
                                   }).join(", ")}
                                 </span>
@@ -223,7 +243,7 @@ function VandaagPage() {
           </div>
         ) : (
           <>
-            <MacroSummary totals={totals} target={target} goalType={goal.type} />
+            <MacroSummary totals={totals} target={withExtra(date)} base={target} goalType={goal.type} />
 
             {/* Maaltijden */}
             {MEAL_ORDER.map((meal) => {
@@ -246,7 +266,7 @@ function VandaagPage() {
                             : dishes.find((d) => d.id === m.refId);
                           const macros = mealEntryMacros(m, ingredients, dishes);
                           return (
-                            <li key={m.id}>
+                            <li key={m.id} className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => setEditingEntry({ entry: m, name: ref?.name ?? "—" })}
@@ -272,6 +292,15 @@ function VandaagPage() {
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
                               </button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-7 w-7 shrink-0 ${m.locked ? "text-primary" : "text-muted-foreground/60"}`}
+                                onClick={() => update(m.id, { locked: !m.locked })}
+                                aria-label={m.locked ? "Losmaken" : "Vastzetten"}
+                              >
+                                {m.locked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+                              </Button>
                             </li>
                           );
                         })}
@@ -332,11 +361,13 @@ function VandaagPage() {
 function MacroSummary({
   totals,
   target,
+  base,
   goalType,
   average = false,
 }: {
   totals: { kcal: number; protein: number; carbs: number; fat: number };
   target: { kcal: number; protein: number; carbs: number; fat: number };
+  base: { kcal: number; protein: number; carbs: number; fat: number };
   goalType: "afvallen" | "behouden" | "bijkomen" | "spiermassa";
   average?: boolean;
 }) {
@@ -356,31 +387,47 @@ function MacroSummary({
               </span>
               <span className="text-xs text-muted-foreground">/ {target.kcal} kcal</span>
             </div>
+            {target.kcal > base.kcal && (
+              <div className="text-[11px] text-muted-foreground">
+                {base.kcal} standaard + <span className="font-medium text-primary">{target.kcal - base.kcal} extra door sport</span>
+              </div>
+            )}
           </div>
           <div className={`text-xs font-medium tabular-nums ${caloriesAgainstGoal ? "text-destructive" : "text-success-strong"}`}>
             {Math.round(target.kcal - totals.kcal)} resterend
           </div>
         </div>
-        <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} unit="g" favorableOver />
-        <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} unit="g" />
-        <MacroBar label="Vet" cur={totals.fat} max={target.fat} unit="g" />
+        <MacroBar label="Eiwit" cur={totals.protein} max={target.protein} base={base.protein} unit="g" favorableOver />
+        <MacroBar label="Koolhydraten" cur={totals.carbs} max={target.carbs} base={base.carbs} unit="g" />
+        <MacroBar label="Vet" cur={totals.fat} max={target.fat} base={base.fat} unit="g" />
       </CardContent>
     </Card>
   );
 }
 
-function MacroBar({ label, cur, max, unit, favorableOver = false }: { label: string; cur: number; max: number; unit: string; favorableOver?: boolean }) {
+function MacroBar({ label, cur, max, base, unit, favorableOver = false }: { label: string; cur: number; max: number; base: number; unit: string; favorableOver?: boolean }) {
   const pct = Math.max(0, Math.min(100, (cur / Math.max(1, max)) * 100));
   const over = cur > max;
+  const extra = max - base;
+  const basePct = (base / Math.max(1, max)) * 100;
   return (
     <div>
       <div className="flex justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
-        <span className="tabular-nums">{Math.round(cur)} / {max} {unit}</span>
+        <span className="tabular-nums">
+          {Math.round(cur)} / {max} {unit}
+          {extra > 0 && <span className="text-primary"> (+{extra})</span>}
+        </span>
       </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="relative mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        {extra > 0 && (
+          <div className="absolute inset-y-0 right-0 bg-primary/15" style={{ left: `${basePct}%` }} aria-hidden />
+        )}
+        {extra > 0 && (
+          <div className="absolute inset-y-0 z-10 w-0.5 bg-foreground/50" style={{ left: `${basePct}%` }} title="Grens standaard macro's" />
+        )}
         <div
-          className={`h-full rounded-full transition-all ${over && !favorableOver ? "bg-destructive" : "bg-primary"}`}
+          className={`relative h-full rounded-full transition-all ${over && !favorableOver ? "bg-destructive" : "bg-primary"}`}
           style={{ width: `${pct}%` }}
         />
       </div>

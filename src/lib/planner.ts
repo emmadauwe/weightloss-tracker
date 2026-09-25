@@ -55,9 +55,35 @@ function candidatesFor(meal: Meal, dishes: Dish[]): Dish[] {
   return dishes.filter((d) => d.categories?.includes(meal));
 }
 
+const STOP = new Set(["met", "van", "en", "de", "het", "een", "in", "op", "voor", "zonder", "extra", "light", "mini", "groot", "klein", "snel", "zelfgemaakt", "zelfgemaakte", "proteine", "proteïne", "eiwit", "eiwitrijk", "eiwitrijke", "vegan", "veggie"]);
+const familyCache = new Map<string, Set<string>>();
+/** Kernwoorden van een receptnaam (zonder merk tussen haakjes, meervoud genormaliseerd). */
+function familyWords(dish: Dish): Set<string> {
+  const cached = familyCache.get(dish.name);
+  if (cached) return cached;
+  const words = dish.name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 4 && !STOP.has(w))
+    .map((w) => w.replace(/(en|s)$/, ""));
+  const set = new Set(words);
+  familyCache.set(dish.name, set);
+  return set;
+}
+/** Twee verschillende recepten voor eenzelfde gerecht (bv. twee soorten pannenkoeken). */
+export function sameFamily(a: Dish, b: Dish): boolean {
+  if (a.id === b.id) return false;
+  const wa = familyWords(a);
+  for (const w of familyWords(b)) if (wa.has(w)) return true;
+  return false;
+}
+
 /**
  * Kies het gerecht dat de dag het dichtst bij het doel brengt, rekening
- * houdend met hoeveel maaltijden er die dag nog volgen.
+ * houdend met hoeveel maaltijden er die dag nog volgen. Vaak gebruikte
+ * recepten krijgen een kleine strafscore zodat alles eerlijk aan bod komt.
  */
 function pickForSlot(opts: {
   candidates: Dish[];
@@ -66,11 +92,18 @@ function pickForSlot(opts: {
   target: Macros;
   priority: MacroPriority;
   remainingSlots: number;
+  usage?: Map<string, number>;
+  avoid?: Dish[];
+  shortlistSize?: number;
 }): Dish | undefined {
-  const { candidates, existing, ingredients, target, priority } = opts;
+  const { existing, ingredients, target, priority, usage, avoid } = opts;
+  let candidates = opts.candidates;
+  if (avoid && avoid.length) {
+    const filtered = candidates.filter((c) => !avoid.some((a) => sameFamily(a, c)));
+    if (filtered.length) candidates = filtered;
+  }
   if (candidates.length === 0) return undefined;
   const slots = Math.max(1, opts.remainingSlots);
-  // Tussendoel: het deel van het resterende budget dat bij deze maaltijd hoort.
   const partial: Macros = {
     kcal: existing.kcal + (target.kcal - existing.kcal) / slots,
     protein: existing.protein + (target.protein - existing.protein) / slots,
@@ -80,13 +113,14 @@ function pickForSlot(opts: {
   const ranked = candidates
     .map((candidate) => ({
       candidate,
-      score: dayScore(sum(existing, dishMacrosPerServing(candidate, ingredients)), partial, priority),
+      score:
+        dayScore(sum(existing, dishMacrosPerServing(candidate, ingredients)), partial, priority) +
+        (usage?.get(candidate.id) ?? 0) * 1.5 +
+        Math.random() * 2,
     }))
     .sort((a, b) => a.score - b.score);
 
-  // Variatie zonder de voedingsdoelen los te laten: kies uit de beste passende
-  // opties, met een grotere kans voor het gerecht met de laagste afwijking.
-  const shortlist = ranked.slice(0, Math.min(4, ranked.length));
+  const shortlist = ranked.slice(0, Math.min(opts.shortlistSize ?? 4, ranked.length));
   const weights = shortlist.map((_, index) => shortlist.length - index);
   let draw = Math.random() * weights.reduce((total, weight) => total + weight, 0);
   for (let index = 0; index < shortlist.length; index++) {
@@ -143,18 +177,35 @@ export function generatePlan(opts: {
   const lunchOnly = candidatesFor("lunch", dishes);
   const dinnerCandidates = candidatesFor("diner", dishes);
 
+  const dishById = new Map(dishes.map((d) => [d.id, d]));
+
   const buildAttempt = (): PlanPick[] => {
     const picks: PlanPick[] = [];
     const dayMacrosMap = new Map<string, Macros>(baseMacros);
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
+    // Hoe vaak elk recept in dit plan voorkomt (voor eerlijke verdeling/variatie).
+    const usage = new Map<string, number>();
+    const dayDishList = new Map<string, Dish[]>();
+    const weekCooked: Dish[] = [];
+    const track = (date: string, dish: Dish, meal: Meal) => {
+      usage.set(dish.id, (usage.get(dish.id) ?? 0) + 1);
+      dayDishList.set(date, [...(dayDishList.get(date) ?? []), dish]);
+      if ((meal === "lunch" || meal === "diner") && !weekCooked.some((d) => d.id === dish.id)) weekCooked.push(dish);
+    };
+    for (const e of existing) {
+      const d = e.dishId ? dishById.get(e.dishId) : undefined;
+      if (d) track(e.date, d, e.meal);
+    }
+    const dayDishes = (date: string) => dayDishList.get(date) ?? [];
     const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
       picks.push({ date, meal, dishId: dish.id, leftoverFrom });
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
+      track(date, dish, meal);
     };
 
     const isFree = (date: string, meal: Meal) => !occupied.has(`${date}|${meal}`);
 
-    // Ontbijt eerst: vast deel van het dagbudget.
+    // Ontbijt eerst: vast deel van het dagbudget, met ruime keuze voor variatie.
     for (const date of dates) {
       if (!isFree(date, "ontbijt")) continue;
       const dish = pickForSlot({
@@ -164,6 +215,9 @@ export function generatePlan(opts: {
         target,
         priority,
         remainingSlots: 4,
+        usage,
+        avoid: dayDishes(date),
+        shortlistSize: 6,
       });
       if (dish) push(date, "ontbijt", dish);
     }
@@ -204,6 +258,8 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 3,
+          usage,
+          avoid: [...dayDishes(date), ...weekCooked],
         });
         if (dish) {
           push(date, "lunch", dish);
@@ -232,6 +288,8 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 2,
+          usage,
+          avoid: [...dayDishes(date), ...weekCooked],
         });
         if (dish) {
           push(date, "diner", dish);
@@ -257,6 +315,9 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 1,
+          usage,
+          avoid: dayDishes(date),
+          shortlistSize: 6,
         });
         if (!snack) break;
         const after = dayScore(sum(dayOf(date), dishMacrosPerServing(snack, ingredients)), target, priority);
