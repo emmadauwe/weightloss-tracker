@@ -427,7 +427,7 @@ function MacroBar({ label, cur, max, base, unit, favorableOver = false }: { labe
           <div className="absolute inset-y-0 z-10 w-0.5 bg-foreground/50" style={{ left: `${basePct}%` }} title="Grens standaard macro's" />
         )}
         <div
-          className={`h-full rounded-full transition-all ${over && !favorableOver ? "bg-destructive" : "bg-primary"}`}
+          className={`relative h-full rounded-full transition-all ${over && !favorableOver ? "bg-destructive" : "bg-primary"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
