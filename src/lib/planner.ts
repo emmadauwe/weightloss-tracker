@@ -258,6 +258,8 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 3,
+          usage,
+          avoid: [...dayDishes(date), ...weekCooked],
         });
         if (dish) {
           push(date, "lunch", dish);
@@ -286,6 +288,8 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 2,
+          usage,
+          avoid: [...dayDishes(date), ...weekCooked],
         });
         if (dish) {
           push(date, "diner", dish);
@@ -311,6 +315,9 @@ export function generatePlan(opts: {
           target,
           priority,
           remainingSlots: 1,
+          usage,
+          avoid: dayDishes(date),
+          shortlistSize: 6,
         });
         if (!snack) break;
         const after = dayScore(sum(dayOf(date), dishMacrosPerServing(snack, ingredients)), target, priority);
