@@ -177,18 +177,35 @@ export function generatePlan(opts: {
   const lunchOnly = candidatesFor("lunch", dishes);
   const dinnerCandidates = candidatesFor("diner", dishes);
 
+  const dishById = new Map(dishes.map((d) => [d.id, d]));
+
   const buildAttempt = (): PlanPick[] => {
     const picks: PlanPick[] = [];
     const dayMacrosMap = new Map<string, Macros>(baseMacros);
     const dayOf = (date: string) => dayMacrosMap.get(date) ?? ZERO;
+    // Hoe vaak elk recept in dit plan voorkomt (voor eerlijke verdeling/variatie).
+    const usage = new Map<string, number>();
+    const dayDishList = new Map<string, Dish[]>();
+    const weekCooked: Dish[] = [];
+    const track = (date: string, dish: Dish, meal: Meal) => {
+      usage.set(dish.id, (usage.get(dish.id) ?? 0) + 1);
+      dayDishList.set(date, [...(dayDishList.get(date) ?? []), dish]);
+      if ((meal === "lunch" || meal === "diner") && !weekCooked.some((d) => d.id === dish.id)) weekCooked.push(dish);
+    };
+    for (const e of existing) {
+      const d = e.dishId ? dishById.get(e.dishId) : undefined;
+      if (d) track(e.date, d, e.meal);
+    }
+    const dayDishes = (date: string) => dayDishList.get(date) ?? [];
     const push = (date: string, meal: Meal, dish: Dish, leftoverFrom?: string) => {
       picks.push({ date, meal, dishId: dish.id, leftoverFrom });
       dayMacrosMap.set(date, sum(dayOf(date), dishMacrosPerServing(dish, ingredients)));
+      track(date, dish, meal);
     };
 
     const isFree = (date: string, meal: Meal) => !occupied.has(`${date}|${meal}`);
 
-    // Ontbijt eerst: vast deel van het dagbudget.
+    // Ontbijt eerst: vast deel van het dagbudget, met ruime keuze voor variatie.
     for (const date of dates) {
       if (!isFree(date, "ontbijt")) continue;
       const dish = pickForSlot({
@@ -198,6 +215,9 @@ export function generatePlan(opts: {
         target,
         priority,
         remainingSlots: 4,
+        usage,
+        avoid: dayDishes(date),
+        shortlistSize: 6,
       });
       if (dish) push(date, "ontbijt", dish);
     }
