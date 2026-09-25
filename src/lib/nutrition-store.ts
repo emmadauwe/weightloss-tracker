@@ -82,6 +82,8 @@ export type MealEntry = {
   leftoverFrom?: string;
   /** Niet meenemen op het boodschappenlijstje (bv. eten van thuis meegekregen). */
   skipShopping?: boolean;
+  /** Vastgezet: blijft staan wanneer de week opnieuw gegenereerd wordt. */
+  locked?: boolean;
 };
 
 const ING_KEY = "nutrition-ingredients-v1";
