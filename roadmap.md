@@ -44,3 +44,7 @@
 - [x] Limit high fives to achievement notifications.
 - [x] Show and adopt friends' workout plans on the friend profile.
 - [x] Add high-five notifications for new personal sport records.
+- [x] Full-width dialogs, borderless close buttons, consistent tab buttons.
+- [x] Sport: per-sport stats only, strength schemas → exercises → logs with chart, manual avg speed.
+- [x] Planner: lock meals, avoid similar recipes, more variety and fair usage.
+- [x] Workout-based extra macros in day/week meters.
