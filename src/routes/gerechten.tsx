@@ -37,7 +37,7 @@ const MEALS: { id: Meal; label: string }[] = [
 
 function GerechtenPage() {
   const { items, upsert, remove, newId } = useDishes();
-  const { items: ingredients, library: ingredientLibrary } = useIngredients();
+  const { items: ingredients } = useIngredients();
   const [tab, setTab] = useState<"recepten" | "ingredienten">("recepten");
   const [q, setQ] = useState("");
   const [viewing, setViewing] = useState<Dish | null>(null);
@@ -411,7 +411,7 @@ function DishDialog({
       <DialogContent className="max-h-[80vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         {picking !== null ? (
           <IngredientPicker
-            ingredients={ingredients}
+            ingredients={ingredients.filter((i) => !i.quick)}
             onClose={() => setPicking(null)}
             onPick={(id) => chooseIngredient(picking, id)}
           />
