@@ -4,6 +4,7 @@ import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import { ChevronDown, ShoppingBasket } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,10 +35,15 @@ export const Route = createFileRoute("/boodschappen")({
 });
 
 function BoodschappenPage() {
-  const [includeDone, setIncludeDone] = useState(false);
+  const includeDone = false;
   const { week } = Route.useSearch();
-  const selected = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? parseISO(week) : new Date();
-  const monday = startOfWeek(selected, { weekStartsOn: 1 });
+  const thisMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+  // Vanaf zaterdag tonen we standaard al de boodschappen voor volgende week.
+  const initialNext = week && /^\d{4}-\d{2}-\d{2}$/.test(week)
+    ? startOfWeek(parseISO(week), { weekStartsOn: 1 }) > thisMonday
+    : [0, 6].includes(new Date().getDay());
+  const [nextWeek, setNextWeek] = useState(initialNext);
+  const monday = nextWeek ? addDays(thisMonday, 7) : thisMonday;
   const dates = Array.from({ length: 7 }, (_, index) => format(addDays(monday, index), "yyyy-MM-dd"));
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
@@ -64,37 +70,24 @@ function BoodschappenPage() {
   const toggleDish = (ids: string[], needed: boolean) =>
     ids.forEach((id) => update(id, { skipShopping: needed ? undefined : true }));
 
-  const isCurrentWeek = format(monday, "yyyy-MM-dd") === format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   return (
     <div className="min-h-screen bg-background pb-28">
       <AppHeader title="Boodschappenlijstje" subtitle="Alles voor je geplande week" />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant={nextWeek ? "outline" : "default"} onClick={() => setNextWeek(false)}>Deze week</Button>
+          <Button size="sm" variant={nextWeek ? "default" : "outline"} onClick={() => setNextWeek(true)}>Volgende week</Button>
+        </div>
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
             <div className="text-sm font-medium">
               {format(monday, "d MMM", { locale: nl })} – {format(addDays(monday, 6), "d MMM", { locale: nl })}
             </div>
-            {isCurrentWeek && <div className="text-xs font-medium text-primary">Deze week</div>}
           </div>
           <ShoppingBasket className="h-5 w-5 text-primary" />
         </div>
 
-        <Card>
-          <CardContent className="flex items-start gap-3 px-5 py-3">
-            <Checkbox
-              id="include-done"
-              checked={includeDone}
-              onCheckedChange={(value) => setIncludeDone(value === true)}
-            />
-            <label htmlFor="include-done" className="cursor-pointer text-xs leading-snug">
-              <span className="font-medium">Toon ook maaltijden die al bereid zijn</span>
-              <span className="block text-muted-foreground">
-                Standaard laten we maaltijden weg die al gegeten zijn of waarvan je al gekookt hebt (restjes).
-              </span>
-            </label>
-          </CardContent>
-        </Card>
 
         {plannedList.length > 0 && (
           <Card>
