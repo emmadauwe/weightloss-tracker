@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
-import { ShoppingBasket } from "lucide-react";
+import { ChevronDown, ShoppingBasket } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +11,7 @@ import { useCloudDoc } from "@/lib/cloud-store";
 import { formatUnit, useDishes, useIngredients, useMeals } from "@/lib/nutrition-store";
 import {
   buildShoppingList,
+  isMealDone,
   formatShoppingAmount,
   sentenceCase,
   shoppingCheckKey,
@@ -39,9 +41,29 @@ function BoodschappenPage() {
   const dates = Array.from({ length: 7 }, (_, index) => format(addDays(monday, index), "yyyy-MM-dd"));
   const { items: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
-  const { items: meals } = useMeals();
+  const { items: meals, update } = useMeals();
+  const [showDishes, setShowDishes] = useState(false);
   const { value: checks, setValue: setChecks } = useCloudDoc<Record<string, boolean>>(SHOPPING_CHECKS_KEY, {});
   const groups = buildShoppingList(dates, meals, ingredients, dishes, { includeDone });
+  // Unieke gerechten/etenswaren van deze week die nog niet bereid zijn.
+  const planned = new Map<string, { name: string; ids: string[]; skipped: boolean }>();
+  for (const m of meals) {
+    if (!dates.includes(m.date) || (!includeDone && isMealDone(m))) continue;
+    const ref = m.kind === "dish" ? dishes.find((d) => d.id === m.refId) : ingredients.find((i) => i.id === m.refId);
+    if (!ref) continue;
+    if (m.kind === "dish" && "directMacros" in ref && ref.directMacros && (ref as { items: unknown[] }).items.length === 0) continue;
+    if (m.kind === "ingredient" && "quick" in ref && ref.quick) continue;
+    const key = `${m.kind}:${m.refId}`;
+    const cur = planned.get(key) ?? { name: ref.name, ids: [], skipped: true };
+    cur.ids.push(m.id);
+    cur.skipped = cur.skipped && Boolean(m.skipShopping);
+    planned.set(key, cur);
+  }
+  const plannedList = [...planned.values()].sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  const skippedCount = plannedList.filter((p) => p.skipped).length;
+  const toggleDish = (ids: string[], needed: boolean) =>
+    ids.forEach((id) => update(id, { skipShopping: needed ? undefined : true }));
+
   const isCurrentWeek = format(monday, "yyyy-MM-dd") === format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   return (
@@ -73,6 +95,44 @@ function BoodschappenPage() {
             </label>
           </CardContent>
         </Card>
+
+        {plannedList.length > 0 && (
+          <Card>
+            <CardContent className="px-5 py-3">
+              <button
+                type="button"
+                onClick={() => setShowDishes((v) => !v)}
+                className="flex w-full items-center justify-between gap-3 text-left"
+                aria-expanded={showDishes}
+              >
+                <span className="text-xs leading-snug">
+                  <span className="font-medium">Heb je iets al in huis?</span>
+                  <span className="block text-muted-foreground">
+                    {skippedCount > 0
+                      ? `${skippedCount} van ${plannedList.length} gerechten staan niet op je lijstje`
+                      : "Bv. een maaltijd in de vriezer of eten van thuis"}
+                  </span>
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${showDishes ? "rotate-180" : ""}`} />
+              </button>
+              {showDishes && (
+                <ul className="mt-2 divide-y divide-border border-t border-border">
+                  {plannedList.map((p) => (
+                    <li key={p.ids[0]} className="flex items-center justify-between gap-3 py-2.5">
+                      <span className={`min-w-0 flex-1 truncate text-sm ${p.skipped ? "text-muted-foreground" : ""}`}>{p.name}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{p.skipped ? "Al in huis" : "Kopen"}</span>
+                      <Switch
+                        checked={!p.skipped}
+                        onCheckedChange={(v) => toggleDish(p.ids, v)}
+                        aria-label={`${p.name} op lijstje`}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {groups.length === 0 ? (
           <Card>
