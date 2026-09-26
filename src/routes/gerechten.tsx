@@ -37,7 +37,7 @@ const MEALS: { id: Meal; label: string }[] = [
 
 function GerechtenPage() {
   const { items, upsert, remove, newId } = useDishes();
-  const { items: ingredients } = useIngredients();
+  const { items: ingredients, library: ingredientLibrary } = useIngredients();
   const [tab, setTab] = useState<"recepten" | "ingredienten">("recepten");
   const [q, setQ] = useState("");
   const [viewing, setViewing] = useState<Dish | null>(null);

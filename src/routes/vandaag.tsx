@@ -441,7 +441,7 @@ function AddMealDialog({
   meal: Meal; date: string; onClose: () => void;
   onAdd: (e: { date: string; meal: Meal; kind: "dish" | "ingredient"; refId: string; amount: number; unit: Unit }) => void;
 }) {
-  const { items: ingredients } = useIngredients();
+  const { library: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
   const [tab, setTab] = useState<"dish" | "ingredient">(dishes.length > 0 ? "dish" : "ingredient");
   const [q, setQ] = useState("");
@@ -554,7 +554,6 @@ function EntryDialog({
   onDelete: () => void;
 }) {
   const [amount, setAmount] = useState(String(entry.amount));
-  const [onList, setOnList] = useState(!entry.skipShopping);
   const [leftover, setLeftover] = useState(Boolean(entry.leftoverFrom));
 
   const submit = (e: React.FormEvent) => {
@@ -563,7 +562,6 @@ function EntryDialog({
     if (a > 0)
       onSave({
         amount: a,
-        skipShopping: onList ? undefined : true,
         leftoverFrom: leftover
           ? entry.leftoverFrom ?? format(addDays(parseISO(entry.date), -1), "yyyy-MM-dd")
           : undefined,
@@ -580,15 +578,6 @@ function EntryDialog({
             <Input id="eamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
           </div>
           <div className="space-y-2 rounded-lg border border-border p-3">
-            <label className="flex items-start gap-3 text-sm">
-              <Checkbox checked={onList} onCheckedChange={(v) => setOnList(v === true)} className="mt-0.5" />
-              <span>
-                Op boodschappenlijstje
-                <span className="block text-xs text-muted-foreground">
-                  Zet uit als je dit al hebt of van thuis meekrijgt.
-                </span>
-              </span>
-            </label>
             <label className="flex items-start gap-3 text-sm">
               <Checkbox checked={leftover} onCheckedChange={(v) => setLeftover(v === true)} className="mt-0.5" />
               <span>
@@ -667,6 +656,7 @@ function QuickAddDialog({
         carbs: num(carbs),
         fat: num(fat),
         category,
+        quick: true,
       },
       a,
     );
