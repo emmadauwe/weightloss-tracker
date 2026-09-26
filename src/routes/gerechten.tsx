@@ -411,7 +411,7 @@ function DishDialog({
       <DialogContent className="max-h-[80vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         {picking !== null ? (
           <IngredientPicker
-            ingredients={ingredients}
+            ingredients={ingredients.filter((i) => !i.quick)}
             onClose={() => setPicking(null)}
             onPick={(id) => chooseIngredient(picking, id)}
           />

@@ -35,6 +35,8 @@ export type Ingredient = {
   unitBase?: "g" | "ml";
   /** Verduidelijking, bv. "1 snee" of "1 middelgrote appel". */
   unitNote?: string;
+  /** Via "snel toevoegen" gemaakt: niet zichtbaar in de ingrediëntenlijst. */
+  quick?: boolean;
 };
 
 export type DishItem = {
@@ -122,7 +124,8 @@ export function useIngredients() {
     [setValue],
   );
 
-  return { items, upsert, remove, loaded, newId: uid };
+  const library = items.filter((i) => !i.quick);
+  return { items, library, upsert, remove, loaded, newId: uid };
 }
 
 export function useDishes() {
