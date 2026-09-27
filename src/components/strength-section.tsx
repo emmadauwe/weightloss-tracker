@@ -206,6 +206,7 @@ function ExerciseView({
   remove: (id: string) => Promise<unknown>;
 }) {
   const [logging, setLogging] = useState(false);
+  const [deleting, setDeleting] = useState<typeof history[number] | null>(null);
   const history = useMemo(() => historyFor(workouts, plan.id, exercise.name), [workouts, plan.id, exercise.name]);
   const chart = useMemo(
     () =>
@@ -280,14 +281,7 @@ function ExerciseView({
                 size="icon"
                 className="h-8 w-8 shrink-0"
                 aria-label="Verwijderen"
-                onClick={() => {
-                  const rest = h.workout.exercises.filter((e) => e.name.trim().toLowerCase() !== exercise.name.trim().toLowerCase());
-                  if (rest.length === 0) void remove(h.workout.id);
-                  else {
-                    const { id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note } = h.workout;
-                    void save({ id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note, exercises: rest });
-                  }
-                }}
+                onClick={() => setDeleting(h)}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
