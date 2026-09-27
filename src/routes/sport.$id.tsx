@@ -47,6 +47,7 @@ function SportDetail() {
   const plans = useWorkoutPlans();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Workout | null>(null);
+  const [deleting, setDeleting] = useState<Workout | null>(null);
 
   const own = useMemo(() => items.filter((w) => w.sport === id), [items, id]);
   const focusKm = sport.id === "lopen" ? goal.runFocusKm : undefined;
@@ -259,6 +260,14 @@ function SportDetail() {
           }}
         />
       )}
+
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && void remove(deleting.id)}
+        title="Training verwijderen?"
+        description={deleting ? `De training van ${format(parseISO(deleting.date), "EEEE d MMM yyyy", { locale: nl })} wordt definitief verwijderd.` : ""}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/date-field";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { PlanDialog } from "@/components/plan-dialog";
 import type { WorkoutPlan, PlanExercise } from "@/lib/workout-plans";
 import type { Workout, WorkoutInput, WorkoutSet } from "@/lib/workouts";
