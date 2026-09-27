@@ -420,6 +420,7 @@ function HistoryView({
   sorted, unit, onRemove, onUpdate, diffIsGood,
 }: { sorted: Entry[]; unit: string; onRemove: (d: string) => void; onUpdate: (originalDate: string, e: Entry) => void; diffIsGood: (diff: number) => boolean }) {
   const [editing, setEditing] = useState<Entry | null>(null);
+  const [deleting, setDeleting] = useState<Entry | null>(null);
 
   if (sorted.length === 0) {
     return (
@@ -471,7 +472,7 @@ function HistoryView({
                   <Button variant="ghost" size="icon" onClick={() => setEditing(e)} aria-label="Bewerken">
                     <Pencil className="h-4 w-4 text-primary" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onRemove(e.date)} aria-label="Verwijderen">
+                  <Button variant="ghost" size="icon" onClick={() => setDeleting(e)} aria-label="Verwijderen">
                     <Trash2 className="h-4 w-4 text-primary" />
                   </Button>
                 </li>
@@ -491,6 +492,13 @@ function HistoryView({
           }}
         />
       )}
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && onRemove(deleting.date)}
+        title="Meting verwijderen?"
+        description={deleting ? `De meting van ${format(parseISO(deleting.date), "EEEE d MMMM yyyy", { locale: nl })} (${deleting.weight.toFixed(1)} ${unit}) wordt definitief verwijderd.` : ""}
+      />
     </>
   );
 }
