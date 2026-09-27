@@ -13,6 +13,7 @@ import {
 } from "@/lib/social";
 import { useNotifications } from "@/lib/notifications";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 
 export const Route = createFileRoute("/account/vrienden")({
@@ -38,6 +39,7 @@ function VriendenPage() {
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState<{ id: string; display_name: string | null; avatar_id: string | null } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
 
   const search = async () => {
     setMessage(null);
@@ -200,10 +202,7 @@ function VriendenPage() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={async () => {
-                          await removeLink(f.id);
-                          await reload();
-                        }}
+                        onClick={() => setDeleting({ id: f.id, name: f.profile?.display_name ?? "deze vriend" })}
                       >
                         <Trash2 className="mr-1 h-4 w-4 text-destructive" /> Verwijderen
                       </Button>
@@ -214,6 +213,18 @@ function VriendenPage() {
             )}
           </CardContent>
         </Card>
+
+        <ConfirmDelete
+          open={deleting !== null}
+          onClose={() => setDeleting(null)}
+          onConfirm={async () => {
+            if (!deleting) return;
+            await removeLink(deleting.id);
+            await reload();
+          }}
+          title="Vriend verwijderen?"
+          description={`${deleting?.name} wordt uit je vriendenlijst gehaald. Jullie zien elkaars voortgang dan niet meer.`}
+        />
       </main>
     </div>
   );

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Apple, Sparkles } from "lucide-react";
 import { suggestMacros } from "@/lib/ai.functions";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import {
   INGREDIENT_CATEGORIES,
   useIngredients,
@@ -24,6 +25,7 @@ export function IngredientLibrary() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Ingredient | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -63,7 +65,7 @@ export function IngredientLibrary() {
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing(i)} aria-label="Bewerken">
                     <Pencil className="h-3.5 w-3.5 text-primary" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => remove(i.id)} aria-label="Verwijderen">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDeleting(i)} aria-label="Verwijderen">
                     <Trash2 className="h-3.5 w-3.5 text-primary" />
                   </Button>
                 </li>
@@ -96,6 +98,13 @@ export function IngredientLibrary() {
           newId={newId}
         />
       )}
+
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && remove(deleting.id)}
+        description={`Weet je zeker dat je “${deleting?.name}” definitief wil verwijderen? Recepten met dit ingrediënt verliezen het.`}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 export const Route = createFileRoute("/vandaag")({
   head: () => ({ meta: [
@@ -59,6 +60,7 @@ function VandaagPage() {
   const [adding, setAdding] = useState<Meal | null>(null);
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
+  const [clearingDay, setClearingDay] = useState<string | null>(null);
 
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
@@ -229,7 +231,7 @@ function VandaagPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => clearDay(d)}
+                          onClick={() => setClearingDay(d)}
                           aria-label="Dag leegmaken"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -353,6 +355,14 @@ function VandaagPage() {
           onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
         />
       )}
+
+      <ConfirmDelete
+        open={clearingDay !== null}
+        onClose={() => setClearingDay(null)}
+        onConfirm={() => clearingDay && clearDay(clearingDay)}
+        title="Dag leegmaken?"
+        description={clearingDay ? `Alle maaltijden van ${format(parseISO(clearingDay), "EEEE d MMM", { locale: nl })} worden verwijderd.` : ""}
+      />
 
     </div>
   );
@@ -555,6 +565,7 @@ function EntryDialog({
 }) {
   const [amount, setAmount] = useState(String(entry.amount));
   const [leftover, setLeftover] = useState(Boolean(entry.leftoverFrom));
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -591,9 +602,25 @@ function EntryDialog({
             </label>
           </div>
           <Button type="submit" className="w-full">Opslaan</Button>
-          <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
-            <Trash2 className="mr-1 h-4 w-4" /> Verwijderen uit deze maaltijd
-          </Button>
+          {confirmDelete ? (
+            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive-soft p-3">
+              <p className="text-xs text-muted-foreground">
+                Weet je zeker dat je “{name}” uit deze maaltijd wil verwijderen?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+                  Annuleren
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                  Ja, verwijderen
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="mr-1 h-4 w-4" /> Verwijderen uit deze maaltijd
+            </Button>
+          )}
         </form>
       </DialogContent>
     </Dialog>

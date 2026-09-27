@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateField } from "@/components/date-field";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { PlanDialog } from "@/components/plan-dialog";
 import type { WorkoutPlan, PlanExercise } from "@/lib/workout-plans";
 import type { Workout, WorkoutInput, WorkoutSet } from "@/lib/workouts";
@@ -205,6 +206,7 @@ function ExerciseView({
   remove: (id: string) => Promise<unknown>;
 }) {
   const [logging, setLogging] = useState(false);
+  const [deleting, setDeleting] = useState<typeof history[number] | null>(null);
   const history = useMemo(() => historyFor(workouts, plan.id, exercise.name), [workouts, plan.id, exercise.name]);
   const chart = useMemo(
     () =>
@@ -279,14 +281,7 @@ function ExerciseView({
                 size="icon"
                 className="h-8 w-8 shrink-0"
                 aria-label="Verwijderen"
-                onClick={() => {
-                  const rest = h.workout.exercises.filter((e) => e.name.trim().toLowerCase() !== exercise.name.trim().toLowerCase());
-                  if (rest.length === 0) void remove(h.workout.id);
-                  else {
-                    const { id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note } = h.workout;
-                    void save({ id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note, exercises: rest });
-                  }
-                }}
+                onClick={() => setDeleting(h)}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
@@ -317,6 +312,22 @@ function ExerciseView({
           }}
         />
       )}
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          const h = deleting;
+          const rest = h.workout.exercises.filter((e) => e.name.trim().toLowerCase() !== exercise.name.trim().toLowerCase());
+          if (rest.length === 0) void remove(h.workout.id);
+          else {
+            const { id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note } = h.workout;
+            void save({ id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note, exercises: rest });
+          }
+        }}
+        title="Sessie verwijderen?"
+        description={deleting ? `De gelogde sessie van ${format(parseISO(deleting.workout.date), "EEEE d MMM yyyy", { locale: nl })} voor “${exercise.name}” wordt verwijderd.` : ""}
+      />
     </>
   );
 }
