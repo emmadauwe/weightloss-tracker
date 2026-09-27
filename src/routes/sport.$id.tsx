@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dumbbell, Pencil, Plus, Trash2, Trophy } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { WorkoutDialog } from "@/components/workout-dialog";
 import { StrengthSection } from "@/components/strength-section";
 import { useGoal } from "@/lib/goal-store";
@@ -227,7 +228,7 @@ function SportDetail() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => void remove(w.id)}
+                      onClick={() => setDeleting(w)}
                       aria-label="Verwijderen"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

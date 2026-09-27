@@ -37,6 +37,7 @@ import {
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 import { useGoal } from "@/lib/goal-store";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 
 export const Route = createFileRoute("/")({
