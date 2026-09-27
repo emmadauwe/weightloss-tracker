@@ -13,6 +13,7 @@ import {
 } from "@/lib/social";
 import { useNotifications } from "@/lib/notifications";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 
 export const Route = createFileRoute("/account/vrienden")({

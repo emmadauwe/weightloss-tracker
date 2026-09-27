@@ -312,6 +312,22 @@ function ExerciseView({
           }}
         />
       )}
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          const h = deleting;
+          const rest = h.workout.exercises.filter((e) => e.name.trim().toLowerCase() !== exercise.name.trim().toLowerCase());
+          if (rest.length === 0) void remove(h.workout.id);
+          else {
+            const { id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note } = h.workout;
+            void save({ id, date, sport, duration_min, distance_km, avg_speed, max_speed, min_speed, plan_id, intensity, note, exercises: rest });
+          }
+        }}
+        title="Sessie verwijderen?"
+        description={deleting ? `De gelogde sessie van ${format(parseISO(deleting.workout.date), "EEEE d MMM yyyy", { locale: nl })} voor “${exercise.name}” wordt verwijderd.` : ""}
+      />
     </>
   );
 }
