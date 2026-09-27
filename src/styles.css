@@ -106,4 +106,11 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+  /* Tekst loopt altijd door naar de volgende regel i.p.v. horizontaal uit te steken. */
+  p, li, h1, h2, h3, h4, label, button, a, span, td, th, div {
+    overflow-wrap: break-word;
+  }
+  input, textarea, select {
+    max-width: 100%;
+  }
 }
