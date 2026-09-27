@@ -59,6 +59,7 @@ function VandaagPage() {
   const [adding, setAdding] = useState<Meal | null>(null);
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
+  const [clearingDay, setClearingDay] = useState<string | null>(null);
 
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
@@ -229,7 +230,7 @@ function VandaagPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => clearDay(d)}
+                          onClick={() => setClearingDay(d)}
                           aria-label="Dag leegmaken"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -353,6 +354,14 @@ function VandaagPage() {
           onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
         />
       )}
+
+      <ConfirmDelete
+        open={clearingDay !== null}
+        onClose={() => setClearingDay(null)}
+        onConfirm={() => clearingDay && clearDay(clearingDay)}
+        title="Dag leegmaken?"
+        description={clearingDay ? `Alle maaltijden van ${format(parseISO(clearingDay), "EEEE d MMM", { locale: nl })} worden verwijderd.` : ""}
+      />
 
     </div>
   );
