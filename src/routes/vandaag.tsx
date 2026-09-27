@@ -565,6 +565,7 @@ function EntryDialog({
 }) {
   const [amount, setAmount] = useState(String(entry.amount));
   const [leftover, setLeftover] = useState(Boolean(entry.leftoverFrom));
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
