@@ -20,6 +20,7 @@ import { useGoalTargets } from "@/lib/goal-targets";
 import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 export const Route = createFileRoute("/vandaag")({
   head: () => ({ meta: [
@@ -600,9 +601,25 @@ function EntryDialog({
             </label>
           </div>
           <Button type="submit" className="w-full">Opslaan</Button>
-          <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={onDelete}>
-            <Trash2 className="mr-1 h-4 w-4" /> Verwijderen uit deze maaltijd
-          </Button>
+          {confirmDelete ? (
+            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive-soft p-3">
+              <p className="text-xs text-muted-foreground">
+                Weet je zeker dat je “{name}” uit deze maaltijd wil verwijderen?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+                  Annuleren
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                  Ja, verwijderen
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full text-destructive hover:text-destructive" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="mr-1 h-4 w-4" /> Verwijderen uit deze maaltijd
+            </Button>
+          )}
         </form>
       </DialogContent>
     </Dialog>
