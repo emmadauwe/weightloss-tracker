@@ -14,6 +14,7 @@ import { suggestMacros } from "@/lib/ai.functions";
 import { IngredientLibrary } from "@/components/ingredient-library";
 import { Textarea } from "@/components/ui/textarea";
 import { AppHeader } from "@/components/app-header";
+import { ConfirmDelete } from "@/components/confirm-delete";
 
 export const Route = createFileRoute("/gerechten")({
   head: () => ({ meta: [
@@ -43,6 +44,7 @@ function GerechtenPage() {
   const [viewing, setViewing] = useState<Dish | null>(null);
   const [editing, setEditing] = useState<Dish | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Dish | null>(null);
 
   const filtered = useMemo(
     () => [...items].sort((a, b) => a.name.localeCompare(b.name))
@@ -89,7 +91,7 @@ function GerechtenPage() {
                         {" · "}per portie ({d.servings})
                       </div>
                       {d.categories && d.categories.length > 0 && (
-                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        <div className="mt-0.5 text-[11px] font-medium text-primary">
                           {d.categories.map((c) => MEALS.find((m) => m.id === c)?.label).join(" · ")}
                         </div>
                       )}
@@ -108,6 +110,9 @@ function GerechtenPage() {
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing(d)} aria-label="Bewerken">
                       <Pencil className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleting(d)} aria-label="Verwijderen">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </CardContent>
                 </Card>
@@ -143,10 +148,15 @@ function GerechtenPage() {
           ingredients={ingredients}
           onClose={() => { setEditing(null); setCreating(false); }}
           onSave={(d) => { upsert(d); setEditing(null); setCreating(false); setViewing(null); }}
-          onDelete={editing ? () => { remove(editing.id); setEditing(null); setViewing(null); } : undefined}
           newId={newId}
         />
       )}
+      <ConfirmDelete
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && remove(deleting.id)}
+        description={`Weet je zeker dat je “${deleting?.name}” definitief wil verwijderen?`}
+      />
     </div>
   );
 }
@@ -295,13 +305,12 @@ function CategorySelect({ value, onChange }: { value: Meal[]; onChange: (v: Meal
 }
 
 function DishDialog({
-  initial, ingredients, onClose, onSave, onDelete, newId,
+  initial, ingredients, onClose, onSave, newId,
 }: {
   initial: Dish | null;
   ingredients: ReturnType<typeof useIngredients>["items"];
   onClose: () => void;
   onSave: (d: Dish) => void;
-  onDelete?: (() => void) | undefined;
   newId: () => string;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
@@ -325,7 +334,6 @@ function DishDialog({
   const [dFat, setDFat] = useState(backMacro(initial?.directMacros?.fat));
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [detachOk, setDetachOk] = useState(false);
 
   const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
@@ -593,35 +601,6 @@ function DishDialog({
             <Button type="submit" className="w-full">Opslaan</Button>
           </DialogFooter>
 
-          {onDelete && (
-            <div className="border-t border-border pt-3">
-              {confirmDelete ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Weet je zeker dat je “{initial?.name}” definitief wil verwijderen?
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
-                      Annuleren
-                    </Button>
-                    <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
-                      Ja, verwijderen
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setConfirmDelete(true)}
-                >
-                  <Trash2 className="mr-1 h-4 w-4" /> Recept verwijderen
-                </Button>
-              )}
-            </div>
-          )}
           </form>
           )}
           </>

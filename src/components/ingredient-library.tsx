@@ -38,42 +38,44 @@ export function IngredientLibrary() {
   return (
     <div className="space-y-3">
       <Input placeholder="Zoek ingrediënt…" value={q} onChange={(e) => setQ(e.target.value)} />
-      <Card>
-        <CardContent className="p-0">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center">
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center py-10 text-center">
               <Apple className="mb-2 h-7 w-7 text-primary" />
               <p className="text-sm font-medium">Geen ingrediënten</p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-border">
+          </CardContent>
+        </Card>
+      ) : (
+            <ul className="space-y-2">
               {filtered.map((i) => (
-                <li key={i.id} className="flex items-center gap-2 px-5 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="break-words font-medium">{i.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {i.kcal} kcal · {i.protein}P · {i.carbs}K · {i.fat}V
-                      {" · "}
-                      per {i.baseUnit === "g" || i.baseUnit === "ml"
-                        ? `100 ${i.baseUnit}`
-                        : `1 ${i.baseUnit}${i.unitGrams ? ` (${i.unitGrams} ${i.unitBase ?? "g"})` : ""}${i.unitNote ? ` — ${i.unitNote}` : ""}`}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-primary">
-                      {i.category ? sentenceCase(i.category) : "Nog geen type"}
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing(i)} aria-label="Bewerken">
-                    <Pencil className="h-3.5 w-3.5 text-primary" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setDeleting(i)} aria-label="Verwijderen">
-                    <Trash2 className="h-3.5 w-3.5 text-primary" />
-                  </Button>
+                <li key={i.id}>
+                  <Card>
+                    <CardContent className="flex items-center gap-1 px-5 py-3.5">
+                      <button type="button" onClick={() => setEditing(i)} className="min-w-0 flex-1 text-left">
+                        <div className="break-words font-medium">{i.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {i.kcal} kcal · {i.protein}P · {i.carbs}K · {i.fat}V
+                          {" · "}
+                          per {i.baseUnit === "g" || i.baseUnit === "ml"
+                            ? `100 ${i.baseUnit}`
+                            : `1 ${i.baseUnit}${i.unitGrams ? ` (${i.unitGrams} ${i.unitBase ?? "g"})` : ""}${i.unitNote ? ` — ${i.unitNote}` : ""}`}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-medium text-primary">
+                          {i.category ? sentenceCase(i.category) : "Nog geen type"}
+                        </div>
+                      </button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing(i)} aria-label="Bewerken">
+                        <Pencil className="h-3.5 w-3.5 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleting(i)} aria-label="Verwijderen">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </li>
               ))}
             </ul>
-          )}
-        </CardContent>
-      </Card>
+      )}
 
       <button
         onClick={() => setCreating(true)}

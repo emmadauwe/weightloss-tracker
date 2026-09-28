@@ -3,8 +3,8 @@ import { Scale, UtensilsCrossed, ChefHat, ShoppingBasket, Dumbbell } from "lucid
 
 const items = [
   { to: "/", label: "Gewicht", icon: Scale },
-  { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
   { to: "/sport", label: "Sport", icon: Dumbbell },
+  { to: "/vandaag", label: "Planning", icon: UtensilsCrossed },
   { to: "/gerechten", label: "Recepten", icon: ChefHat },
   { to: "/boodschappen", label: "Lijstje", icon: ShoppingBasket },
 ] as const;

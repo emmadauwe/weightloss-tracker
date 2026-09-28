@@ -474,7 +474,7 @@ function HistoryView({
                     <Pencil className="h-4 w-4 text-primary" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => setDeleting(e)} aria-label="Verwijderen">
-                    <Trash2 className="h-4 w-4 text-primary" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </li>
               );

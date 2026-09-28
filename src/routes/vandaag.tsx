@@ -58,6 +58,8 @@ function VandaagPage() {
     return { kcal: target.kcal + e.kcal, protein: target.protein + e.protein, carbs: target.carbs + e.carbs, fat: target.fat + e.fat };
   };
   const [adding, setAdding] = useState<Meal | null>(null);
+  const [addKind, setAddKind] = useState<"dish" | "ingredient">("dish");
+  const [choosingAdd, setChoosingAdd] = useState<Meal | null>(null);
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
   const [clearingDay, setClearingDay] = useState<string | null>(null);
@@ -209,12 +211,18 @@ function VandaagPage() {
                             return (
                               <div key={meal} className="grid grid-cols-[64px_1fr] gap-2 text-xs">
                                 <span className="font-medium text-foreground">{MEAL_LABEL[meal]}</span>
-                                <span className="text-muted-foreground">
+                                <span className="space-y-1 text-muted-foreground">
                                   {entriesForMeal.map((entry) => {
                                     const ref = entry.kind === "dish" ? dishes.find((item) => item.id === entry.refId) : ingredients.find((item) => item.id === entry.refId);
-                                    const leftover = (entry.leftoverFrom ? " (restje)" : "") + (entry.locked ? " 🔒" : "");
-                                    return `${ref?.name ?? "—"} · ${entry.amount} ${formatUnit(entry.unit, entry.amount)}${leftover}`;
-                                  }).join(", ")}
+                                     return (
+                                       <span key={entry.id} className="flex min-w-0 items-start gap-1.5">
+                                         <span className="min-w-0 flex-1 break-words">
+                                           {ref?.name ?? "—"} · {entry.amount} {formatUnit(entry.unit, entry.amount)}{entry.leftoverFrom ? " (restje)" : ""}
+                                         </span>
+                                         {entry.locked && <Lock className="mt-0.5 h-3 w-3 shrink-0 text-primary" aria-label="Vastgezet" />}
+                                       </span>
+                                     );
+                                   })}
                                 </span>
                               </div>
                             );
@@ -308,14 +316,9 @@ function VandaagPage() {
                         })}
                       </ul>
                     )}
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setAdding(meal)}>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setChoosingAdd(meal)}>
                         <Plus className="mr-1 h-4 w-4" /> Toevoegen
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setQuickAdding(meal)}>
-                        <Sparkles className="mr-1 h-4 w-4 text-primary" /> Snel toevoegen
-                      </Button>
-                    </div>
+                    </Button>
                   </CardContent>
                 </Card>
               );
@@ -327,10 +330,30 @@ function VandaagPage() {
       {adding && (
         <AddMealDialog
           meal={adding}
+          initialTab={addKind}
           date={date}
           onClose={() => setAdding(null)}
           onAdd={(entry) => { add(entry); setAdding(null); }}
         />
+      )}
+
+      {choosingAdd && (
+        <Dialog open onOpenChange={(open) => !open && setChoosingAdd(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Toevoegen aan {MEAL_LABEL[choosingAdd]}</DialogTitle></DialogHeader>
+            <div className="space-y-2">
+              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setAddKind("dish"); setAdding(choosingAdd); setChoosingAdd(null); }}>
+                Maaltijd
+              </Button>
+              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setAddKind("ingredient"); setAdding(choosingAdd); setChoosingAdd(null); }}>
+                Ingrediënt
+              </Button>
+              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setQuickAdding(choosingAdd); setChoosingAdd(null); }}>
+                <Sparkles className="mr-2 h-4 w-4 text-primary" /> Snel toevoegen
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {quickAdding && (
@@ -446,14 +469,14 @@ function MacroBar({ label, cur, max, base, unit, favorableOver = false }: { labe
 }
 
 function AddMealDialog({
-  meal, date, onClose, onAdd,
+  meal, date, initialTab, onClose, onAdd,
 }: {
-  meal: Meal; date: string; onClose: () => void;
+  meal: Meal; date: string; initialTab: "dish" | "ingredient"; onClose: () => void;
   onAdd: (e: { date: string; meal: Meal; kind: "dish" | "ingredient"; refId: string; amount: number; unit: Unit }) => void;
 }) {
   const { library: ingredients } = useIngredients();
   const { items: dishes } = useDishes();
-  const [tab, setTab] = useState<"dish" | "ingredient">(dishes.length > 0 ? "dish" : "ingredient");
+  const tab = initialTab;
   const [q, setQ] = useState("");
   const [refId, setRefId] = useState("");
   const [amount, setAmount] = useState("100");
@@ -501,10 +524,6 @@ function AddMealDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className="flex gap-2">
-            <Button type="button" size="sm" variant={tab === "dish" ? "default" : "outline"} onClick={() => { setTab("dish"); setRefId(""); }}>Gerechten</Button>
-            <Button type="button" size="sm" variant={tab === "ingredient" ? "default" : "outline"} onClick={() => { setTab("ingredient"); setRefId(""); }}>Ingrediënten</Button>
-          </div>
           <Input placeholder="Zoeken…" value={q} onChange={(e) => setQ(e.target.value)} />
           <div className="max-h-48 overflow-y-auto rounded-md border border-border">
             {list.length === 0 ? (
