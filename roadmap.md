@@ -48,3 +48,7 @@
 - [x] Sport: per-sport stats only, strength schemas → exercises → logs with chart, manual avg speed.
 - [x] Planner: lock meals, avoid similar recipes, more variety and fair usage.
 - [x] Workout-based extra macros in day/week meters.
+
+- [x] Stack planning items vertically and unify locks/add flow.
+- [x] Swap Planning and Sport navigation positions.
+- [x] Match recipe and ingredient cards with red confirmed deletion.
