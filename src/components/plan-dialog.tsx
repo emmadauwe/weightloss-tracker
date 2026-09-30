@@ -140,11 +140,11 @@ export function PlanDialog({
               {confirmDelete ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Dit schema definitief verwijderen?</p>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+                  <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+                    <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setConfirmDelete(false)}>
                       Annuleren
                     </Button>
-                    <Button type="button" variant="destructive" size="sm" onClick={() => void onDelete()}>
+                    <Button type="button" variant="destructive" size="sm" className="w-full" onClick={() => void onDelete()}>
                       Ja, verwijderen
                     </Button>
                   </div>

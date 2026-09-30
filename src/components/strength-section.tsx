@@ -368,17 +368,17 @@ function LogDialog({
         >
           <DateField label="Datum" value={date} onChange={setDate} />
           <div className="space-y-2">
-            <div className="grid grid-cols-[3rem_1fr_1fr_2rem] gap-2 text-[11px] text-muted-foreground">
+            <div className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-1.5 text-[11px] text-muted-foreground">
               <span>Set</span>
               <span>Gewicht (kg)</span>
               <span>Reps</span>
               <span />
             </div>
             {sets.map((s, i) => (
-              <div key={i} className="grid grid-cols-[3rem_1fr_1fr_2rem] items-center gap-2">
+              <div key={i} className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-1.5">
                 <span className="text-sm tabular-nums">{i + 1}</span>
-                <Input inputMode="decimal" value={s.weight} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} />
-                <Input inputMode="numeric" value={s.reps} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, reps: e.target.value } : x)))} />
+                <Input className="min-w-0 px-2" inputMode="decimal" value={s.weight} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} />
+                <Input className="min-w-0 px-2" inputMode="numeric" value={s.reps} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, reps: e.target.value } : x)))} />
                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label="Set verwijderen" onClick={() => setSets(sets.filter((_, j) => j !== i))}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>

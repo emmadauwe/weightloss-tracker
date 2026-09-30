@@ -601,7 +601,7 @@ function EntryDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[80vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="truncate pr-6">{name}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{name}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="eamt">{entry.unit === "portie" ? "Porties" : `Hoeveelheid (${entry.unit})`}</Label>
@@ -626,11 +626,11 @@ function EntryDialog({
               <p className="text-xs text-muted-foreground">
                 Weet je zeker dat je “{name}” uit deze maaltijd wil verwijderen?
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+              <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+                <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setConfirmDelete(false)}>
                   Annuleren
                 </Button>
-                <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+                <Button type="button" variant="destructive" size="sm" className="w-full" onClick={onDelete}>
                   Ja, verwijderen
                 </Button>
               </div>
