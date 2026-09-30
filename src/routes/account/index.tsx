@@ -90,11 +90,11 @@ function AccountPage() {
                       onChange={(e) => setDraft(e.target.value)}
                       autoFocus={editingName}
                     />
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
                       {hasName ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" disabled={!draft.trim() || draft.trim() === profile.name}>
+                            <Button size="sm" className="w-full" disabled={!draft.trim() || draft.trim() === profile.name}>
                               <Check className="mr-1 h-4 w-4" /> Opslaan
                             </Button>
                           </AlertDialogTrigger>
@@ -112,12 +112,12 @@ function AccountPage() {
                           </AlertDialogContent>
                         </AlertDialog>
                       ) : (
-                        <Button size="sm" disabled={!draft.trim()} onClick={saveName}>
+                        <Button size="sm" className="w-full" disabled={!draft.trim()} onClick={saveName}>
                           <Check className="mr-1 h-4 w-4" /> Opslaan
                         </Button>
                       )}
                       {hasName && (
-                        <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>
+                        <Button size="sm" variant="ghost" className="w-full" onClick={() => setEditingName(false)}>
                           Annuleren
                         </Button>
                       )}

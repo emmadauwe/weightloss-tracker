@@ -251,19 +251,19 @@ export function IngredientDialog({
           </Button>
           {aiError && <p className="text-xs text-destructive">{aiError}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="ikcal">Kcal</Label>
               <Input id="ikcal" inputMode="decimal" value={kcal} onChange={(e) => setKcal(e.target.value)} />
             </div>
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="iprot">Eiwit (g)</Label>
               <Input id="iprot" inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} />
             </div>
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="icarb">Koolhydraten (g)</Label>
               <Input id="icarb" inputMode="decimal" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
             </div>
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="ifat">Vet (g)</Label>
               <Input id="ifat" inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} />
             </div>
