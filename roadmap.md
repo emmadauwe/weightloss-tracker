@@ -52,3 +52,7 @@
 - [x] Stack planning items vertically and unify locks/add flow.
 - [x] Swap Planning and Sport navigation positions.
 - [x] Match recipe and ingredient cards with red confirmed deletion.
+- [ ] Keep long meal names, calories, and locks inside day and week planning cards.
+- [ ] Refocus friend profiles on shared goals, progress, monthly sport activity, and optional detail sections.
+- [ ] Label strength achievements by exercise and show per-plan exercise evolution.
+- [ ] Simplify friend rows and show unread activity on the profile icon.

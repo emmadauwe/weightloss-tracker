@@ -1,10 +1,12 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, User } from "lucide-react";
+import { useNotifications } from "@/lib/notifications";
 
 export function AppHeader({
   title, subtitle, back,
 }: { title: string; subtitle?: string; back?: boolean }) {
   const router = useRouter();
+  const { attentionCount } = useNotifications();
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
@@ -31,9 +33,17 @@ export function AppHeader({
         <Link
           to="/account"
           aria-label="Account"
-          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent"
+          className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-accent"
         >
           <User className="h-5 w-5 text-primary" />
+          {attentionCount > 0 && (
+            <span
+              className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground"
+              aria-label={`${attentionCount} ongelezen ${attentionCount === 1 ? "melding" : "meldingen"}`}
+            >
+              {attentionCount > 9 ? "9+" : attentionCount}
+            </span>
+          )}
         </Link>
       </div>
     </header>

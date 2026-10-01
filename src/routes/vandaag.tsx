@@ -276,14 +276,14 @@ function VandaagPage() {
                             : dishes.find((d) => d.id === m.refId);
                           const macros = mealEntryMacros(m, ingredients, dishes);
                           return (
-                            <li key={m.id} className="flex items-center gap-1">
+                            <li key={m.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => setEditingEntry({ entry: m, name: ref?.name ?? "—" })}
-                                className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-sm hover:bg-accent"
+                                className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-md px-1 py-1 text-left text-sm hover:bg-accent"
                               >
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate">
+                                  <span className="block break-words [overflow-wrap:anywhere]">
                                     {ref?.name ?? "—"}
                                     <span className="text-muted-foreground"> · {m.amount} {formatUnit(m.unit, m.amount)}</span>
                                   </span>
@@ -300,7 +300,7 @@ function VandaagPage() {
                                     )}
                                   </span>
                                 </span>
-                                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
+                                <span className="shrink-0 whitespace-nowrap pt-0.5 text-xs text-muted-foreground tabular-nums">{Math.round(macros.kcal)} kcal</span>
                               </button>
                               <Button
                                 variant="ghost"
