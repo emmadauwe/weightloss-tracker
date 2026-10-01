@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, Check, ChevronRight, Hand, Search, Trash2, UserPlus, X } from "lucide-react";
 import { avatarSrc } from "@/lib/profile-store";
 import {
-  friendSummary,
   useFriends,
-  useFriendStats,
   type ProfileRow,
 } from "@/lib/social";
 import { useNotifications } from "@/lib/notifications";
@@ -33,7 +31,6 @@ export const Route = createFileRoute("/account/vrienden")({
 function VriendenPage() {
   const { friends, incoming, outgoing, findByEmail, sendRequest, accept, removeLink, reload } = useFriends();
   const { items: notifications, dismiss, highFive: highFiveFor } = useNotifications();
-  const stats = useFriendStats(friends.map((f) => f.friendId));
 
   const [email, setEmail] = useState("");
   const [searching, setSearching] = useState(false);
@@ -183,28 +180,28 @@ function VriendenPage() {
               </p>
             ) : (
               friends.map((f) => {
-                const summary = friendSummary(stats[f.friendId], f.profile);
                 return (
                   <div key={f.id} className="rounded-lg border border-border">
-                    <Link
-                      to="/vriend/$id"
-                      params={{ id: f.friendId }}
-                      className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-accent"
-                    >
-                      <Avatar p={f.profile} />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{f.profile?.display_name ?? "Zonder naam"}</div>
-                        <div className="truncate text-xs text-muted-foreground">{summary}</div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </Link>
-                    <div className="flex justify-end border-t border-border px-3 py-1.5">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center">
+                      <Link
+                        to="/vriend/$id"
+                        params={{ id: f.friendId }}
+                        className="flex min-w-0 items-center gap-3 px-3 py-3 transition-colors hover:bg-accent"
+                      >
+                        <Avatar p={f.profile} />
+                        <div className="min-w-0 flex-1 break-words text-sm font-medium">
+                          {f.profile?.display_name ?? "Zonder naam"}
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </Link>
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="ghost"
+                        aria-label={`${f.profile?.display_name ?? "Vriend"} verwijderen`}
+                        className="mr-2 h-9 w-9 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => setDeleting({ id: f.id, name: f.profile?.display_name ?? "deze vriend" })}
                       >
-                        <Trash2 className="mr-1 h-4 w-4 text-destructive" /> Verwijderen
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

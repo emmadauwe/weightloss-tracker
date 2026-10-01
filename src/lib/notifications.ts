@@ -23,7 +23,7 @@ type Ack = Record<string, { kg?: number; goal?: boolean; record?: string }>;
 const ACK_KEY = "friend-milestones-v1";
 
 export function useNotifications() {
-  const { friends } = useFriends();
+  const { friends, incoming } = useFriends();
   const stats = useFriendStats(friends.map((f) => f.friendId));
   const { received, markSeenOne, send } = useHighFives();
   const friendWorkouts = useFriendWorkouts(friends.map((f) => f.friendId));
@@ -128,5 +128,5 @@ export function useNotifications() {
     [send, dismiss],
   );
 
-  return { items, dismiss, highFive };
+  return { items, dismiss, highFive, attentionCount: items.length + incoming.length };
 }

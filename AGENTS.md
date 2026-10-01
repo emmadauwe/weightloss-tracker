@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Friend-profile summaries are derived from existing privacy-filtered stats, workouts, and plans; do not duplicate social data in another store, because the database policies remain the source of visibility.
