@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, Download, Search } from "lucide-react";
+import { BookOpen, Check, ChevronDown, ClipboardList, Download, Dumbbell, Search, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
@@ -45,6 +45,7 @@ function FriendPage() {
   const friendPlans = useFriendWorkoutPlans([id]);
   const plans = (friendPlans[id] ?? []).filter((p) => !p.source_owner);
   const [query, setQuery] = useState("");
+  const [openSection, setOpenSection] = useState<"recipes" | "sports" | "plans" | null>(null);
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   useEffect(() => {
@@ -60,51 +61,68 @@ function FriendPage() {
   const insights = strengthInsights(workouts, plans);
   const otherWorkouts = workouts.filter((w) => sportOf(w.sport).kind !== "kracht");
   const progress = profile?.share_progress === false ? null : sharedProgressPercent(s);
+  const themeClass = `friend-theme-${profile?.avatar_id ?? "fox"}`;
+  const totalSessions = months.reduce((sum, [, count]) => sum + count, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className={`min-h-screen bg-background pb-28 ${themeClass}`}>
       <AppHeader title={profile?.display_name ?? "Vriend"} back />
-      <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
-        <Card>
-          <CardContent className="space-y-4 px-5 py-5">
-            <div className="flex items-center gap-4">
-              <img src={avatarSrc(profile?.avatar_id)} alt="" width={512} height={512} className="h-20 w-20 shrink-0 rounded-full object-cover" />
-              <div className="min-w-0 flex-1 break-words text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
-                {profile?.display_name ?? "Zonder naam"}
+      <main className="mx-auto max-w-2xl space-y-4 px-4 pt-4">
+        <Card className="overflow-hidden border-friend-accent/20">
+          <CardContent className="p-0">
+            <div className="bg-friend-accent-soft/45 px-5 pb-5 pt-6 text-center">
+              <div className="mx-auto h-24 w-24 rounded-full bg-card p-1.5 shadow-sm ring-1 ring-friend-accent/25">
+                <img src={avatarSrc(profile?.avatar_id)} alt="" width={512} height={512} className="h-full w-full rounded-full object-cover" />
               </div>
+              <h1 className="mt-3 break-words text-3xl font-semibold leading-tight">{profile?.display_name ?? "Zonder naam"}</h1>
             </div>
-            {s && (s.current_weight != null || s.goal_weight != null) && (
-              <div className="grid grid-cols-2 gap-3">
-                {s.current_weight != null && <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />}
-                {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
-              </div>
-            )}
-            {progress != null && (
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium">Vooruitgang naar doel</span>
-                  <span className="text-xs font-medium tabular-nums text-primary">{progress.toFixed(0)}%</span>
+            <div className="space-y-5 px-5 py-5">
+              {s && (s.current_weight != null || s.goal_weight != null) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {s.current_weight != null && <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />}
+                  {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
                 </div>
-                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+              )}
+              {progress != null && (
+                <div>
+                  <div className="flex items-end justify-between gap-3">
+                    <span className="text-[11px] font-medium text-muted-foreground">Vooruitgang naar doel</span>
+                    <span className="text-3xl font-semibold leading-none tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>{progress.toFixed(0)}%</span>
+                  </div>
+                  <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {months.length > 0 && (
-          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
-            {months.map(([sport, n]) => (
-              <div key={sport} className="rounded-xl bg-secondary px-4 py-3 text-sm">
-                <span className="font-semibold">{name}</span> heeft deze maand al{" "}
-                <span className="font-semibold text-primary">{n} keer</span> {sportOf(sport).label.toLowerCase()} gedaan
+          <div className="rounded-lg border border-friend-accent/25 bg-friend-accent-soft/55 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card text-friend-accent shadow-sm">
+                <Sparkles className="h-5 w-5" />
               </div>
-            ))}
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase text-friend-accent">Deze maand</p>
+                <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                  <p className="text-lg font-semibold">Lekker bezig, {name}!</p>
+                  <span className="shrink-0 text-3xl font-semibold leading-none tabular-nums text-friend-accent" style={{ fontFamily: "var(--font-display)" }}>{totalSessions}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{months.map(([sport, n]) => `${n}× ${sportOf(sport).label.toLowerCase()}`).join(" · ")}</p>
+              </div>
+            </div>
           </div>
         )}
 
-        <Section title="Recepten" count={dishes.length}>
+        <div className="grid grid-cols-3 gap-2">
+          <SectionButton icon={BookOpen} label="Recepten" count={dishes.length} active={openSection === "recipes"} onClick={() => setOpenSection((v) => v === "recipes" ? null : "recipes")} />
+          <SectionButton icon={Dumbbell} label="Sport" count={workouts.length} active={openSection === "sports"} onClick={() => setOpenSection((v) => v === "sports" ? null : "sports")} />
+          <SectionButton icon={ClipboardList} label="Schema's" count={plans.length} active={openSection === "plans"} onClick={() => setOpenSection((v) => v === "plans" ? null : "plans")} />
+        </div>
+
+        {openSection === "recipes" && <Section title="Recepten">
           {dishes.length > 0 && (
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -120,9 +138,9 @@ function FriendPage() {
           ) : (
             filtered.map((d) => <SharedDish key={d.id} dish={d} ownerName={profile?.display_name ?? "een vriend"} />)
           )}
-        </Section>
+        </Section>}
 
-        {(insights.length > 0 || otherWorkouts.length > 0) && (
+        {openSection === "sports" && (
           <Section title="Sportprestaties">
             {insights.map((it) => (
               <div key={it.plan} className="rounded-lg border border-border px-3 py-3">
@@ -156,8 +174,8 @@ function FriendPage() {
           </Section>
         )}
 
-        {plans.length > 0 && (
-          <Section title="Fitnessschema's" count={plans.length}>
+        {openSection === "plans" && (
+          <Section title="Fitnessschema's">
             {plans.map((p) => (
               <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
             ))}
@@ -170,10 +188,27 @@ function FriendPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-secondary px-3 py-2">
+    <div className="rounded-lg bg-secondary/70 px-3 py-3 text-center">
       <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="text-sm font-semibold tabular-nums">{value}</div>
+      <div className="mt-0.5 text-2xl font-semibold leading-none tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{value}</div>
     </div>
+  );
+}
+
+function SectionButton({ icon: Icon, label, count, active, onClick }: { icon: typeof BookOpen; label: string; count: number; active: boolean; onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      aria-label={`${label} bekijken`}
+      aria-expanded={active}
+      className={`h-auto min-w-0 flex-col gap-1.5 px-2 py-3 ${active ? "border-friend-accent bg-friend-accent-soft/70 text-friend-accent" : "bg-card"}`}
+    >
+      <Icon className="h-5 w-5" />
+      <span className="text-2xl font-semibold leading-none tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{count}</span>
+      <span className="max-w-full break-words text-[10px] font-medium leading-tight text-muted-foreground">{label}</span>
+    </Button>
   );
 }
 
@@ -350,21 +385,14 @@ function Spark({ values }: { values: number[] }) {
   );
 }
 
-function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left"
-        aria-expanded={open}
-      >
-        <span className="min-w-0 flex-1 text-sm font-medium">{title}</span>
-        {count != null && <span className="shrink-0 text-xs text-muted-foreground">{count}</span>}
-        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <CardContent className="space-y-3 border-t border-border px-5 py-4">{children}</CardContent>}
+    <Card className="overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-3">
+        <ChevronDown className="h-4 w-4 rotate-180 text-friend-accent" />
+        <h2 className="text-lg font-semibold">{title}</h2>
+      </div>
+      <CardContent className="space-y-3 px-5 py-4">{children}</CardContent>
     </Card>
   );
 }
