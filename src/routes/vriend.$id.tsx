@@ -2,12 +2,11 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Download, Search } from "lucide-react";
+import { Check, ChevronDown, Download, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
 import {
-  friendSummary,
   sharedProgressPercent,
   useFriendDishes,
   useFriendStats,
@@ -16,7 +15,7 @@ import {
 } from "@/lib/social";
 import { useDishes, useIngredients } from "@/lib/nutrition-store";
 import { sharedDishToLocal } from "@/lib/shared-recipes";
-import { useFriendWorkouts, sportOf, workoutSummary, personalRecord } from "@/lib/workouts";
+import { useFriendWorkouts, sportOf, workoutSummary, personalRecord, type Workout } from "@/lib/workouts";
 import { useFriendWorkoutPlans, useWorkoutPlans, type WorkoutPlan } from "@/lib/workout-plans";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -56,125 +55,114 @@ function FriendPage() {
   }, [id]);
 
   const s = stats[id];
-  const summary = friendSummary(s, profile);
+  const name = profile?.display_name ?? "Je vriend";
+  const months = monthCounts(workouts);
+  const insights = strengthInsights(workouts, plans);
+  const otherWorkouts = workouts.filter((w) => sportOf(w.sport).kind !== "kracht");
   const progress = profile?.share_progress === false ? null : sharedProgressPercent(s);
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <AppHeader title={profile?.display_name ?? "Vriend"} subtitle="Voortgang en recepten" back />
+      <AppHeader title={profile?.display_name ?? "Vriend"} back />
       <main className="mx-auto max-w-2xl space-y-3 px-4 pt-4">
         <Card>
-          <CardContent className="flex items-center gap-4 px-5 py-4">
-            <img
-              src={avatarSrc(profile?.avatar_id)}
-              alt=""
-              width={512}
-              height={512}
-              className="h-16 w-16 rounded-full object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-lg font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+          <CardContent className="space-y-4 px-5 py-5">
+            <div className="flex items-center gap-4">
+              <img src={avatarSrc(profile?.avatar_id)} alt="" width={512} height={512} className="h-20 w-20 shrink-0 rounded-full object-cover" />
+              <div className="min-w-0 flex-1 break-words text-xl font-semibold" style={{ fontFamily: "var(--font-display)" }}>
                 {profile?.display_name ?? "Zonder naam"}
               </div>
-              <div className="text-xs text-muted-foreground">{summary}</div>
             </div>
+            {s && (s.current_weight != null || s.goal_weight != null) && (
+              <div className="grid grid-cols-2 gap-3">
+                {s.current_weight != null && <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />}
+                {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
+              </div>
+            )}
+            {progress != null && (
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium">Vooruitgang naar doel</span>
+                  <span className="text-xs font-medium tabular-nums text-primary">{progress.toFixed(0)}%</span>
+                </div>
+                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {s && (s.current_weight != null || s.goal_weight != null || progress != null) && (
-          <Card>
-            <CardContent className="space-y-4 px-5 py-4 text-sm">
-              {(s.current_weight != null || s.goal_weight != null) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {s.current_weight != null && (
-                    <Stat label="Huidig gewicht" value={`${s.current_weight.toFixed(1)} kg`} />
-                  )}
-                  {s.goal_weight != null && <Stat label="Doelgewicht" value={`${s.goal_weight.toFixed(1)} kg`} />}
-                </div>
-              )}
-              {progress != null && (
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Vooruitgang naar doel</span>
-                    <span className="text-xs font-medium tabular-nums text-primary">{progress.toFixed(0)}%</span>
-                  </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {months.length > 0 && (
+          <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+            {months.map(([sport, n]) => (
+              <div key={sport} className="rounded-xl bg-secondary px-4 py-3 text-sm">
+                <span className="font-semibold">{name}</span> heeft deze maand al{" "}
+                <span className="font-semibold text-primary">{n} keer</span> {sportOf(sport).label.toLowerCase()} gedaan
+              </div>
+            ))}
+          </div>
         )}
 
-        {workouts.length > 0 && (
-          <Card>
-            <CardContent className="space-y-2 px-5 py-4">
-              <div className="text-sm font-medium">Sportprestaties</div>
+        <Section title="Recepten" count={dishes.length}>
+          {dishes.length > 0 && (
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Zoek een recept…" className="pl-9" />
+            </div>
+          )}
+          {loading ? (
+            <p className="text-xs text-muted-foreground">Laden…</p>
+          ) : dishes.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Deze vriend deelt (nog) geen recepten.</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Geen recept gevonden voor “{query}”.</p>
+          ) : (
+            filtered.map((d) => <SharedDish key={d.id} dish={d} ownerName={profile?.display_name ?? "een vriend"} />)
+          )}
+        </Section>
+
+        {(insights.length > 0 || otherWorkouts.length > 0) && (
+          <Section title="Sportprestaties">
+            {insights.map((it) => (
+              <div key={it.plan} className="rounded-lg border border-border px-3 py-3">
+                <div className="text-[11px] text-muted-foreground">{it.plan}</div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="min-w-0 break-words text-sm font-medium">{it.exercise}</span>
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-primary">max {it.max} kg</span>
+                </div>
+                <Spark values={it.series} />
+              </div>
+            ))}
+            {otherWorkouts.length > 0 && (
               <ul className="divide-y divide-border rounded-md border border-border">
-                {workouts.slice(0, 8).map((w) => {
+                {otherWorkouts.slice(0, 8).map((w) => {
                   const pr = personalRecord(w, workouts);
                   return (
                     <li key={w.id} className="flex items-center justify-between gap-2 px-3 py-2">
                       <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">
+                        <div className="break-words text-sm font-medium">
                           {sportOf(w.sport).label}
                           {pr && <span className="ml-1 text-xs text-primary">· record {pr.kind}</span>}
                         </div>
-                        <div className="truncate text-xs text-muted-foreground">{workoutSummary(w)}</div>
+                        <div className="break-words text-xs text-muted-foreground">{workoutSummary(w)}</div>
                       </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {format(parseISO(w.date), "d MMM", { locale: nl })}
-                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{format(parseISO(w.date), "d MMM", { locale: nl })}</span>
                     </li>
                   );
                 })}
               </ul>
-            </CardContent>
-          </Card>
+            )}
+          </Section>
         )}
 
         {plans.length > 0 && (
-          <Card>
-            <CardContent className="space-y-3 px-5 py-4">
-              <div className="text-sm font-medium">Fitnessschema's</div>
-              {plans.map((p) => (
-                <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
-              ))}
-            </CardContent>
-          </Card>
+          <Section title="Fitnessschema's" count={plans.length}>
+            {plans.map((p) => (
+              <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
+            ))}
+          </Section>
         )}
-
-        <Card>
-          <CardContent className="space-y-3 px-5 py-4">
-            <div className="text-sm font-medium">Recepten</div>
-            {dishes.length > 0 && (
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Zoek een recept…"
-                  className="pl-9"
-                />
-              </div>
-            )}
-            {loading ? (
-              <p className="text-xs text-muted-foreground">Laden…</p>
-            ) : dishes.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Deze vriend deelt (nog) geen recepten.</p>
-            ) : filtered.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Geen recept gevonden voor “{query}”.</p>
-            ) : (
-              filtered.map((d) => (
-                <SharedDish key={d.id} dish={d} ownerName={profile?.display_name ?? "een vriend"} />
-              ))
-            )}
-          </CardContent>
-        </Card>
       </main>
     </div>
   );
@@ -307,5 +295,76 @@ function SharedPlan({ plan, ownerName }: { plan: WorkoutPlan; ownerName: string 
         </Button>
       </div>
     </div>
+  );
+}
+
+function monthCounts(workouts: Workout[]) {
+  const ym = format(new Date(), "yyyy-MM");
+  const m = new Map<string, number>();
+  for (const w of workouts) if (w.date.startsWith(ym)) m.set(w.sport, (m.get(w.sport) ?? 0) + 1);
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+type StrengthInsight = { plan: string; exercise: string; max: number; series: number[] };
+
+function strengthInsights(workouts: Workout[], plans: WorkoutPlan[]): StrengthInsight[] {
+  const out: StrengthInsight[] = [];
+  for (const p of plans) {
+    const logs = workouts.filter((w) => w.plan_id === p.id).slice().sort((a, b) => a.date.localeCompare(b.date));
+    let best: { name: string; max: number } | null = null;
+    for (const ex of p.exercises) {
+      const key = ex.name.trim().toLowerCase();
+      let max = 0;
+      for (const w of logs)
+        for (const e of w.exercises)
+          if (e.name.trim().toLowerCase() === key) for (const s of e.sets) max = Math.max(max, s.weight ?? 0);
+      if (max > 0 && (!best || max > best.max)) best = { name: ex.name, max };
+    }
+    if (!best) continue;
+    const key = best.name.trim().toLowerCase();
+    const series: number[] = [];
+    for (const w of logs) {
+      const ws = w.exercises
+        .filter((e) => e.name.trim().toLowerCase() === key)
+        .flatMap((e) => e.sets.map((s) => s.weight ?? 0))
+        .filter((v) => v > 0);
+      if (ws.length) series.push(ws.reduce((a, b) => a + b, 0) / ws.length);
+    }
+    out.push({ plan: p.name, exercise: best.name, max: best.max, series });
+  }
+  return out;
+}
+
+function Spark({ values }: { values: number[] }) {
+  if (values.length < 2) return null;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const pts = values
+    .map((v, i) => `${(i / (values.length - 1)) * 100},${28 - ((v - min) / span) * 24}`)
+    .join(" ");
+  return (
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="h-8 w-full text-primary">
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function Section({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-3 px-5 py-4 text-left"
+        aria-expanded={open}
+      >
+        <span className="min-w-0 flex-1 text-sm font-medium">{title}</span>
+        {count != null && <span className="shrink-0 text-xs text-muted-foreground">{count}</span>}
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <CardContent className="space-y-3 border-t border-border px-5 py-4">{children}</CardContent>}
+    </Card>
   );
 }
