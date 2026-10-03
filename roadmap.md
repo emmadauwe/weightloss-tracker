@@ -55,4 +55,5 @@
 - [ ] Keep long meal names, calories, and locks inside day and week planning cards.
 - [x] Refocus friend profiles on shared goals, progress, monthly sport activity, and optional detail sections.
 - [x] Label strength achievements by exercise and show per-plan exercise evolution.
-- [ ] Simplify friend rows and show unread activity on the profile icon.
+- [x] Simplify friend rows and show unread activity on the profile icon.
+- [x] Align friend profile colors, progress typography, activity card, icons, and sport composition with the rest of the app.
