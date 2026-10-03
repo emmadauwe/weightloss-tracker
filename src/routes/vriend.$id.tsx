@@ -69,7 +69,7 @@ function FriendPage() {
       <main className="mx-auto max-w-2xl space-y-4 px-4 pt-4">
         <Card className="overflow-hidden">
           <CardContent className="p-0">
-            <div className="bg-secondary px-5 pb-5 pt-6 text-center">
+            <div className="bg-card px-5 pb-5 pt-6 text-center">
               <div className="mx-auto h-24 w-24 rounded-full bg-card p-1.5 shadow-sm">
                 <img src={avatarSrc(profile?.avatar_id)} alt="" width={512} height={512} className="h-full w-full rounded-full object-cover" />
               </div>
@@ -136,9 +136,9 @@ function FriendPage() {
           <Section title="Sportprestaties">
             {insights.map((it) => (
               <div key={it.plan} className="rounded-lg border border-border px-4 py-3">
-                <div className="text-xs text-muted-foreground">{it.plan}</div>
+                <div className="break-words text-base font-semibold">{it.plan}</div>
                 <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
-                  <span className="min-w-0 break-words text-sm font-medium">{it.exercise}</span>
+                  <span className="min-w-0 break-words text-sm text-muted-foreground">{it.exercise}</span>
                   <span className="shrink-0 text-sm font-medium tabular-nums text-primary">{it.max} kg</span>
                 </div>
                 <Spark values={it.series} />
@@ -264,14 +264,20 @@ function SharedDish({ dish, ownerName }: { dish: SharedDishRow; ownerName: strin
           )}
         </div>
       )}
-      <div className="flex justify-end border-t border-border px-3 py-1.5">
-        <Button size="sm" variant="ghost" onClick={copy} disabled={copied || already}>
+      <div className="flex justify-end border-t border-border px-2 py-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-9 w-9"
+          aria-label={copied || already ? "Al in jouw gerechten" : "Recept overnemen"}
+          onClick={copy}
+          disabled={copied || already}
+        >
           {copied || already ? (
-            <Check className="mr-1 h-4 w-4 text-primary" />
+            <Check className="h-4 w-4 text-primary" />
           ) : (
-            <Download className="mr-1 h-4 w-4 text-primary" />
+            <Download className="h-4 w-4 text-primary" />
           )}
-          {copied || already ? "In jouw gerechten" : "Overnemen"}
         </Button>
       </div>
     </div>
@@ -306,10 +312,12 @@ function SharedPlan({ plan, ownerName }: { plan: WorkoutPlan; ownerName: string 
           ))}
         </ul>
       )}
-      <div className="flex justify-end border-t border-border px-3 py-1.5">
+      <div className="flex justify-end border-t border-border px-2 py-1">
         <Button
-          size="sm"
+          size="icon"
           variant="ghost"
+          className="h-9 w-9"
+          aria-label={already ? "Al in jouw schema's" : "Schema overnemen"}
           disabled={already || busy}
           onClick={() => {
             setBusy(true);
@@ -317,11 +325,10 @@ function SharedPlan({ plan, ownerName }: { plan: WorkoutPlan; ownerName: string 
           }}
         >
           {already ? (
-            <Check className="mr-1 h-4 w-4 text-primary" />
+            <Check className="h-4 w-4 text-primary" />
           ) : (
-            <Download className="mr-1 h-4 w-4 text-primary" />
+            <Download className="h-4 w-4 text-primary" />
           )}
-          {already ? "In jouw schema's" : "Overnemen"}
         </Button>
       </div>
     </div>
