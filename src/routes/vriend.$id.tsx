@@ -385,7 +385,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <Card className="overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-5 py-3">
         <ChevronDown className="h-4 w-4 rotate-180 text-muted-foreground" />
-        <h2 className="text-sm font-medium">{title}</h2>
+        <div className="text-sm font-medium">{title}</div>
       </div>
       <CardContent className="space-y-3 px-5 py-4">{children}</CardContent>
     </Card>
