@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Check, ChevronDown, ClipboardList, Download, Dumbbell, Search, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Download, Dumbbell, Search, ChefHat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { avatarSrc } from "@/lib/profile-store";
@@ -45,7 +45,7 @@ function FriendPage() {
   const friendPlans = useFriendWorkoutPlans([id]);
   const plans = (friendPlans[id] ?? []).filter((p) => !p.source_owner);
   const [query, setQuery] = useState("");
-  const [openSection, setOpenSection] = useState<"recipes" | "sports" | "plans" | null>(null);
+  const [openSection, setOpenSection] = useState<"recipes" | "sports" | null>(null);
   const filtered = dishes.filter((d) => d.name.toLowerCase().includes(query.trim().toLowerCase()));
 
   useEffect(() => {
@@ -61,17 +61,16 @@ function FriendPage() {
   const insights = strengthInsights(workouts, plans);
   const otherWorkouts = workouts.filter((w) => sportOf(w.sport).kind !== "kracht");
   const progress = profile?.share_progress === false ? null : sharedProgressPercent(s);
-  const themeClass = `friend-theme-${profile?.avatar_id ?? "fox"}`;
   const totalSessions = months.reduce((sum, [, count]) => sum + count, 0);
 
   return (
-    <div className={`min-h-screen bg-background pb-28 ${themeClass}`}>
+    <div className="min-h-screen bg-background pb-28">
       <AppHeader title={profile?.display_name ?? "Vriend"} back />
       <main className="mx-auto max-w-2xl space-y-4 px-4 pt-4">
-        <Card className="overflow-hidden border-friend-accent/20">
+        <Card className="overflow-hidden">
           <CardContent className="p-0">
-            <div className="bg-friend-accent-soft/45 px-5 pb-5 pt-6 text-center">
-              <div className="mx-auto h-24 w-24 rounded-full bg-card p-1.5 shadow-sm ring-1 ring-friend-accent/25">
+            <div className="bg-secondary px-5 pb-5 pt-6 text-center">
+              <div className="mx-auto h-24 w-24 rounded-full bg-card p-1.5 shadow-sm">
                 <img src={avatarSrc(profile?.avatar_id)} alt="" width={512} height={512} className="h-full w-full rounded-full object-cover" />
               </div>
               <h1 className="mt-3 break-words text-3xl font-semibold leading-tight">{profile?.display_name ?? "Zonder naam"}</h1>
@@ -85,11 +84,11 @@ function FriendPage() {
               )}
               {progress != null && (
                 <div>
-                  <div className="flex items-end justify-between gap-3">
-                    <span className="text-[11px] font-medium text-muted-foreground">Vooruitgang naar doel</span>
-                    <span className="text-3xl font-semibold leading-none tabular-nums text-primary" style={{ fontFamily: "var(--font-display)" }}>{progress.toFixed(0)}%</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Vooruitgang naar doel</span>
+                    <span className="text-sm font-medium tabular-nums text-primary">{progress.toFixed(0)}%</span>
                   </div>
-                  <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
@@ -99,27 +98,20 @@ function FriendPage() {
         </Card>
 
         {months.length > 0 && (
-          <div className="rounded-lg border border-friend-accent/25 bg-friend-accent-soft/55 p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card text-friend-accent shadow-sm">
-                <Sparkles className="h-5 w-5" />
+          <Card>
+            <CardContent className="px-5 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium">Deze maand</p>
+                <span className="shrink-0 text-sm font-medium tabular-nums text-primary">{totalSessions} {totalSessions === 1 ? "training" : "trainingen"}</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase text-friend-accent">Deze maand</p>
-                <div className="mt-0.5 flex items-baseline justify-between gap-3">
-                  <p className="text-lg font-semibold">Lekker bezig, {name}!</p>
-                  <span className="shrink-0 text-3xl font-semibold leading-none tabular-nums text-friend-accent" style={{ fontFamily: "var(--font-display)" }}>{totalSessions}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{months.map(([sport, n]) => `${n}× ${sportOf(sport).label.toLowerCase()}`).join(" · ")}</p>
-              </div>
-            </div>
-          </div>
+              <p className="mt-2 text-xs text-muted-foreground">{name} deed {months.map(([sport, n]) => `${n}× ${sportOf(sport).label.toLowerCase()}`).join(" · ")}.</p>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
-          <SectionButton icon={BookOpen} label="Recepten" count={dishes.length} active={openSection === "recipes"} onClick={() => setOpenSection((v) => v === "recipes" ? null : "recipes")} />
+        <div className="grid grid-cols-2 gap-3">
+          <SectionButton icon={ChefHat} label="Recepten" count={dishes.length} active={openSection === "recipes"} onClick={() => setOpenSection((v) => v === "recipes" ? null : "recipes")} />
           <SectionButton icon={Dumbbell} label="Sport" count={workouts.length} active={openSection === "sports"} onClick={() => setOpenSection((v) => v === "sports" ? null : "sports")} />
-          <SectionButton icon={ClipboardList} label="Schema's" count={plans.length} active={openSection === "plans"} onClick={() => setOpenSection((v) => v === "plans" ? null : "plans")} />
         </div>
 
         {openSection === "recipes" && <Section title="Recepten">
@@ -143,11 +135,11 @@ function FriendPage() {
         {openSection === "sports" && (
           <Section title="Sportprestaties">
             {insights.map((it) => (
-              <div key={it.plan} className="rounded-lg border border-border px-3 py-3">
-                <div className="text-[11px] text-muted-foreground">{it.plan}</div>
-                <div className="flex items-baseline justify-between gap-2">
+              <div key={it.plan} className="rounded-lg border border-border px-4 py-3">
+                <div className="text-xs text-muted-foreground">{it.plan}</div>
+                <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
                   <span className="min-w-0 break-words text-sm font-medium">{it.exercise}</span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-primary">max {it.max} kg</span>
+                  <span className="shrink-0 text-sm font-medium tabular-nums text-primary">{it.max} kg</span>
                 </div>
                 <Spark values={it.series} />
               </div>
@@ -171,14 +163,17 @@ function FriendPage() {
                 })}
               </ul>
             )}
-          </Section>
-        )}
-
-        {openSection === "plans" && (
-          <Section title="Fitnessschema's">
-            {plans.map((p) => (
-              <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
-            ))}
+            {plans.length > 0 && (
+              <div className="space-y-2 border-t border-border pt-3">
+                <h3 className="text-sm font-medium">Fitnessschema's</h3>
+                {plans.map((p) => (
+                  <SharedPlan key={p.id} plan={p} ownerName={profile?.display_name ?? "een vriend"} />
+                ))}
+              </div>
+            )}
+            {insights.length === 0 && otherWorkouts.length === 0 && plans.length === 0 && (
+              <p className="text-xs text-muted-foreground">Deze vriend deelt (nog) geen sportprestaties.</p>
+            )}
           </Section>
         )}
       </main>
@@ -195,7 +190,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SectionButton({ icon: Icon, label, count, active, onClick }: { icon: typeof BookOpen; label: string; count: number; active: boolean; onClick: () => void }) {
+function SectionButton({ icon: Icon, label, count, active, onClick }: { icon: typeof ChefHat; label: string; count: number; active: boolean; onClick: () => void }) {
   return (
     <Button
       type="button"
@@ -203,11 +198,11 @@ function SectionButton({ icon: Icon, label, count, active, onClick }: { icon: ty
       onClick={onClick}
       aria-label={`${label} bekijken`}
       aria-expanded={active}
-      className={`h-auto min-w-0 flex-col gap-1.5 px-2 py-3 ${active ? "border-friend-accent bg-friend-accent-soft/70 text-friend-accent" : "bg-card"}`}
+      className={`h-auto min-w-0 flex-col gap-1.5 px-2 py-3 ${active ? "border-primary bg-secondary text-primary" : "bg-card text-muted-foreground"}`}
     >
-      <Icon className="h-5 w-5" />
-      <span className="text-2xl font-semibold leading-none tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{count}</span>
-      <span className="max-w-full break-words text-[10px] font-medium leading-tight text-muted-foreground">{label}</span>
+      <Icon className="h-5 w-5" strokeWidth={2} />
+      <span className="text-sm font-medium tabular-nums text-foreground">{count}</span>
+      <span className="max-w-full break-words text-[11px] font-medium leading-tight">{label}</span>
     </Button>
   );
 }
@@ -389,8 +384,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-5 py-3">
-        <ChevronDown className="h-4 w-4 rotate-180 text-friend-accent" />
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <ChevronDown className="h-4 w-4 rotate-180 text-muted-foreground" />
+        <h2 className="text-sm font-medium">{title}</h2>
       </div>
       <CardContent className="space-y-3 px-5 py-4">{children}</CardContent>
     </Card>
