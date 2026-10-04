@@ -42,7 +42,7 @@ const GOAL_TYPES: { id: GoalType; label: string }[] = [
 ];
 
 function DoelPage() {
-  const { goal, setGoal, calc, settings, setSettings, currentWeight } = useGoalTargets();
+  const { goal, raw, setGoal, calc, settings, setSettings, currentWeight } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
@@ -109,7 +109,7 @@ function DoelPage() {
                   type="button"
                   onClick={() => setGoal({ ...goal, type: t.id })}
                   className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                    goal.type === t.id
+                    raw.type === t.id
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-card hover:bg-accent"
                   }`}
@@ -121,6 +121,7 @@ function DoelPage() {
           </CardContent>
         </Card>
 
+        {raw.type && raw.type !== "behouden" && (
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
             <div className="text-sm font-medium">Doelgewicht &amp; tijdlijn</div>
@@ -214,13 +215,14 @@ function DoelPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardContent className="px-5 py-4 space-y-3">
             <div className="text-sm font-medium">Dagelijks leven</div>
             <p className="text-xs text-muted-foreground">Hoe zit/sta/wandel je op een gemiddelde dag, buiten sport om?</p>
-            <Select value={goal.lifestyle ?? "zittend"} onValueChange={(v) => setGoal({ ...goal, lifestyle: v as Lifestyle })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select value={raw.lifestyle ?? ""} onValueChange={(v) => setGoal({ ...goal, lifestyle: v as Lifestyle })}>
+              <SelectTrigger><SelectValue placeholder="Kies je dagelijks leven" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="zittend">Zittend werk, weinig bewegen</SelectItem>
                 <SelectItem value="licht_actief">Zittend werk + wat wandelen</SelectItem>
@@ -293,7 +295,7 @@ function DoelPage() {
         {!calc ? (
           <Card>
             <CardContent className="px-5 py-6 text-center text-sm text-muted-foreground">
-              Vul je leeftijd, lengte en startgewicht in bij Gegevens om je dagelijks plan te zien.
+              Kies je doel en vul je geboortedatum, geslacht, lengte en gewicht in bij Gegevens om je dagelijks plan te zien.
             </CardContent>
           </Card>
         ) : (

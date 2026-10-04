@@ -41,7 +41,10 @@ export const DEFAULT_GOAL: GoalSettings = {
   cookPerWeek: 4,
 };
 
+const EMPTY_GOAL: Partial<GoalSettings> = {};
+
 export function useGoal() {
-  const { value, setValue, loaded } = useCloudDoc<GoalSettings>(GOAL_KEY, DEFAULT_GOAL);
-  return { goal: { ...DEFAULT_GOAL, ...value }, setGoal: setValue, loaded };
+  // Nieuwe accounts starten leeg: `raw` bevat enkel wat de gebruiker zelf koos.
+  const { value, setValue, loaded } = useCloudDoc<Partial<GoalSettings>>(GOAL_KEY, EMPTY_GOAL);
+  return { goal: { ...DEFAULT_GOAL, ...value } as GoalSettings, raw: value, setGoal: setValue, loaded };
 }

@@ -33,7 +33,7 @@ export function ageFromBirthDate(birthDate?: string) {
 }
 
 function GegevensPage() {
-  const { goal, setGoal, settings, setSettings } = useGoalTargets();
+  const { goal, raw, setGoal, settings, setSettings } = useGoalTargets();
 
   const numOrUndef = (s: string) => {
     const n = parseFloat(s.replace(",", "."));
@@ -83,8 +83,8 @@ function GegevensPage() {
               />
               <div className="space-y-2">
                 <Label>Geslacht</Label>
-                <Select value={goal.sex} onValueChange={(v) => setGoal({ ...goal, sex: v as Sex })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select value={raw.sex ?? ""} onValueChange={(v) => setGoal({ ...goal, sex: v as Sex })}>
+                  <SelectTrigger><SelectValue placeholder="Kies" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="v">Vrouw</SelectItem>
                     <SelectItem value="m">Man</SelectItem>
