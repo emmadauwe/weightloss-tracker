@@ -103,9 +103,15 @@ function VandaagPage() {
   }, [weekDates, workouts, target, currentWeight, losing]);
 
   const totals = dayMacros(date, meals, ingredients, dishes);
+  // Gemiddelde enkel over de dagen die al ingevuld zijn, zodat lege dagen
+  // het overzicht niet Kunstmatig omlaag trekken.
   const weekAverage = useMemo(() => {
+    let filledDays = 0;
     const sum = weekDates.reduce(
       (current, weekDate) => {
+        const entries = meals.filter((m) => m.date === weekDate);
+        if (entries.length === 0) return current;
+        filledDays += 1;
         const macros = dayMacros(weekDate, meals, ingredients, dishes);
         return {
           kcal: current.kcal + macros.kcal,
@@ -116,11 +122,12 @@ function VandaagPage() {
       },
       { kcal: 0, protein: 0, carbs: 0, fat: 0 },
     );
+    const days = Math.max(1, filledDays);
     return {
-      kcal: sum.kcal / 7,
-      protein: sum.protein / 7,
-      carbs: sum.carbs / 7,
-      fat: sum.fat / 7,
+      kcal: sum.kcal / days,
+      protein: sum.protein / days,
+      carbs: sum.carbs / days,
+      fat: sum.fat / days,
     };
   }, [weekDates, meals, ingredients, dishes]);
   const todayMeals = meals.filter((m) => m.date === date);
