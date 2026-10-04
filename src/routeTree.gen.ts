@@ -9,40 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VandaagRouteImport } from './routes/vandaag'
-import { Route as SportRouteImport } from './routes/sport'
-import { Route as IngredientenRouteImport } from './routes/ingredienten'
-import { Route as GerechtenRouteImport } from './routes/gerechten'
-import { Route as BoodschappenRouteImport } from './routes/boodschappen'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SportIndexRouteImport } from './routes/sport.index'
+import { Route as BoodschappenRouteImport } from './routes/boodschappen'
+import { Route as GerechtenRouteImport } from './routes/gerechten'
+import { Route as IngredientenRouteImport } from './routes/ingredienten'
+import { Route as SportRouteImport } from './routes/sport'
+import { Route as VandaagRouteImport } from './routes/vandaag'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
-import { Route as VriendIdRouteImport } from './routes/vriend.$id'
-import { Route as SportIdRouteImport } from './routes/sport.$id'
-import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
-import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
-import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
-import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
 import { Route as AccountDoelRouteImport } from './routes/account/doel'
+import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
+import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
+import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
+import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
+import { Route as SportIndexRouteImport } from './routes/sport.index'
+import { Route as SportIdRouteImport } from './routes/sport.$id'
+import { Route as VriendIdRouteImport } from './routes/vriend.$id'
 
-const VandaagRoute = VandaagRouteImport.update({
-  id: '/vandaag',
-  path: '/vandaag',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SportRoute = SportRouteImport.update({
-  id: '/sport',
-  path: '/sport',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IngredientenRoute = IngredientenRouteImport.update({
-  id: '/ingredienten',
-  path: '/ingredienten',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GerechtenRoute = GerechtenRouteImport.update({
-  id: '/gerechten',
-  path: '/gerechten',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BoodschappenRoute = BoodschappenRouteImport.update({
@@ -50,44 +35,34 @@ const BoodschappenRoute = BoodschappenRouteImport.update({
   path: '/boodschappen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const GerechtenRoute = GerechtenRouteImport.update({
+  id: '/gerechten',
+  path: '/gerechten',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SportIndexRoute = SportIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SportRoute,
+const IngredientenRoute = IngredientenRouteImport.update({
+  id: '/ingredienten',
+  path: '/ingredienten',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportRoute = SportRouteImport.update({
+  id: '/sport',
+  path: '/sport',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VandaagRoute = VandaagRouteImport.update({
+  id: '/vandaag',
+  path: '/vandaag',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VriendIdRoute = VriendIdRouteImport.update({
-  id: '/vriend/$id',
-  path: '/vriend/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SportIdRoute = SportIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => SportRoute,
-} as any)
-const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
-  id: '/api/suggest-macros',
-  path: '/api/suggest-macros',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountVriendenRoute = AccountVriendenRouteImport.update({
-  id: '/account/vrienden',
-  path: '/account/vrienden',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountPrivacyRoute = AccountPrivacyRouteImport.update({
-  id: '/account/privacy',
-  path: '/account/privacy',
+const AccountDoelRoute = AccountDoelRouteImport.update({
+  id: '/account/doel',
+  path: '/account/doel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountGegevensRoute = AccountGegevensRouteImport.update({
@@ -95,9 +70,34 @@ const AccountGegevensRoute = AccountGegevensRouteImport.update({
   path: '/account/gegevens',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountDoelRoute = AccountDoelRouteImport.update({
-  id: '/account/doel',
-  path: '/account/doel',
+const AccountPrivacyRoute = AccountPrivacyRouteImport.update({
+  id: '/account/privacy',
+  path: '/account/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountVriendenRoute = AccountVriendenRouteImport.update({
+  id: '/account/vrienden',
+  path: '/account/vrienden',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
+  id: '/api/suggest-macros',
+  path: '/api/suggest-macros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportIndexRoute = SportIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SportRoute,
+} as any)
+const SportIdRoute = SportIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => SportRoute,
+} as any)
+const VriendIdRoute = VriendIdRouteImport.update({
+  id: '/vriend/$id',
+  path: '/vriend/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -223,32 +223,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vandaag': {
-      id: '/vandaag'
-      path: '/vandaag'
-      fullPath: '/vandaag'
-      preLoaderRoute: typeof VandaagRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sport': {
-      id: '/sport'
-      path: '/sport'
-      fullPath: '/sport'
-      preLoaderRoute: typeof SportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ingredienten': {
-      id: '/ingredienten'
-      path: '/ingredienten'
-      fullPath: '/ingredienten'
-      preLoaderRoute: typeof IngredientenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gerechten': {
-      id: '/gerechten'
-      path: '/gerechten'
-      fullPath: '/gerechten'
-      preLoaderRoute: typeof GerechtenRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/boodschappen': {
@@ -258,19 +237,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BoodschappenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/gerechten': {
+      id: '/gerechten'
+      path: '/gerechten'
+      fullPath: '/gerechten'
+      preLoaderRoute: typeof GerechtenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sport/': {
-      id: '/sport/'
-      path: '/'
-      fullPath: '/sport/'
-      preLoaderRoute: typeof SportIndexRouteImport
-      parentRoute: typeof SportRoute
+    '/ingredienten': {
+      id: '/ingredienten'
+      path: '/ingredienten'
+      fullPath: '/ingredienten'
+      preLoaderRoute: typeof IngredientenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sport': {
+      id: '/sport'
+      path: '/sport'
+      fullPath: '/sport'
+      preLoaderRoute: typeof SportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vandaag': {
+      id: '/vandaag'
+      path: '/vandaag'
+      fullPath: '/vandaag'
+      preLoaderRoute: typeof VandaagRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/account/': {
       id: '/account/'
@@ -279,39 +272,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vriend/$id': {
-      id: '/vriend/$id'
-      path: '/vriend/$id'
-      fullPath: '/vriend/$id'
-      preLoaderRoute: typeof VriendIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sport/$id': {
-      id: '/sport/$id'
-      path: '/$id'
-      fullPath: '/sport/$id'
-      preLoaderRoute: typeof SportIdRouteImport
-      parentRoute: typeof SportRoute
-    }
-    '/api/suggest-macros': {
-      id: '/api/suggest-macros'
-      path: '/api/suggest-macros'
-      fullPath: '/api/suggest-macros'
-      preLoaderRoute: typeof ApiSuggestMacrosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account/vrienden': {
-      id: '/account/vrienden'
-      path: '/account/vrienden'
-      fullPath: '/account/vrienden'
-      preLoaderRoute: typeof AccountVriendenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account/privacy': {
-      id: '/account/privacy'
-      path: '/account/privacy'
-      fullPath: '/account/privacy'
-      preLoaderRoute: typeof AccountPrivacyRouteImport
+    '/account/doel': {
+      id: '/account/doel'
+      path: '/account/doel'
+      fullPath: '/account/doel'
+      preLoaderRoute: typeof AccountDoelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/gegevens': {
@@ -321,11 +286,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountGegevensRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account/doel': {
-      id: '/account/doel'
-      path: '/account/doel'
-      fullPath: '/account/doel'
-      preLoaderRoute: typeof AccountDoelRouteImport
+    '/account/privacy': {
+      id: '/account/privacy'
+      path: '/account/privacy'
+      fullPath: '/account/privacy'
+      preLoaderRoute: typeof AccountPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/vrienden': {
+      id: '/account/vrienden'
+      path: '/account/vrienden'
+      fullPath: '/account/vrienden'
+      preLoaderRoute: typeof AccountVriendenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/suggest-macros': {
+      id: '/api/suggest-macros'
+      path: '/api/suggest-macros'
+      fullPath: '/api/suggest-macros'
+      preLoaderRoute: typeof ApiSuggestMacrosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sport/': {
+      id: '/sport/'
+      path: '/'
+      fullPath: '/sport/'
+      preLoaderRoute: typeof SportIndexRouteImport
+      parentRoute: typeof SportRoute
+    }
+    '/sport/$id': {
+      id: '/sport/$id'
+      path: '/$id'
+      fullPath: '/sport/$id'
+      preLoaderRoute: typeof SportIdRouteImport
+      parentRoute: typeof SportRoute
+    }
+    '/vriend/$id': {
+      id: '/vriend/$id'
+      path: '/vriend/$id'
+      fullPath: '/vriend/$id'
+      preLoaderRoute: typeof VriendIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
