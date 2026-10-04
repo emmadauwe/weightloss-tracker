@@ -103,9 +103,15 @@ function VandaagPage() {
   }, [weekDates, workouts, target, currentWeight, losing]);
 
   const totals = dayMacros(date, meals, ingredients, dishes);
+  // Gemiddelde enkel over de dagen die al ingevuld zijn, zodat lege dagen
+  // het overzicht niet kunstmatig omlaag trekken.
   const weekAverage = useMemo(() => {
+    let filledDays = 0;
     const sum = weekDates.reduce(
       (current, weekDate) => {
+        const entries = meals.filter((m) => m.date === weekDate);
+        if (entries.length === 0) return current;
+        filledDays += 1;
         const macros = dayMacros(weekDate, meals, ingredients, dishes);
         return {
           kcal: current.kcal + macros.kcal,
@@ -116,11 +122,12 @@ function VandaagPage() {
       },
       { kcal: 0, protein: 0, carbs: 0, fat: 0 },
     );
+    const days = Math.max(1, filledDays);
     return {
-      kcal: sum.kcal / 7,
-      protein: sum.protein / 7,
-      carbs: sum.carbs / 7,
-      fat: sum.fat / 7,
+      kcal: sum.kcal / days,
+      protein: sum.protein / days,
+      carbs: sum.carbs / days,
+      fat: sum.fat / days,
     };
   }, [weekDates, meals, ingredients, dishes]);
   const todayMeals = meals.filter((m) => m.date === date);
@@ -258,13 +265,31 @@ function VandaagPage() {
             {/* Maaltijden */}
             {MEAL_ORDER.map((meal) => {
               const list = todayMeals.filter((m) => m.meal === meal);
-              const sum = list.reduce((acc, m) => acc + mealEntryMacros(m, ingredients, dishes).kcal, 0);
+              const mealMacros = list.reduce(
+                (acc, m) => {
+                  const macros = mealEntryMacros(m, ingredients, dishes);
+                  return {
+                    kcal: acc.kcal + macros.kcal,
+                    protein: acc.protein + macros.protein,
+                    carbs: acc.carbs + macros.carbs,
+                    fat: acc.fat + macros.fat,
+                  };
+                },
+                { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+              );
               return (
                 <Card key={meal}>
                   <CardContent className="px-5 py-3.5 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{MEAL_LABEL[meal]}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">{Math.round(sum)} kcal</div>
+                      <div className="text-xs text-muted-foreground tabular-nums">
+                        {Math.round(mealMacros.kcal)} kcal
+                        {list.length > 0 && (
+                          <span className="ml-1.5">
+                            · {Math.round(mealMacros.protein)}P · {Math.round(mealMacros.carbs)}K · {Math.round(mealMacros.fat)}V
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {list.length === 0 ? (
                       <p className="text-xs text-muted-foreground">Nog niets toegevoegd.</p>
