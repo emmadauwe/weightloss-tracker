@@ -10,7 +10,8 @@ import { sportOf } from "./workouts";
  * exact dezelfde cijfers tonen.
  */
 export function useGoalTargets() {
-  const { goal, setGoal } = useGoal();
+  const { goal, raw, setGoal } = useGoal();
+  const maintain = goal.type === "behouden";
   const { settings, setSettings } = useSettings();
   const { entries } = useEntries();
 
@@ -21,12 +22,12 @@ export function useGoalTargets() {
   const currentWeight = entries[entries.length - 1]?.weight ?? settings.startWeight;
 
   const calc = useMemo(() => {
-    if (!currentWeight || !settings.heightCm || !goal.age) return null;
+    if (!currentWeight || !settings.heightCm || !goal.age || !raw.type || !raw.sex) return null;
     return computeGoal({
       type: goal.type,
       weightKg: toKg(currentWeight)!,
       startWeightKg: toKg(settings.startWeight),
-      goalKg: toKg(settings.goalWeight),
+      goalKg: maintain ? undefined : toKg(settings.goalWeight),
       heightCm: settings.heightCm,
       age: goal.age,
       sex: goal.sex,
@@ -36,11 +37,11 @@ export function useGoalTargets() {
       sessionsPerWeek: 0,
       minutesPerSession: 0,
       strength: (goal.sports ?? []).some((id) => sportOf(id).kind === "kracht"),
-      startDate: settings.startDate,
-      endDate: settings.endDate,
+      startDate: maintain ? undefined : settings.startDate,
+      endDate: maintain ? undefined : settings.endDate,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWeight, settings, goal]);
+  }, [currentWeight, settings, goal, raw]);
 
   const target = useMemo(
     () => ({
@@ -52,5 +53,5 @@ export function useGoalTargets() {
     [goal, calc],
   );
 
-  return { goal, setGoal, settings, setSettings, calc, target, currentWeight };
+  return { goal, raw, setGoal, settings, setSettings, calc, target, currentWeight };
 }
