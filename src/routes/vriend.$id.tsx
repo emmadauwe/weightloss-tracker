@@ -135,11 +135,11 @@ function FriendPage() {
         {openSection === "sports" && (
           <Section title="Sportprestaties">
             {insights.map((it) => (
-              <div key={it.plan} className="rounded-lg border border-border px-4 py-3">
-                <div className="break-words text-base font-semibold">{it.plan}</div>
+              <div key={it.plan} className="rounded-lg border border-border px-3 py-3">
+                <div className="break-words text-sm font-medium">{it.plan}</div>
                 <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3">
-                  <span className="min-w-0 break-words text-sm text-muted-foreground">{it.exercise}</span>
-                  <span className="shrink-0 text-sm font-medium tabular-nums text-primary">{it.max} kg</span>
+                  <span className="min-w-0 break-words text-xs text-muted-foreground">{it.exercise}</span>
+                  <span className="shrink-0 text-xs font-medium tabular-nums text-primary">{it.max} kg</span>
                 </div>
                 <Spark values={it.series} />
               </div>
