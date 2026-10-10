@@ -47,8 +47,33 @@ function VandaagPage() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [view, setView] = useState<"dag" | "week">("dag");
   const { items: ingredients, upsert: upsertIngredient, newId: newIngredientId } = useIngredients();
-  const { items: dishes } = useDishes();
+  const { items: dishes, upsert: upsertDish, newId: newDishId } = useDishes();
   const { items: meals, add, remove, update } = useMeals();
+  const [savePrompt, setSavePrompt] = useState<{ ingredient: Ingredient; amount: number } | null>(null);
+  const saveAsIngredient = () => {
+    if (!savePrompt) return;
+    upsertIngredient({ ...savePrompt.ingredient, quick: undefined });
+    setSavePrompt(null);
+  };
+  const saveAsDish = () => {
+    if (!savePrompt) return;
+    const { ingredient: ing, amount } = savePrompt;
+    const factor = ing.baseUnit === "g" || ing.baseUnit === "ml" ? amount / 100 : amount;
+    const r = (n: number) => Math.round(n * factor * 10) / 10;
+    const dishId = newDishId();
+    upsertDish({
+      id: dishId,
+      name: ing.name,
+      servings: 1,
+      items: [],
+      directMacros: { kcal: r(ing.kcal), protein: r(ing.protein), carbs: r(ing.carbs), fat: r(ing.fat) },
+      ...(ing.baseUnit === "g" || ing.baseUnit === "ml" ? { portionAmount: amount, portionBase: ing.baseUnit } : {}),
+    });
+    meals
+      .filter((m) => m.kind === "ingredient" && m.refId === ing.id)
+      .forEach((m) => update(m.id, { kind: "dish", refId: dishId, amount: 1, unit: "portie" }));
+    setSavePrompt(null);
+  };
   const { goal, target, currentWeight } = useGoalTargets();
   const { items: workouts } = useWorkouts();
   const losing = goal.type === "afvallen";
@@ -389,9 +414,26 @@ function VandaagPage() {
             upsertIngredient(ingredient);
             add({ date, meal: quickAdding, kind: "ingredient", refId: ingredient.id, amount, unit: ingredient.baseUnit });
             setQuickAdding(null);
+            setSavePrompt({ ingredient, amount });
           }}
           newId={newIngredientId}
         />
+      )}
+
+      {savePrompt && (
+        <Dialog open onOpenChange={(o) => !o && setSavePrompt(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Bewaren voor later?</DialogTitle></DialogHeader>
+            <p className="break-words text-sm text-muted-foreground">
+              {savePrompt.ingredient.name} is toegevoegd. Wil je het ook bewaren zodat je het later snel terugvindt?
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={saveAsIngredient}>Bewaar als ingrediënt</Button>
+              <Button variant="outline" onClick={saveAsDish}>Bewaar als kant-en-klare maaltijd</Button>
+              <Button variant="ghost" onClick={() => setSavePrompt(null)}>Niet bewaren</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {editingEntry && (

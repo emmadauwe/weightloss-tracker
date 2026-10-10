@@ -57,7 +57,6 @@ function BoodschappenPage() {
     if (!dates.includes(m.date) || (!includeDone && isMealDone(m))) continue;
     const ref = m.kind === "dish" ? dishes.find((d) => d.id === m.refId) : ingredients.find((i) => i.id === m.refId);
     if (!ref) continue;
-    if (m.kind === "dish" && "directMacros" in ref && ref.directMacros && (ref as { items: unknown[] }).items.length === 0) continue;
     if (m.kind === "ingredient" && "quick" in ref && ref.quick) continue;
     const key = `${m.kind}:${m.refId}`;
     const cur = planned.get(key) ?? { name: ref.name, ids: [], skipped: true };
