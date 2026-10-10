@@ -56,6 +56,8 @@ export type Dish = {
   categories?: Meal[];
   items: DishItem[];
   /** Kant-en-klaar gerecht: macro's per portie rechtstreeks ingevuld, zonder ingrediënten. */
+  /** Eenmalig toegevoegd vanuit de planning: niet zichtbaar in de receptenlijst. */
+  quick?: boolean;
   directMacros?: { kcal: number; protein: number; carbs: number; fat: number };
   /** Kant-en-klaar: hoeveel gram of ml één portie weegt (optioneel). */
   portionAmount?: number;
@@ -145,7 +147,8 @@ export function useDishes() {
   );
   const remove = useCallback((id: string) => setValue((prev) => prev.filter((x) => x.id !== id)), [setValue]);
 
-  return { items, upsert, remove, loaded, newId: uid };
+  const library = items.filter((d) => !d.quick);
+  return { items, library, upsert, remove, loaded, newId: uid };
 }
 
 export function useMeals() {

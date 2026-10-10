@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, Lock, LockOpen } from "lucide-react";
 import { useWorkouts } from "@/lib/workouts";
 import { extraMacrosForDate } from "@/lib/workout-energy";
-import { formatUnit, useDishes, useIngredients, useMeals, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
+import { formatUnit, useDishes, useIngredients, useMeals, type Dish, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
 import { INGREDIENT_CATEGORIES } from "@/lib/nutrition-store";
 import { suggestMacros } from "@/lib/ai.functions";
 import { sentenceCase } from "@/lib/shopping-list";
@@ -21,6 +21,8 @@ import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { IngredientDialog } from "@/components/ingredient-library";
+import { DishDialog } from "./gerechten";
 
 export const Route = createFileRoute("/vandaag")({
   head: () => ({ meta: [
@@ -110,8 +112,8 @@ function VandaagPage() {
       }));
     const picks = generatePlan({
       dates,
-      dishes,
-      ingredients,
+      dishes: dishes.filter((d) => !d.quick),
+      ingredients: ingredients.filter((i) => !i.quick),
       target,
       priority: "eiwit",
       cookCount: dates.length === 1 ? undefined : Math.round((cookPerWeek * dates.length) / 7),
@@ -398,9 +400,6 @@ function VandaagPage() {
               <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setAddKind("ingredient"); setAdding(choosingAdd); setChoosingAdd(null); }}>
                 Ingrediënt
               </Button>
-              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setQuickAdding(choosingAdd); setChoosingAdd(null); }}>
-                <Sparkles className="mr-2 h-4 w-4 text-primary" /> Snel toevoegen
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -541,9 +540,26 @@ function AddMealDialog({
   meal: Meal; date: string; initialTab: "dish" | "ingredient"; onClose: () => void;
   onAdd: (e: { date: string; meal: Meal; kind: "dish" | "ingredient"; refId: string; amount: number; unit: Unit }) => void;
 }) {
-  const { library: ingredients } = useIngredients();
-  const { items: dishes } = useDishes();
+  const { library: ingredients, upsert: upsertIngredient, newId: newIngredientId } = useIngredients();
+  const { items: allIngredients } = useIngredients();
+  const { library: dishes, upsert: upsertDish, newId: newDishId } = useDishes();
   const tab = initialTab;
+  const [creating, setCreating] = useState(false);
+  const [pending, setPending] = useState<{ kind: "dish"; item: Dish } | { kind: "ingredient"; item: Ingredient } | null>(null);
+  const [chosenName, setChosenName] = useState("");
+  const keep = (save: boolean) => {
+    if (!pending) return;
+    if (pending.kind === "dish") {
+      upsertDish({ ...pending.item, quick: save ? undefined : true });
+      setRefId(pending.item.id); setChosenName(pending.item.name); setAmount("1"); setUnit("portie");
+    } else {
+      const ing = pending.item;
+      upsertIngredient({ ...ing, quick: save ? undefined : true });
+      setRefId(ing.id); setChosenName(ing.name); setUnit(ing.baseUnit);
+      setAmount(ing.baseUnit === "g" || ing.baseUnit === "ml" ? "100" : "1");
+    }
+    setPending(null);
+  };
   const [q, setQ] = useState("");
   const [refId, setRefId] = useState("");
   const [amount, setAmount] = useState("100");
@@ -568,6 +584,7 @@ function AddMealDialog({
 
   const choose = (id: string) => {
     setRefId(id);
+    setChosenName("");
     if (tab === "dish") {
       setAmount("1"); setUnit("portie");
     } else {
@@ -587,11 +604,21 @@ function AddMealDialog({
   };
 
   return (
+    <>
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <Input placeholder="Zoeken…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="flex gap-2">
+            <Input placeholder="Zoeken…" value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1" />
+            <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={() => setCreating(true)}
+              aria-label={tab === "dish" ? "Nieuw recept" : "Nieuw ingrediënt"}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {chosenName && (
+            <p className="break-words text-sm">Gekozen: <span className="font-medium">{chosenName}</span></p>
+          )}
           <div className="max-h-48 overflow-y-auto rounded-md border border-border">
             {list.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground text-center">Geen resultaten</p>
@@ -637,6 +664,29 @@ function AddMealDialog({
         </form>
       </DialogContent>
     </Dialog>
+    {creating && tab === "ingredient" && (
+      <IngredientDialog initial={null} newId={newIngredientId} onClose={() => setCreating(false)}
+        onSave={(ing) => { setCreating(false); setPending({ kind: "ingredient", item: ing }); }} />
+    )}
+    {creating && tab === "dish" && (
+      <DishDialog initial={null} ingredients={allIngredients} newId={newDishId} onClose={() => setCreating(false)}
+        onSave={(d) => { setCreating(false); setPending({ kind: "dish", item: d }); }} />
+    )}
+    {pending && (
+      <Dialog open onOpenChange={(o) => !o && keep(false)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Opslaan bij {pending.kind === "dish" ? "recepten" : "ingrediënten"}?</DialogTitle></DialogHeader>
+          <p className="break-words text-sm text-muted-foreground">
+            Wil je “{pending.item.name}” bewaren bij je {pending.kind === "dish" ? "recepten" : "ingrediënten"}, of enkel nu gebruiken?
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => keep(true)}>Opslaan bij {pending.kind === "dish" ? "recepten" : "ingrediënten"}</Button>
+            <Button variant="outline" onClick={() => keep(false)}>Enkel nu gebruiken</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
 
