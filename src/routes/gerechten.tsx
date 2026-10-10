@@ -37,7 +37,7 @@ const MEALS: { id: Meal; label: string }[] = [
 ];
 
 function GerechtenPage() {
-  const { items, upsert, remove, newId } = useDishes();
+  const { library: items, upsert, remove, newId } = useDishes();
   const { items: ingredients } = useIngredients();
   const [tab, setTab] = useState<"recepten" | "ingredienten">("recepten");
   const [q, setQ] = useState("");
@@ -304,7 +304,7 @@ function CategorySelect({ value, onChange }: { value: Meal[]; onChange: (v: Meal
   );
 }
 
-function DishDialog({
+export function DishDialog({
   initial, ingredients, onClose, onSave, newId,
 }: {
   initial: Dish | null;

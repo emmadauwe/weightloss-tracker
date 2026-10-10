@@ -102,7 +102,7 @@ export function SocialSync() {
         await supabase.from("shared_dishes").delete().eq("owner_id", user.id);
         return;
       }
-      const own = dishes.filter((d) => !d.source);
+      const own = dishes.filter((d) => !d.source && !d.quick);
       const rows = own.map((d) => ({
         owner_id: user.id,
         local_id: d.id,
