@@ -53,6 +53,17 @@ export function buildShoppingList(
 
     const dish = dishes.find((item) => item.id === entry.refId);
     if (!dish) continue;
+    if (dish.items.length === 0 && dish.directMacros) {
+      const key = `dish:${dish.id}`;
+      const current = totals.get(key);
+      totals.set(key, {
+        name: dish.name,
+        amount: (current?.amount ?? 0) + entry.amount,
+        unit: "portie",
+        category: "bereide maaltijden",
+      });
+      continue;
+    }
     for (const item of dish.items) {
       const ingredient = ingredients.find((candidate) => candidate.id === item.ingredientId);
       if (!ingredient) continue;
