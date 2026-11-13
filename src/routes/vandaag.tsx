@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, Lock, LockOpen } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Sparkles, Lock, LockOpen, Copy } from "lucide-react";
 import { useWorkouts } from "@/lib/workouts";
 import { extraMacrosForDate } from "@/lib/workout-energy";
 import { formatUnit, useDishes, useIngredients, useMeals, type Dish, type Ingredient, type IngredientCategory, type Meal, type MealEntry, type Unit } from "@/lib/nutrition-store";
@@ -90,6 +90,7 @@ function VandaagPage() {
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
   const [clearingDay, setClearingDay] = useState<string | null>(null);
+  const [copying, setCopying] = useState<Meal | null>(null);
 
   const cookPerWeek = goal.cookPerWeek ?? 4;
 
@@ -308,7 +309,14 @@ function VandaagPage() {
                 <Card key={meal}>
                   <CardContent className="px-5 py-3.5 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="font-medium">{MEAL_LABEL[meal]}</div>
+                      <div className="flex min-w-0 items-center gap-1">
+                        <span className="font-medium">{MEAL_LABEL[meal]}</span>
+                        {list.length > 0 && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground/70" onClick={() => setCopying(meal)} aria-label="Kopiëren naar andere dag">
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground tabular-nums">
                         {Math.round(mealMacros.kcal)} kcal
                         {list.length > 0 && (
@@ -400,6 +408,9 @@ function VandaagPage() {
               <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setAddKind("ingredient"); setAdding(choosingAdd); setChoosingAdd(null); }}>
                 Ingrediënt
               </Button>
+              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setQuickAdding(choosingAdd); setChoosingAdd(null); }}>
+                <Sparkles className="mr-1 h-4 w-4 text-primary" /> Snel toevoegen
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -409,13 +420,12 @@ function VandaagPage() {
         <QuickAddDialog
           meal={quickAdding}
           onClose={() => setQuickAdding(null)}
-          onAdd={(ingredient, amount) => {
-            upsertIngredient(ingredient);
-            add({ date, meal: quickAdding, kind: "ingredient", refId: ingredient.id, amount, unit: ingredient.baseUnit });
+          onAdd={(dish, portions) => {
+            upsertDish(dish);
+            add({ date, meal: quickAdding, kind: "dish", refId: dish.id, amount: portions, unit: "portie" });
             setQuickAdding(null);
-            setSavePrompt({ ingredient, amount });
           }}
-          newId={newIngredientId}
+          newId={newDishId}
         />
       )}
 
@@ -442,6 +452,23 @@ function VandaagPage() {
           onClose={() => setEditingEntry(null)}
           onSave={(patch) => { update(editingEntry.entry.id, patch); setEditingEntry(null); }}
           onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
+        />
+      )}
+
+      {copying && (
+        <CopyMealDialog
+          meal={copying}
+          fromDate={date}
+          weekDates={weekDates}
+          onClose={() => setCopying(null)}
+          onCopy={(targets) => {
+            const src = meals.filter((m) => m.date === date && m.meal === copying);
+            for (const t of targets) for (const m of src) {
+              const { id: _id, locked: _l, ...rest } = m;
+              add({ ...rest, date: t.date, meal: t.meal });
+            }
+            setCopying(null);
+          }}
         />
       )}
 
@@ -605,7 +632,7 @@ function AddMealDialog({
 
   return (
     <>
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!creating && !pending} onOpenChange={(o) => !o && !creating && !pending && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
@@ -673,7 +700,7 @@ function AddMealDialog({
         onSave={(d) => { setCreating(false); setPending({ kind: "dish", item: d }); }} />
     )}
     {pending && (
-      <Dialog open onOpenChange={(o) => !o && keep(false)}>
+      <Dialog open onOpenChange={(o) => { if (!o && pending) keep(false); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Opslaan bij {pending.kind === "dish" ? "recepten" : "ingrediënten"}?</DialogTitle></DialogHeader>
           <p className="break-words text-sm text-muted-foreground">
@@ -763,127 +790,113 @@ function EntryDialog({
   );
 }
 
+function CopyMealDialog({
+  meal, fromDate, weekDates, onClose, onCopy,
+}: {
+  meal: Meal; fromDate: string; weekDates: string[]; onClose: () => void;
+  onCopy: (targets: { date: string; meal: Meal }[]) => void;
+}) {
+  const [targetMeal, setTargetMeal] = useState<Meal>(meal);
+  const [picked, setPicked] = useState<string[]>([]);
+  const toggle = (d: string) => setPicked((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{MEAL_LABEL[meal]} kopiëren</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">Handig als je meerdere porties maakt. Kies de dagen waarop je dit nog eet.</p>
+        <div className="space-y-2">
+          <Label>Als</Label>
+          <Select value={targetMeal} onValueChange={(v) => setTargetMeal(v as Meal)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MEAL_ORDER.map((m) => <SelectItem key={m} value={m}>{MEAL_LABEL[m]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          {weekDates.map((d) => {
+            const same = d === fromDate && targetMeal === meal;
+            return (
+              <label key={d} className={`flex items-center gap-3 rounded-md border border-border px-3 py-2 text-sm ${same ? "opacity-50" : ""}`}>
+                <Checkbox checked={picked.includes(d)} disabled={same} onCheckedChange={() => toggle(d)} />
+                <span className="capitalize">{format(parseISO(d), "EEEE d MMM", { locale: nl })}</span>
+              </label>
+            );
+          })}
+        </div>
+        <DialogFooter>
+          <Button className="w-full" disabled={picked.length === 0} onClick={() => onCopy(picked.map((date) => ({ date, meal: targetMeal })))}>
+            Kopiëren{picked.length > 0 ? ` naar ${picked.length} dag${picked.length === 1 ? "" : "en"}` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QuickAddDialog({
   meal, onClose, onAdd, newId,
 }: {
   meal: Meal;
   onClose: () => void;
-  onAdd: (ingredient: Ingredient, amount: number) => void;
+  onAdd: (dish: Dish, portions: number) => void;
   newId: () => string;
 }) {
   const [name, setName] = useState("");
-  const [baseUnit, setBaseUnit] = useState<Unit>("portie");
   const [kcal, setKcal] = useState("");
   const [protein, setProtein] = useState("");
   const [carbs, setCarbs] = useState("");
   const [fat, setFat] = useState("");
-  const [category, setCategory] = useState<IngredientCategory>("bereide maaltijden");
-  const [amount, setAmount] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
-  const perLabel = baseUnit === "g" || baseUnit === "ml" ? `per 100 ${baseUnit}` : `per 1 ${baseUnit}`;
+  const num = (x: string) => parseFloat(x.replace(",", ".")) || 0;
 
   const ask = async () => {
     if (!name.trim()) return;
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const s = await suggestMacros({ data: { name: name.trim(), baseUnit } });
-      setKcal(String(s.kcal));
-      setProtein(String(s.protein));
-      setCarbs(String(s.carbs));
-      setFat(String(s.fat));
-      if ((INGREDIENT_CATEGORIES as readonly string[]).includes(s.category)) {
-        setCategory(s.category as IngredientCategory);
-      }
+      const s = await suggestMacros({ data: { name: name.trim(), baseUnit: "portie" } });
+      setKcal(String(s.kcal)); setProtein(String(s.protein)); setCarbs(String(s.carbs)); setFat(String(s.fat));
     } catch (e) {
       setError(e instanceof Error ? e.message : "De AI-schatting is niet gelukt.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const a = num(amount);
-    if (!name.trim() || !a) return;
-    onAdd(
-      {
-        id: newId(),
-        name: name.trim(),
-        baseUnit,
-        kcal: num(kcal),
-        protein: num(protein),
-        carbs: num(carbs),
-        fat: num(fat),
-        category,
-        quick: true,
-      },
-      a,
-    );
+    if (!name.trim()) return;
+    onAdd({
+      id: newId(), name: name.trim(), servings: 1, items: [], quick: true, categories: [meal],
+      directMacros: { kcal: num(kcal), protein: num(protein), carbs: num(carbs), fat: num(fat) },
+    }, 1);
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Snel toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="qname">Wat heb je gegeten?</Label>
             <Input id="qname" value={name} onChange={(e) => setName(e.target.value)} placeholder="bv. Falafelwrap" required autoFocus />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Eenheid</Label>
-              <Select value={baseUnit} onValueChange={(v) => setBaseUnit(v as Unit)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="qamt">Hoeveelheid</Label>
-              <Input id="qamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            </div>
+            <p className="text-xs text-muted-foreground">Wordt niet bewaard in je recepten of ingrediënten.</p>
           </div>
           <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => void ask()} disabled={loading || !name.trim()}>
             <Sparkles className="mr-1 h-4 w-4 text-primary" />
-            {loading ? "Even zoeken…" : "Stel macro's voor met AI"}
+            {loading ? "Even zoeken…" : "Schat macro's met AI"}
           </Button>
           {error && <p className="text-xs text-destructive">{error}</p>}
-          <p className="text-xs text-muted-foreground">Waardes hieronder gelden {perLabel}.</p>
+          <p className="text-xs text-muted-foreground">Voor één portie.</p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="qkcal">Kcal</Label>
-              <Input id="qkcal" inputMode="decimal" value={kcal} onChange={(e) => setKcal(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="qprot">Eiwit (g)</Label>
-              <Input id="qprot" inputMode="decimal" value={protein} onChange={(e) => setProtein(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="qcarb">Koolhydraten (g)</Label>
-              <Input id="qcarb" inputMode="decimal" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="qfat">Vet (g)</Label>
-              <Input id="qfat" inputMode="decimal" value={fat} onChange={(e) => setFat(e.target.value)} />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as IngredientCategory)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {INGREDIENT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{sentenceCase(c)}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {([["Kcal", kcal, setKcal], ["Eiwit (g)", protein, setProtein], ["Koolhydraten (g)", carbs, setCarbs], ["Vet (g)", fat, setFat]] as const).map(([l, v, set]) => (
+              <div key={l} className="space-y-2">
+                <Label>{l}</Label>
+                <Input inputMode="decimal" value={v} onChange={(e) => set(e.target.value)} />
+              </div>
+            ))}
           </div>
           <DialogFooter>
-            <Button type="submit" className="w-full">Toevoegen</Button>
+            <Button type="submit" className="w-full" disabled={!name.trim()}>Toevoegen</Button>
           </DialogFooter>
         </form>
       </DialogContent>
