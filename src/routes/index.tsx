@@ -38,6 +38,8 @@ import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 import { useGoal } from "@/lib/goal-store";
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { DateField } from "@/components/date-field";
+import { Dialog as GDialog, DialogContent as GDialogContent, DialogHeader as GDialogHeader, DialogTitle as GDialogTitle } from "@/components/ui/dialog";
 
 
 export const Route = createFileRoute("/")({
@@ -56,10 +58,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
-  const { settings } = useSettings();
+  const { settings, setSettings } = useSettings();
   const { goal: goalSettings } = useGoal();
   const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
   const [showBmi, setShowBmi] = useState(false);
+  const [goalPopup, setGoalPopup] = useState<"kg" | "dagen" | null>(null);
 
   const sorted = entries;
   const latest = sorted[sorted.length - 1];
@@ -190,11 +193,13 @@ function Index() {
                 label="Nog te gaan"
                 value={goal && latest ? toGoal.toFixed(1) : "—"}
                 unit={goal && latest ? unit : undefined}
+                onClick={() => setGoalPopup("kg")}
               />
               <MiniStat
                 label="Dagen over"
                 value={daysLeft !== null ? String(daysLeft) : "—"}
                 unit={daysLeft !== null ? "dagen" : undefined}
+                onClick={() => setGoalPopup("dagen")}
               />
               <MiniStat
                 label="BMI"
@@ -317,8 +322,81 @@ function Index() {
       {/* Floating add button */}
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
+      <GDialog open={goalPopup !== null} onOpenChange={(o) => !o && setGoalPopup(null)}>
+        <GDialogContent className="max-h-[85vh] overflow-y-auto">
+          <GDialogHeader><GDialogTitle>{goalPopup === "kg" ? "Nog te gaan" : "Dagen over"}</GDialogTitle></GDialogHeader>
+          {goalPopup === "kg" ? (() => {
+            const pct = start && goal && latest && start !== goal ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100)) : 0;
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <PopStat label={weightChange > 0 ? "Bijgekomen" : weightChange < 0 ? "Afgevallen" : "Verandering"} value={latest ? Math.abs(weightChange).toFixed(1) : "—"} unit={unit} />
+                  <PopStat label="Nog te gaan" value={goal && latest ? toGoal.toFixed(1) : "—"} unit={unit} />
+                </div>
+                {start && goal && (
+                  <div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} /></div>
+                    <div className="mt-2 flex justify-between text-xs text-muted-foreground tabular-nums"><span>{start} {unit} start</span><span>{pct.toFixed(0)}%</span><span>{goal} {unit} doel</span></div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="pop-goal">Doelgewicht ({unit})</Label>
+                  <Input id="pop-goal" inputMode="decimal" defaultValue={goal ?? ""}
+                    onBlur={(e) => { const v = parseFloat(e.target.value.replace(",", ".")); setSettings({ ...settings, goalWeight: v > 0 ? v : undefined }); }} />
+                  <p className="text-xs text-muted-foreground">Wordt ook aangepast bij Doel in je account.</p>
+                </div>
+              </div>
+            );
+          })() : (() => {
+            const total = settings.startDate && settings.endDate ? differenceInDays(parseISO(settings.endDate), parseISO(settings.startDate)) : null;
+            const passed = settings.startDate ? Math.max(0, differenceInDays(new Date(), parseISO(settings.startDate))) : null;
+            const pct = total && passed !== null ? Math.max(0, Math.min(100, (passed / total) * 100)) : 0;
+            const perWeek = goal && latest && daysLeft ? (goal - latest.weight) / Math.max(1, daysLeft / 7) : null;
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <PopStat label="Al bezig" value={passed !== null ? String(passed) : "—"} unit="dagen" />
+                  <PopStat label="Dagen over" value={daysLeft !== null ? String(daysLeft) : "—"} unit="dagen" />
+                </div>
+                {total !== null && (
+                  <div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} /></div>
+                    <div className="mt-2 flex justify-between text-xs text-muted-foreground tabular-nums">
+                      <span>{format(parseISO(settings.startDate!), "d MMM yyyy", { locale: nl })}</span>
+                      <span>{format(parseISO(settings.endDate!), "d MMM yyyy", { locale: nl })}</span>
+                    </div>
+                  </div>
+                )}
+                {perWeek !== null && (
+                  <div className="rounded-lg bg-secondary px-4 py-3 text-sm">
+                    Nodig tempo: <span className="font-semibold tabular-nums">{perWeek > 0 ? "+" : "−"}{Math.abs(perWeek).toFixed(2).replace(".", ",")} {unit}/week</span>
+                    <span className="block text-xs text-muted-foreground">{perWeek > 0 ? "bijkomen" : "afvallen"} om je doel op tijd te halen{Math.abs(perWeek) > 0.5 ? " — dat is sneller dan aangeraden (0,5 kg/week)." : "."}</span>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <DateField label="Einddag" value={settings.endDate} onChange={(v) => setSettings({ ...settings, endDate: v })} />
+                  <p className="text-xs text-muted-foreground">Wordt ook aangepast bij Doel in je account.</p>
+                </div>
+              </div>
+            );
+          })()}
+        </GDialogContent>
+      </GDialog>
+
       <BmiDialog open={showBmi} onOpenChange={setShowBmi} bmi={bmi} heightCm={settings.heightCm} unit={unit} />
 
+    </div>
+  );
+}
+
+function PopStat({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <div className="rounded-xl border border-border px-4 py-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="text-2xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{value}</span>
+        {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
+      </div>
     </div>
   );
 }
