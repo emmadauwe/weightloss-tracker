@@ -409,7 +409,7 @@ function VandaagPage() {
                 Ingrediënt
               </Button>
               <Button type="button" variant="outline" className="w-full justify-start" onClick={() => { setQuickAdding(choosingAdd); setChoosingAdd(null); }}>
-                <Sparkles className="mr-1 h-4 w-4 text-primary" /> Snel toevoegen
+                Snel toevoegen
               </Button>
             </div>
           </DialogContent>
