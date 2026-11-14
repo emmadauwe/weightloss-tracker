@@ -17,7 +17,7 @@ import { INGREDIENT_CATEGORIES } from "@/lib/nutrition-store";
 import { suggestMacros } from "@/lib/ai.functions";
 import { sentenceCase } from "@/lib/shopping-list";
 import { useGoalTargets } from "@/lib/goal-targets";
-import { dayMacros, mealEntryMacros } from "@/lib/nutrition-math";
+import { dayMacros, dishMacrosPerServing, ingredientMacros, mealEntryMacros } from "@/lib/nutrition-math";
 import { generatePlan, picksToEntries } from "@/lib/planner";
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -131,6 +131,13 @@ function VandaagPage() {
   }, [weekDates, workouts, target, currentWeight, losing]);
 
   const totals = dayMacros(date, meals, ingredients, dishes);
+  const selectedTarget = withExtra(date);
+  const remaining = {
+    kcal: selectedTarget.kcal - totals.kcal,
+    protein: selectedTarget.protein - totals.protein,
+    carbs: selectedTarget.carbs - totals.carbs,
+    fat: selectedTarget.fat - totals.fat,
+  };
   // Gemiddelde enkel over de dagen die al ingevuld zijn, zodat lege dagen
   // het overzicht niet kunstmatig omlaag trekken.
   const weekAverage = useMemo(() => {
@@ -392,6 +399,7 @@ function VandaagPage() {
           meal={adding}
           initialTab={addKind}
           date={date}
+          remaining={remaining}
           onClose={() => setAdding(null)}
           onAdd={(entry) => { add(entry); setAdding(null); }}
         />
@@ -562,9 +570,11 @@ function MacroBar({ label, cur, max, base, unit, favorableOver = false }: { labe
 }
 
 function AddMealDialog({
-  meal, date, initialTab, onClose, onAdd,
+  meal, date, initialTab, remaining, onClose, onAdd,
 }: {
-  meal: Meal; date: string; initialTab: "dish" | "ingredient"; onClose: () => void;
+  meal: Meal; date: string; initialTab: "dish" | "ingredient";
+  remaining: { kcal: number; protein: number; carbs: number; fat: number };
+  onClose: () => void;
   onAdd: (e: { date: string; meal: Meal; kind: "dish" | "ingredient"; refId: string; amount: number; unit: Unit }) => void;
 }) {
   const { library: ingredients, upsert: upsertIngredient, newId: newIngredientId } = useIngredients();
@@ -635,6 +645,11 @@ function AddMealDialog({
     <Dialog open={!creating && !pending} onOpenChange={(o) => !o && !creating && !pending && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Toevoegen aan {MEAL_LABEL[meal]}</DialogTitle></DialogHeader>
+        <div className="rounded-lg bg-secondary px-3 py-2 text-xs">
+          <span className="font-medium">Nog over voor deze dag: </span>
+          <span className="tabular-nums">{Math.round(remaining.kcal)} kcal · {Math.round(remaining.protein)} g eiwit</span>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Vergelijk de macro's per portie of standaardhoeveelheid voordat je kiest.</p>
+        </div>
         <form onSubmit={submit} className="space-y-3">
           <div className="flex gap-2">
             <Input placeholder="Zoeken…" value={q} onChange={(e) => setQ(e.target.value)} className="min-w-0 flex-1" />
@@ -646,19 +661,37 @@ function AddMealDialog({
           {chosenName && (
             <p className="break-words text-sm">Gekozen: <span className="font-medium">{chosenName}</span></p>
           )}
-          <div className="max-h-48 overflow-y-auto rounded-md border border-border">
+          <div className="max-h-64 overflow-y-auto rounded-md border border-border">
             {list.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground text-center">Geen resultaten</p>
             ) : (
               <ul className="divide-y divide-border">
-                {list.map((x) => (
-                  <li key={x.id}>
-                    <button type="button" onClick={() => choose(x.id)}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${refId === x.id ? "bg-secondary" : ""}`}>
-                      {x.name}
-                    </button>
-                  </li>
-                ))}
+                {list.map((x) => {
+                  const ing = tab === "ingredient" ? (x as Ingredient) : null;
+                  const itemMacros = ing
+                    ? ingredientMacros(ing, ing.baseUnit === "g" || ing.baseUnit === "ml" ? 100 : 1, ing.baseUnit)
+                    : dishMacrosPerServing(x as Dish, allIngredients);
+                  const fits = itemMacros.kcal <= remaining.kcal + 0.5;
+                  return (
+                    <li key={x.id}>
+                      <button type="button" onClick={() => choose(x.id)}
+                        className={`w-full px-3 py-2.5 text-left hover:bg-accent ${refId === x.id ? "bg-secondary" : ""}`}>
+                        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                          <div className="min-w-0">
+                            <div className="break-words text-sm">{x.name}</div>
+                            <div className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                              {Math.round(itemMacros.kcal)} kcal · {Math.round(itemMacros.protein)}P · {Math.round(itemMacros.carbs)}K · {Math.round(itemMacros.fat)}V
+                              <span> · {ing ? (ing.baseUnit === "g" || ing.baseUnit === "ml" ? `per 100 ${ing.baseUnit}` : `per ${ing.baseUnit}`) : "per portie"}</span>
+                            </div>
+                          </div>
+                          <span className={`pt-0.5 text-right text-[10px] font-medium ${fits ? "text-success-strong" : "text-destructive"}`}>
+                            {fits ? "Past in je dag" : `${Math.ceil(itemMacros.kcal - remaining.kcal)} kcal erboven`}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

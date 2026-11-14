@@ -41,15 +41,24 @@ function GerechtenPage() {
   const { items: ingredients } = useIngredients();
   const [tab, setTab] = useState<"recepten" | "ingredienten">("recepten");
   const [q, setQ] = useState("");
+  const [mealFilter, setMealFilter] = useState<Meal | "alle">("alle");
+  const [ingredientFilter, setIngredientFilter] = useState("alle");
   const [viewing, setViewing] = useState<Dish | null>(null);
   const [editing, setEditing] = useState<Dish | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Dish | null>(null);
 
+  const usedIngredients = useMemo(() => {
+    const ids = new Set(items.flatMap((dish) => dish.items.map((item) => item.ingredientId)));
+    return ingredients.filter((ingredient) => ids.has(ingredient.id)).sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  }, [items, ingredients]);
+
   const filtered = useMemo(
     () => [...items].sort((a, b) => a.name.localeCompare(b.name))
-      .filter((d) => d.name.toLowerCase().includes(q.toLowerCase())),
-    [items, q],
+      .filter((d) => d.name.toLowerCase().includes(q.toLowerCase()))
+      .filter((d) => mealFilter === "alle" || d.categories?.includes(mealFilter))
+      .filter((d) => ingredientFilter === "alle" || d.items.some((item) => item.ingredientId === ingredientFilter)),
+    [items, q, mealFilter, ingredientFilter],
   );
 
   return (
@@ -69,12 +78,28 @@ function GerechtenPage() {
         ) : (
           <>
         <Input placeholder="Zoek recept…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+          <Select value={mealFilter} onValueChange={(value) => setMealFilter(value as Meal | "alle")}>
+            <SelectTrigger aria-label="Filter op type maaltijd"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle maaltijden</SelectItem>
+              {MEALS.map((meal) => <SelectItem key={meal.id} value={meal.id}>{meal.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={ingredientFilter} onValueChange={setIngredientFilter}>
+            <SelectTrigger aria-label="Filter op ingrediënt"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle ingrediënten</SelectItem>
+              {usedIngredients.map((ingredient) => <SelectItem key={ingredient.id} value={ingredient.id}>{ingredient.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         {filtered.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center py-12 text-center">
               <ChefHat className="mb-2 h-7 w-7 text-primary" />
-              <p className="text-sm font-medium">Nog geen recepten</p>
-              <p className="mt-1 text-xs text-muted-foreground">Tik op + om je eerste recept toe te voegen.</p>
+              <p className="text-sm font-medium">{items.length === 0 ? "Nog geen recepten" : "Geen recepten gevonden"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{items.length === 0 ? "Tik op + om je eerste recept toe te voegen." : "Pas je zoekopdracht of filters aan."}</p>
             </CardContent>
           </Card>
         ) : (
