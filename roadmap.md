@@ -57,8 +57,8 @@
 - [x] Label strength achievements by exercise and show per-plan exercise evolution.
 - [x] Simplify friend rows and show unread activity on the profile icon.
 - [x] Align friend profile colors, progress typography, activity card, icons, and sport composition with the rest of the app.
-- [ ] Add per-set strength logging with a two-minute rest timer and daily session grouping.
-- [ ] Add AI-assisted front/back muscle targeting maps for strength exercises.
-- [ ] Split daily weight history from weekly-average progress.
-- [ ] Add meal-type and ingredient filters to the recipe library.
-- [ ] Show per-serving macros and remaining-day fit while choosing meals.
+- [x] Add per-set strength logging with a two-minute rest timer and daily session grouping.
+- [x] Add AI-assisted front/back muscle targeting maps for strength exercises.
+- [x] Split daily weight history from weekly-average progress.
+- [x] Add meal-type and ingredient filters to the recipe library.
+- [x] Show per-serving macros and remaining-day fit while choosing meals.
