@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ChevronLeft, ChevronRight, ExternalLink, ListChecks, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, ListChecks, Pencil, Plus, SkipForward, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DateField } from "@/components/date-field";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { PlanDialog } from "@/components/plan-dialog";
+import { MuscleMap } from "@/components/muscle-map";
 import type { WorkoutPlan, PlanExercise } from "@/lib/workout-plans";
 import type { Workout, WorkoutInput, WorkoutSet } from "@/lib/workouts";
 
@@ -218,6 +219,11 @@ function ExerciseView({
         .map((p) => ({ ...p, value: Math.round(p.value! * 10) / 10 })),
     [history],
   );
+  const bestSet = history.reduce((best, h) => Math.max(best, ...h.sets.map((s) => s.weight ?? 0)), 0);
+  const totalVolume = history.reduce(
+    (total, h) => total + h.sets.reduce((sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0), 0),
+    0,
+  );
 
   return (
     <>
@@ -233,6 +239,17 @@ function ExerciseView({
                 Uitleg <ExternalLink className="h-3 w-3" />
               </a>
             )}
+          </div>
+          <MuscleMap exerciseName={exercise.name} />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-secondary px-3 py-2">
+              <div className="text-[11px] text-muted-foreground">Beste set</div>
+              <div className="text-sm font-semibold tabular-nums">{bestSet || "—"}{bestSet ? " kg" : ""}</div>
+            </div>
+            <div className="rounded-lg bg-secondary px-3 py-2">
+              <div className="text-[11px] text-muted-foreground">Totaal trainingsvolume</div>
+              <div className="text-sm font-semibold tabular-nums">{Math.round(totalVolume).toLocaleString("nl-BE")} kg</div>
+            </div>
           </div>
           <div className="mb-2 mt-3 text-xs text-muted-foreground">Gemiddeld gewicht per sessie (kg)</div>
           {chart.length < 2 ? (
@@ -343,16 +360,34 @@ function LogDialog({
   onClose: () => void;
   onSave: (date: string, sets: WorkoutSet[]) => Promise<void>;
 }) {
+  type SetRow = { weight: string; reps: string; done: boolean };
   const [date, setDate] = useState<string | undefined>(format(new Date(), "yyyy-MM-dd"));
-  const initial: { weight: string; reps: string }[] = last?.length
-    ? last.map((s) => ({ weight: s.weight?.toString() ?? "", reps: s.reps?.toString() ?? "" }))
-    : Array.from({ length: exercise.sets || 3 }, () => ({ weight: "", reps: exercise.reps?.toString() ?? "" }));
+  const initial: SetRow[] = last?.length
+    ? last.map((s) => ({ weight: s.weight?.toString() ?? "", reps: s.reps?.toString() ?? "", done: false }))
+    : Array.from({ length: exercise.sets || 3 }, () => ({ weight: "", reps: exercise.reps?.toString() ?? "", done: false }));
   const [sets, setSets] = useState(initial);
+  const [restSeconds, setRestSeconds] = useState(0);
+  const [saving, setSaving] = useState(false);
   const n = (v: string) => (v.trim() === "" ? undefined : Number(v.replace(",", ".")));
+  const completed = sets.filter((s) => s.done);
+
+  useEffect(() => {
+    if (restSeconds <= 0) return;
+    const timer = window.setInterval(() => setRestSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [restSeconds > 0]);
+
+  const completeSet = (index: number) => {
+    const row = sets[index];
+    if (n(row.weight) == null && n(row.reps) == null) return;
+    setSets((prev) => prev.map((s, i) => (i === index ? { ...s, done: !s.done } : s)));
+    if (!row.done) setRestSeconds(120);
+  };
+  const restLabel = `${Math.floor(restSeconds / 60)}:${String(restSeconds % 60).padStart(2, "0")}`;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="break-words">{exercise.name}</DialogTitle>
         </DialogHeader>
@@ -360,35 +395,60 @@ function LogDialog({
           className="space-y-3"
           onSubmit={async (e) => {
             e.preventDefault();
-            if (!date) return;
-            const clean = sets.map((s) => ({ weight: n(s.weight), reps: n(s.reps) })).filter((s) => s.weight != null || s.reps != null);
-            if (!clean.length) return;
-            await onSave(date, clean);
+            if (!date || completed.length === 0) return;
+            setSaving(true);
+            try {
+              await onSave(date, completed.map((s) => ({ weight: n(s.weight), reps: n(s.reps) })));
+            } finally {
+              setSaving(false);
+            }
           }}
         >
           <DateField label="Datum" value={date} onChange={setDate} />
+          {last?.length ? (
+            <p className="rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
+              Je vorige gewichten en reps zijn ingevuld. Vink elke set af zodra je ze hebt gedaan.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Vul gewicht en reps in en vink elke set af zodra je ze hebt gedaan.</p>
+          )}
           <div className="space-y-2">
-            <div className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] gap-1.5 text-[11px] text-muted-foreground">
-              <span>Set</span>
-              <span>Gewicht (kg)</span>
-              <span>Reps</span>
-              <span />
+            <div className="grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1fr)_2rem_2rem] gap-1.5 text-[11px] text-muted-foreground">
+              <span>Set</span><span>Gewicht (kg)</span><span>Reps</span><span /><span />
             </div>
             {sets.map((s, i) => (
-              <div key={i} className="grid grid-cols-[2rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-1.5">
-                <span className="text-sm tabular-nums">{i + 1}</span>
-                <Input className="min-w-0 px-2" inputMode="decimal" value={s.weight} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} />
-                <Input className="min-w-0 px-2" inputMode="numeric" value={s.reps} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, reps: e.target.value } : x)))} />
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label="Set verwijderen" onClick={() => setSets(sets.filter((_, j) => j !== i))}>
+              <div key={i} className={`grid grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1fr)_2rem_2rem] items-center gap-1.5 rounded-md ${s.done ? "bg-secondary/60" : ""}`}>
+                <span className="text-center text-sm tabular-nums">{i + 1}</span>
+                <Input aria-label={`Gewicht set ${i + 1}`} disabled={s.done} className="min-w-0 px-2" inputMode="decimal" value={s.weight} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, weight: e.target.value } : x)))} />
+                <Input aria-label={`Reps set ${i + 1}`} disabled={s.done} className="min-w-0 px-2" inputMode="numeric" value={s.reps} onChange={(e) => setSets(sets.map((x, j) => (j === i ? { ...x, reps: e.target.value } : x)))} />
+                <Button type="button" variant={s.done ? "default" : "outline"} size="icon" className="h-8 w-8" aria-label={s.done ? `Set ${i + 1} opnieuw openen` : `Set ${i + 1} afronden`} onClick={() => completeSet(i)}>
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label={`Set ${i + 1} verwijderen`} onClick={() => setSets(sets.filter((_, j) => j !== i))}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setSets([...sets, { ...(sets[sets.length - 1] ?? { weight: "", reps: "" }) }])}>
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setSets([...sets, { ...(sets[sets.length - 1] ?? { weight: "", reps: "" }), done: false }])}>
               <Plus className="mr-1 h-3.5 w-3.5" /> Set toevoegen
             </Button>
           </div>
-          <Button type="submit" className="w-full">Opslaan</Button>
+          {restSeconds > 0 && (
+            <div className="flex items-center gap-3 rounded-xl bg-secondary px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium text-primary">Rustpauze</div>
+                <div className="text-2xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{restLabel}</div>
+                <div className="text-[11px] text-muted-foreground">Even op adem komen voor je volgende set.</div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setRestSeconds(0)} aria-label="Rust overslaan">
+                <SkipForward className="h-4 w-4 text-primary" />
+              </Button>
+            </div>
+          )}
+          {restSeconds === 0 && completed.length > 0 && <p className="text-center text-xs font-medium text-primary">Rust voorbij — klaar voor je volgende set.</p>}
+          <Button type="submit" className="w-full" disabled={completed.length === 0 || saving}>
+            {saving ? "Opslaan…" : `Sessie opslaan · ${completed.length} ${completed.length === 1 ? "set" : "sets"}`}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

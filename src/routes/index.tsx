@@ -60,7 +60,7 @@ function Index() {
   const { entries, addEntry, removeEntry, updateEntry } = useEntries();
   const { settings, setSettings } = useSettings();
   const { goal: goalSettings } = useGoal();
-  const [tab, setTab] = useState<"dashboard" | "history">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "history" | "weekly">("dashboard");
   const [showBmi, setShowBmi] = useState(false);
   const [goalPopup, setGoalPopup] = useState<"kg" | "dagen" | null>(null);
 
@@ -119,6 +119,21 @@ function Index() {
       })),
     [sorted],
   );
+
+  const weeklyData = useMemo(() => {
+    const weeks = new Map<string, { total: number; count: number }>();
+    for (const entry of sorted) {
+      const week = format(startOfWeek(parseISO(entry.date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const current = weeks.get(week) ?? { total: 0, count: 0 };
+      weeks.set(week, { total: current.total + entry.weight, count: current.count + 1 });
+    }
+    return Array.from(weeks.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, week]) => ({
+      date,
+      label: format(parseISO(date), "d MMM", { locale: nl }),
+      weight: Math.round((week.total / week.count) * 10) / 10,
+      count: week.count,
+    }));
+  }, [sorted]);
 
   return (
     <div className="min-h-screen bg-background pb-36">
@@ -223,7 +238,7 @@ function Index() {
                       ? "var(--success)"
                       : "var(--destructive)"
                 }
-                onClick={() => setTab("history")}
+                onClick={() => setTab("weekly")}
               />
             </div>
 
@@ -232,7 +247,9 @@ function Index() {
             {/* Gewichtsverloop */}
             <Card>
               <CardContent className="px-5 py-4">
-                <div className="mb-3 text-sm font-medium">Gewichtsverloop</div>
+                <button type="button" className="mb-3 text-left text-sm font-medium" onClick={() => setTab("history")}>
+                  Gewichtsverloop <span className="text-xs font-normal text-muted-foreground">· dagelijkse metingen</span>
+                </button>
                 {chartData.length < 2 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <TrendingDown className="mb-2 h-7 w-7 text-primary" />
@@ -309,6 +326,13 @@ function Index() {
               />
             )}
           </div>
+        ) : tab === "weekly" ? (
+          <WeeklyProgress
+            data={weeklyData}
+            unit={unit}
+            diffIsGood={diffIsGood}
+            onBack={() => setTab("dashboard")}
+          />
         ) : (
           <div className="space-y-3">
             <Button variant="ghost" size="sm" onClick={() => setTab("dashboard")}>
@@ -492,6 +516,69 @@ function BmiDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function WeeklyProgress({
+  data,
+  unit,
+  diffIsGood,
+  onBack,
+}: {
+  data: { date: string; label: string; weight: number; count: number }[];
+  unit: string;
+  diffIsGood: (diff: number) => boolean;
+  onBack: () => void;
+}) {
+  const latest = data[data.length - 1];
+  const previous = data[data.length - 2];
+  const difference = latest && previous ? Math.round((latest.weight - previous.weight) * 10) / 10 : null;
+  return (
+    <div className="space-y-3">
+      <Button variant="ghost" size="sm" onClick={onBack}>
+        <ChevronLeft className="h-4 w-4 text-primary" /> Terug naar overzicht
+      </Button>
+      <div className="grid grid-cols-2 gap-3">
+        <MiniStat label="Gemiddelde deze week" value={latest ? latest.weight.toFixed(1) : "—"} unit={latest ? unit : undefined} />
+        <MiniStat
+          label="Verschil met vorige week"
+          value={difference === null ? "—" : `${difference > 0 ? "+" : ""}${difference.toFixed(1)}`}
+          unit={difference === null ? undefined : unit}
+          valueColor={difference === null || difference === 0 ? undefined : diffIsGood(difference) ? "var(--success)" : "var(--destructive)"}
+        />
+      </div>
+      <Card>
+        <CardContent className="px-5 py-4">
+          <div className="text-sm font-medium">Wekelijks gemiddelde</div>
+          <p className="mt-0.5 text-xs text-muted-foreground">Elk punt is het gemiddelde van je metingen in die week.</p>
+          {data.length < 2 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <TrendingDown className="mb-2 h-7 w-7 text-primary" />
+              <p className="text-sm text-muted-foreground">Meet in minstens twee weken om je wekelijkse vooruitgang te zien.</p>
+            </div>
+          ) : (
+            <div className="mt-3 h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} domain={["dataMin - 1", "dataMax + 1"]} />
+                  <Tooltip
+                    contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 13 }}
+                    formatter={(v: number) => [`${v} ${unit}`, "Weekgemiddelde"]}
+                    labelFormatter={(_label, payload) => {
+                      const point = payload[0]?.payload as { label: string; count: number } | undefined;
+                      return point ? `Week van ${point.label} · ${point.count} ${point.count === 1 ? "meting" : "metingen"}` : "";
+                    }}
+                  />
+                  <Line type="monotone" dataKey="weight" stroke="var(--primary)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

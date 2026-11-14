@@ -52,8 +52,13 @@
 - [x] Stack planning items vertically and unify locks/add flow.
 - [x] Swap Planning and Sport navigation positions.
 - [x] Match recipe and ingredient cards with red confirmed deletion.
-- [ ] Keep long meal names, calories, and locks inside day and week planning cards.
+- [x] Keep long meal names, calories, and locks inside day and week planning cards.
 - [x] Refocus friend profiles on shared goals, progress, monthly sport activity, and optional detail sections.
 - [x] Label strength achievements by exercise and show per-plan exercise evolution.
 - [x] Simplify friend rows and show unread activity on the profile icon.
 - [x] Align friend profile colors, progress typography, activity card, icons, and sport composition with the rest of the app.
+- [x] Add per-set strength logging with a two-minute rest timer and daily session grouping.
+- [x] Add AI-assisted front/back muscle targeting maps for strength exercises.
+- [x] Split daily weight history from weekly-average progress.
+- [x] Add meal-type and ingredient filters to the recipe library.
+- [x] Show per-serving macros and remaining-day fit while choosing meals.
