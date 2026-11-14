@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/exercise-muscles")({
           });
           const result = streamText({
             model: provider.responses("openai/gpt-6-astra"),
-            system: "Je bent een deskundige krachttrainer. Bepaal welke spieren een oefening belast. Geef uitsluitend de gevraagde gestructureerde spieranalyse. Gebruik 3 voor de hoofdspieren, 2 voor duidelijke hulpspieren, 1 voor lichte stabilisatie en negeer niet-belaste spieren. De korte Nederlandse samenvatting benoemt de hoofdspieren.",
+            instructions: "Je bent een deskundige krachttrainer. Bepaal welke spieren een oefening belast. Geef uitsluitend de gevraagde gestructureerde spieranalyse. Gebruik 3 voor de hoofdspieren, 2 voor duidelijke hulpspieren, 1 voor lichte stabilisatie en negeer niet-belaste spieren. De korte Nederlandse samenvatting benoemt de hoofdspieren.",
             messages: [{ role: "user", content: `Analyseer de krachtoefening: ${parsedInput.data.name}` }],
             output: Output.object({ schema: outputSchema }),
             abortSignal: request.signal,

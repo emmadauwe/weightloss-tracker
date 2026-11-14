@@ -20,6 +20,7 @@ import { Route as AccountDoelRouteImport } from './routes/account/doel'
 import { Route as AccountGegevensRouteImport } from './routes/account/gegevens'
 import { Route as AccountPrivacyRouteImport } from './routes/account/privacy'
 import { Route as AccountVriendenRouteImport } from './routes/account/vrienden'
+import { Route as ApiExerciseMusclesRouteImport } from './routes/api/exercise-muscles'
 import { Route as ApiSuggestMacrosRouteImport } from './routes/api/suggest-macros'
 import { Route as SportIndexRouteImport } from './routes/sport.index'
 import { Route as SportIdRouteImport } from './routes/sport.$id'
@@ -80,6 +81,11 @@ const AccountVriendenRoute = AccountVriendenRouteImport.update({
   path: '/account/vrienden',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiExerciseMusclesRoute = ApiExerciseMusclesRouteImport.update({
+  id: '/api/exercise-muscles',
+  path: '/api/exercise-muscles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSuggestMacrosRoute = ApiSuggestMacrosRouteImport.update({
   id: '/api/suggest-macros',
   path: '/api/suggest-macros',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
+  '/api/exercise-muscles': typeof ApiExerciseMusclesRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
+  '/api/exercise-muscles': typeof ApiExerciseMusclesRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/account/gegevens': typeof AccountGegevensRoute
   '/account/privacy': typeof AccountPrivacyRoute
   '/account/vrienden': typeof AccountVriendenRoute
+  '/api/exercise-muscles': typeof ApiExerciseMusclesRoute
   '/api/suggest-macros': typeof ApiSuggestMacrosRoute
   '/sport/$id': typeof SportIdRoute
   '/vriend/$id': typeof VriendIdRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/account/gegevens'
     | '/account/privacy'
     | '/account/vrienden'
+    | '/api/exercise-muscles'
     | '/api/suggest-macros'
     | '/sport/$id'
     | '/vriend/$id'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/account/gegevens'
     | '/account/privacy'
     | '/account/vrienden'
+    | '/api/exercise-muscles'
     | '/api/suggest-macros'
     | '/sport/$id'
     | '/vriend/$id'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/account/gegevens'
     | '/account/privacy'
     | '/account/vrienden'
+    | '/api/exercise-muscles'
     | '/api/suggest-macros'
     | '/sport/$id'
     | '/vriend/$id'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   AccountGegevensRoute: typeof AccountGegevensRoute
   AccountPrivacyRoute: typeof AccountPrivacyRoute
   AccountVriendenRoute: typeof AccountVriendenRoute
+  ApiExerciseMusclesRoute: typeof ApiExerciseMusclesRoute
   ApiSuggestMacrosRoute: typeof ApiSuggestMacrosRoute
   VriendIdRoute: typeof VriendIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountVriendenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/exercise-muscles': {
+      id: '/api/exercise-muscles'
+      path: '/api/exercise-muscles'
+      fullPath: '/api/exercise-muscles'
+      preLoaderRoute: typeof ApiExerciseMusclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/suggest-macros': {
       id: '/api/suggest-macros'
       path: '/api/suggest-macros'
@@ -354,6 +374,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountGegevensRoute: AccountGegevensRoute,
   AccountPrivacyRoute: AccountPrivacyRoute,
   AccountVriendenRoute: AccountVriendenRoute,
+  ApiExerciseMusclesRoute: ApiExerciseMusclesRoute,
   ApiSuggestMacrosRoute: ApiSuggestMacrosRoute,
   VriendIdRoute: VriendIdRoute,
   AccountIndexRoute: AccountIndexRoute,
