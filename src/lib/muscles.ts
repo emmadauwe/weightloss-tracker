@@ -13,6 +13,10 @@ export const MUSCLE_IDS = [
   "lats",
   "onderrug",
   "trapezius",
+  "borst_boven", "borst_onder", "schouders_voor", "schouders_zij", "schouders_achter",
+  "buik_schuin", "quadriceps_binnen", "quadriceps_buiten", "quadriceps_midden",
+  "adductoren", "abductoren", "hamstrings_binnen", "hamstrings_buiten",
+  "gluteus_maximus", "gluteus_medius", "gluteus_minimus", "gastrocnemius", "soleus",
 ] as const;
 
 export type MuscleId = (typeof MUSCLE_IDS)[number];
@@ -34,7 +38,34 @@ export const MUSCLE_LABELS: Record<MuscleId, string> = {
   lats: "Latissimus",
   onderrug: "Onderrug",
   trapezius: "Trapezius",
+  borst_boven: "Bovenborst", borst_onder: "Onderborst",
+  schouders_voor: "Voorste schouder", schouders_zij: "Zijschouder", schouders_achter: "Achterste schouder",
+  buik_schuin: "Schuine buikspieren", quadriceps_binnen: "Binnenste quadriceps",
+  quadriceps_buiten: "Buitenste quadriceps", quadriceps_midden: "Middelste quadriceps",
+  adductoren: "Binnenkant bovenbeen", abductoren: "Heupabductoren",
+  hamstrings_binnen: "Binnenste hamstrings", hamstrings_buiten: "Buitenste hamstrings",
+  gluteus_maximus: "Grote bilspier", gluteus_medius: "Middelste bilspier",
+  gluteus_minimus: "Kleine bilspier (diep)", gastrocnemius: "Oppervlakkige kuit", soleus: "Diepe kuit",
 };
+
+export const MUSCLE_PARENTS: Partial<Record<MuscleId, MuscleId>> = {
+  borst_boven: "borst", borst_onder: "borst", schouders_voor: "schouders", schouders_zij: "schouders", schouders_achter: "schouders",
+  buik_schuin: "buik", quadriceps_binnen: "quadriceps", quadriceps_buiten: "quadriceps", quadriceps_midden: "quadriceps",
+  hamstrings_binnen: "hamstrings", hamstrings_buiten: "hamstrings",
+  gluteus_maximus: "billen", gluteus_medius: "billen", gluteus_minimus: "billen", gastrocnemius: "kuiten", soleus: "kuiten",
+};
+
+export function exerciseMuscleKey(name: string) {
+  return name.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+export function muscleIntensity(analysis: MuscleAnalysis, id: MuscleId) {
+  const direct = analysis.muscles.find((m) => m.id === id);
+  if (direct) return direct.intensity;
+  const parent = MUSCLE_PARENTS[id];
+  // Oude, algemenere analyses blijven bruikbaar zonder opnieuw AI aan te roepen.
+  return parent ? analysis.muscles.find((m) => m.id === parent)?.intensity ?? 0 : 0;
+}
 
 /** Directe, voorzichtige schatting terwijl de AI-analyse wordt opgehaald. */
 export function fallbackMuscleAnalysis(exerciseName: string): MuscleAnalysis {

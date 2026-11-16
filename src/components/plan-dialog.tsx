@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, X } from "lucide-react";
 import type { PlanExercise, WorkoutPlan, WorkoutPlanInput } from "@/lib/workout-plans";
+import { useExerciseMuscles } from "@/hooks/use-exercise-muscles";
 
 export function PlanDialog({
   initial,
@@ -21,6 +22,8 @@ export function PlanDialog({
   const [exercises, setExercises] = useState<PlanExercise[]>(initial?.exercises ?? [{ name: "", sets: 3, reps: 10 }]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [detachOk, setDetachOk] = useState(false);
+  const { ensure, loaded: musclesLoaded } = useExerciseMuscles();
+  const [saving, setSaving] = useState(false);
 
   const adopted = Boolean(initial?.source_name) && !detachOk;
 
@@ -30,12 +33,16 @@ export function PlanDialog({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    setSaving(true);
+    try {
+    await Promise.all(exercises.filter((ex) => ex.name.trim()).map((ex) => ensure(ex.name).catch(() => undefined)));
     await onSave({
       id: initial?.id,
       name: name.trim(),
       exercises: exercises.filter((ex) => ex.name.trim()),
       detach: Boolean(initial?.source_name),
     });
+    } finally { setSaving(false); }
   };
 
   if (adopted) {
@@ -84,6 +91,7 @@ export function PlanDialog({
                     value={ex.name}
                     placeholder="Oefening"
                     onChange={(e) => update(i, { name: e.target.value })}
+                    onBlur={() => { if (ex.name.trim()) void ensure(ex.name).catch(() => undefined); }}
                   />
                   <Button
                     type="button"
@@ -132,7 +140,7 @@ export function PlanDialog({
           </div>
 
           <DialogFooter>
-            <Button type="submit">Opslaan</Button>
+            <Button type="submit" disabled={saving || !musclesLoaded}>{saving ? "Opslaan…" : "Opslaan"}</Button>
           </DialogFooter>
 
           {onDelete && initial && (
