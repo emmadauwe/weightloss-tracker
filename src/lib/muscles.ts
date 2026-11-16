@@ -21,7 +21,12 @@ export const MUSCLE_IDS = [
 
 export type MuscleId = (typeof MUSCLE_IDS)[number];
 export type MuscleTarget = { id: MuscleId; intensity: number };
-export type MuscleAnalysis = { muscles: MuscleTarget[]; summary?: string };
+export type MuscleAnalysis = { muscles: MuscleTarget[]; summary?: string; anatomyVersion?: number };
+export const ANATOMY_VERSION = 2;
+export const GENERAL_MUSCLE_IDS: MuscleId[] = ["borst", "schouders", "quadriceps", "hamstrings", "billen", "kuiten"];
+export function hasDetailedMuscleAnalysis(analysis: MuscleAnalysis | undefined) {
+  return Boolean(analysis && analysis.anatomyVersion === ANATOMY_VERSION && !analysis.muscles.some((m) => GENERAL_MUSCLE_IDS.includes(m.id)));
+}
 
 export const MUSCLE_LABELS: Record<MuscleId, string> = {
   borst: "Borst",
@@ -62,9 +67,8 @@ export function exerciseMuscleKey(name: string) {
 export function muscleIntensity(analysis: MuscleAnalysis, id: MuscleId) {
   const direct = analysis.muscles.find((m) => m.id === id);
   if (direct) return direct.intensity;
-  const parent = MUSCLE_PARENTS[id];
-  // Oude, algemenere analyses blijven bruikbaar zonder opnieuw AI aan te roepen.
-  return parent ? analysis.muscles.find((m) => m.id === parent)?.intensity ?? 0 : 0;
+  // Never propagate a broad group's intensity to distinct anatomical regions.
+  return 0;
 }
 
 /** Directe, voorzichtige schatting terwijl de AI-analyse wordt opgehaald. */
@@ -114,5 +118,6 @@ export async function analyseExerciseMuscles(name: string): Promise<MuscleAnalys
       intensity: Math.max(0, Math.min(3, Math.round(m.intensity))),
     })),
     summary: json.summary,
+    anatomyVersion: json.anatomyVersion,
   };
 }
