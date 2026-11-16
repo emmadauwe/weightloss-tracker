@@ -118,5 +118,6 @@ export async function analyseExerciseMuscles(name: string): Promise<MuscleAnalys
       intensity: Math.max(0, Math.min(3, Math.round(m.intensity))),
     })),
     summary: json.summary,
+    anatomyVersion: json.anatomyVersion,
   };
 }
