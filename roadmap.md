@@ -63,3 +63,4 @@
 - [x] Add meal-type and ingredient filters to the recipe library.
 - [x] Show per-serving macros and remaining-day fit while choosing meals.
 - [x] Refine anatomical muscle drawings, remove surrounding copy, and persist one analysis per exercise name.
+- [ ] Remove exercise summary tiles and muscle-name text; replace coarse cached muscle targeting with independently classified anatomical regions.

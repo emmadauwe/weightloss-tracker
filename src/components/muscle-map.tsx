@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useExerciseMuscles } from "@/hooks/use-exercise-muscles";
-import { exerciseMuscleKey, fallbackMuscleAnalysis, muscleIntensity, MUSCLE_LABELS, type MuscleAnalysis, type MuscleId } from "@/lib/muscles";
+import { exerciseMuscleKey, hasDetailedMuscleAnalysis, muscleIntensity, MUSCLE_LABELS, type MuscleAnalysis, type MuscleId } from "@/lib/muscles";
 
 function muscleFill(analysis: MuscleAnalysis, id: MuscleId) {
   const intensity = muscleIntensity(analysis, id);
@@ -12,7 +12,8 @@ function muscleFill(analysis: MuscleAnalysis, id: MuscleId) {
 export function MuscleMap({ exerciseName }: { exerciseName: string }) {
   const { cache, loaded, ensure } = useExerciseMuscles();
   const key = exerciseMuscleKey(exerciseName);
-  const cached = cache[key] ?? cache[exerciseName.trim().toLowerCase()];
+  const saved = cache[key] ?? cache[exerciseName.trim().toLowerCase()];
+  const cached = hasDetailedMuscleAnalysis(saved) ? saved : undefined;
   const [result, setResult] = useState<MuscleAnalysis | undefined>();
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -26,21 +27,18 @@ export function MuscleMap({ exerciseName }: { exerciseName: string }) {
     }
     return () => { active = false; };
   }, [key, loaded, cached, ensure, attempt]);
-  const analysis = cached ?? result ?? fallbackMuscleAnalysis(exerciseName);
-  const labels = analysis.muscles.filter((m) => m.intensity > 0).sort((a, b) => b.intensity - a.intensity);
+  const analysis = cached ?? result ?? { muscles: [] };
   return (
     <div className="mt-4" aria-busy={!cached && !result && !error}>
       <div className="grid grid-cols-2 gap-5">
         <BodyFigure side="front" analysis={analysis} />
         <BodyFigure side="back" analysis={analysis} />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
-        {labels.map((m) => (
-          <div key={m.id} className="flex min-w-0 items-start gap-1.5 text-[11px] leading-snug text-muted-foreground">
-            <svg width="10" height="10" className="mt-0.5 shrink-0" aria-hidden="true"><circle cx="5" cy="5" r="4.5" fill={muscleFill(analysis, m.id)} /></svg>
-            <span>{MUSCLE_LABELS[m.id]}</span>
-          </div>
-        ))}
+      <div className="mt-2 flex flex-wrap justify-center gap-3 text-[10px] text-muted-foreground" aria-label="Belastingsintensiteit">
+        {([1, 2, 3] as const).map((intensity) => <span key={intensity} className="flex items-center gap-1">
+          <svg width="8" height="8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill={intensity === 3 ? "var(--success-strong)" : intensity === 2 ? "var(--primary)" : "var(--secondary)"} /></svg>
+          {intensity === 3 ? "Hoofdspier" : intensity === 2 ? "Hulpspier" : "Licht"}
+        </span>)}
       </div>
       {error && <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground" role="status">
         <span className="min-w-0 flex-1">{error}</span>

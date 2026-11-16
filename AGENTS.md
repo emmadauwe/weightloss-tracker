@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Friend-profile summaries are derived from existing privacy-filtered stats, workouts, and plans; do not duplicate social data in another store, because the database policies remain the source of visibility.
-- Muscle analyses use the existing cloud document keyed by normalized exercise name; wait for hydration and share in-flight requests so reopening an exercise never repeats a saved analysis. Classify names in the schema editor and retain legacy coarse results for compatibility.
+- Muscle analyses use a versioned cloud document keyed by normalized exercise name; wait for hydration and share in-flight requests. Upgrade outdated coarse results once, persist detailed results, and never propagate a group intensity to anatomical subregions.

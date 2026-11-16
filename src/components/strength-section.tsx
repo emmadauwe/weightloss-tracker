@@ -219,11 +219,6 @@ function ExerciseView({
         .map((p) => ({ ...p, value: Math.round(p.value! * 10) / 10 })),
     [history],
   );
-  const bestSet = history.reduce((best, h) => Math.max(best, ...h.sets.map((s) => s.weight ?? 0)), 0);
-  const totalVolume = history.reduce(
-    (total, h) => total + h.sets.reduce((sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0), 0),
-    0,
-  );
 
   return (
     <>
@@ -241,16 +236,6 @@ function ExerciseView({
             )}
           </div>
           <MuscleMap exerciseName={exercise.name} />
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-lg bg-secondary px-3 py-2">
-              <div className="text-[11px] text-muted-foreground">Beste set</div>
-              <div className="text-sm font-semibold tabular-nums">{bestSet || "—"}{bestSet ? " kg" : ""}</div>
-            </div>
-            <div className="rounded-lg bg-secondary px-3 py-2">
-              <div className="text-[11px] text-muted-foreground">Totaal trainingsvolume</div>
-              <div className="text-sm font-semibold tabular-nums">{Math.round(totalVolume).toLocaleString("nl-BE")} kg</div>
-            </div>
-          </div>
           <div className="mb-2 mt-3 text-xs text-muted-foreground">Gemiddeld gewicht per sessie (kg)</div>
           {chart.length < 2 ? (
             <p className="py-4 text-center text-xs text-muted-foreground">Log 2+ sessies voor de grafiek</p>

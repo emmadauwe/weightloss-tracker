@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { exerciseMuscleKey, muscleIntensity, MUSCLE_IDS } from "./muscles";
+import { exerciseMuscleKey, muscleIntensity, MUSCLE_IDS, hasDetailedMuscleAnalysis, ANATOMY_VERSION } from "./muscles";
 import { analyseMusclesOnce } from "./muscle-cache";
 
 describe("exercise muscle mapping", () => {
@@ -16,8 +16,15 @@ describe("exercise muscle mapping", () => {
     assert.equal(muscleIntensity(analysis, "gluteus_medius"), 1);
     assert.equal(muscleIntensity(analysis, "gluteus_minimus"), 0);
   });
-  test("existing coarse results work without reanalysis", () => {
-    assert.equal(muscleIntensity({ muscles: [{ id: "billen", intensity: 2 }] }, "gluteus_maximus"), 2);
+  test("a broad glute group never colors the three distinct glutes", () => {
+    for (const id of ["gluteus_maximus", "gluteus_medius", "gluteus_minimus"] as const) {
+      assert.equal(muscleIntensity({ muscles: [{ id: "billen", intensity: 3 }] }, id), 0);
+    }
+  });
+  test("coarse caches are upgraded once, current detailed results are reusable", () => {
+    assert.equal(hasDetailedMuscleAnalysis({ muscles: [{ id: "billen", intensity: 3 }] }), false);
+    assert.equal(hasDetailedMuscleAnalysis({ anatomyVersion: ANATOMY_VERSION, muscles: [{ id: "gluteus_maximus", intensity: 3 }] }), true);
+    assert.equal(hasDetailedMuscleAnalysis({ anatomyVersion: ANATOMY_VERSION, muscles: [{ id: "quadriceps", intensity: 3 }] }), false);
   });
   test("simultaneous views only request analysis once", async () => {
     let calls = 0;
