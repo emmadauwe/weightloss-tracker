@@ -62,3 +62,4 @@
 - [x] Split daily weight history from weekly-average progress.
 - [x] Add meal-type and ingredient filters to the recipe library.
 - [x] Show per-serving macros and remaining-day fit while choosing meals.
+- [x] Refine anatomical muscle drawings, remove surrounding copy, and persist one analysis per exercise name.
