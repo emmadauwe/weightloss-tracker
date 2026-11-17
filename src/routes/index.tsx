@@ -337,9 +337,9 @@ function Index() {
       <GDialog open={goalPopup !== null} onOpenChange={(o) => !o && setGoalPopup(null)}>
         <GDialogContent className="max-h-[85vh] overflow-y-auto" onOpenAutoFocus={(event) => {
           event.preventDefault();
-          event.currentTarget?.focus();
+          document.getElementById("goal-progress-title")?.focus();
         }}>
-          <GDialogHeader><GDialogTitle>{goalPopup === "kg" ? "Nog te gaan" : "Dagen over"}</GDialogTitle></GDialogHeader>
+          <GDialogHeader><GDialogTitle id="goal-progress-title" tabIndex={-1}>{goalPopup === "kg" ? "Nog te gaan" : "Dagen over"}</GDialogTitle></GDialogHeader>
           {goalPopup === "kg" ? (() => {
             const pct = start && goal && latest && start !== goal ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100)) : 0;
             return (
