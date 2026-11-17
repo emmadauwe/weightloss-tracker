@@ -89,6 +89,13 @@ function VandaagPage() {
   const [choosingAdd, setChoosingAdd] = useState<Meal | null>(null);
   const [quickAdding, setQuickAdding] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<{ entry: MealEntry; name: string } | null>(null);
+  const editingDish = editingEntry?.entry.kind === "dish" ? dishes.find((dish) => dish.id === editingEntry.entry.refId) : undefined;
+  const editingIngredient = editingEntry?.entry.kind === "ingredient" ? ingredients.find((ingredient) => ingredient.id === editingEntry.entry.refId) : undefined;
+  const quickEdit = editingDish?.quick && editingDish.directMacros
+    ? { name: editingDish.name, macros: editingDish.directMacros }
+    : editingIngredient?.quick ? { name: editingIngredient.name, macros: {
+      kcal: editingIngredient.kcal, protein: editingIngredient.protein, carbs: editingIngredient.carbs, fat: editingIngredient.fat,
+    } } : undefined;
   const [clearingDay, setClearingDay] = useState<string | null>(null);
   const [copying, setCopying] = useState<Meal | null>(null);
 
@@ -457,8 +464,15 @@ function VandaagPage() {
         <EntryDialog
           name={editingEntry.name}
           entry={editingEntry.entry}
+          quickItem={quickEdit}
+          macroBase={editingIngredient?.baseUnit === "g" || editingIngredient?.baseUnit === "ml" ? `Per 100 ${editingIngredient.baseUnit}` : "Voor één portie of stuk"}
           onClose={() => setEditingEntry(null)}
-          onSave={(patch) => { update(editingEntry.entry.id, patch); setEditingEntry(null); }}
+          onSave={(patch, details) => {
+            if (details && editingDish?.quick) upsertDish({ ...editingDish, name: details.name, directMacros: details.macros });
+            if (details && editingIngredient?.quick) upsertIngredient({ ...editingIngredient, name: details.name, ...details.macros });
+            update(editingEntry.entry.id, patch);
+            setEditingEntry(null);
+          }}
           onDelete={() => { remove(editingEntry.entry.id); setEditingEntry(null); }}
         />
       )}
@@ -751,28 +765,39 @@ function AddMealDialog({
 }
 
 function EntryDialog({
-  name, entry, onClose, onSave, onDelete,
+  name, entry, quickItem, macroBase, onClose, onSave, onDelete,
 }: {
   name: string;
   entry: MealEntry;
   onClose: () => void;
-  onSave: (patch: Partial<MealEntry>) => void;
+  quickItem?: { name: string; macros: NonNullable<Dish["directMacros"]> };
+  macroBase: string;
+  onSave: (patch: Partial<MealEntry>, details?: { name: string; macros: NonNullable<Dish["directMacros"]> }) => void;
   onDelete: () => void;
 }) {
   const [amount, setAmount] = useState(String(entry.amount));
+  const [title, setTitle] = useState(quickItem?.name ?? name);
+  const [macroFields, setMacroFields] = useState({
+    kcal: String(quickItem?.macros.kcal ?? 0), protein: String(quickItem?.macros.protein ?? 0),
+    carbs: String(quickItem?.macros.carbs ?? 0), fat: String(quickItem?.macros.fat ?? 0),
+  });
   const [leftover, setLeftover] = useState(Boolean(entry.leftoverFrom));
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const a = parseFloat(amount.replace(",", "."));
+    if (quickItem && (!title.trim() || Object.values(macroFields).some((value) => !Number.isFinite(Number(value.replace(",", "."))) || Number(value.replace(",", ".")) < 0))) return;
     if (a > 0)
       onSave({
         amount: a,
         leftoverFrom: leftover
           ? entry.leftoverFrom ?? format(addDays(parseISO(entry.date), -1), "yyyy-MM-dd")
           : undefined,
-      });
+      }, quickItem ? { name: title.trim(), macros: {
+        kcal: Number(macroFields.kcal.replace(",", ".")), protein: Number(macroFields.protein.replace(",", ".")),
+        carbs: Number(macroFields.carbs.replace(",", ".")), fat: Number(macroFields.fat.replace(",", ".")),
+      } } : undefined);
   };
 
   return (
@@ -780,6 +805,21 @@ function EntryDialog({
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{name}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          {quickItem && <>
+            <div className="space-y-2">
+              <Label htmlFor="quick-edit-name">Naam</Label>
+              <Input id="quick-edit-name" value={title} onChange={(event) => setTitle(event.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{macroBase}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {([["kcal", "Kcal"], ["protein", "Eiwit (g)"], ["carbs", "Koolhydraten (g)"], ["fat", "Vet (g)"]] as const).map(([key, label]) => <div key={key} className="space-y-2">
+                  <Label htmlFor={`quick-edit-${key}`}>{label}</Label>
+                  <Input id={`quick-edit-${key}`} inputMode="decimal" value={macroFields[key]} onChange={(event) => setMacroFields((previous) => ({ ...previous, [key]: event.target.value }))} required />
+                </div>)}
+              </div>
+            </div>
+          </>}
           <div className="space-y-2">
             <Label htmlFor="eamt">{entry.unit === "portie" ? "Porties" : `Hoeveelheid (${entry.unit})`}</Label>
             <Input id="eamt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
