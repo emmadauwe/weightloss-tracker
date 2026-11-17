@@ -64,3 +64,5 @@
 - [x] Show per-serving macros and remaining-day fit while choosing meals.
 - [x] Refine anatomical muscle drawings, remove surrounding copy, and persist one analysis per exercise name.
 - [ ] Remove exercise summary tiles and muscle-name text; replace coarse cached muscle targeting with independently classified anatomical regions.
+- [ ] Remove the muscle legend and compare each region's stimulus against effective exercises for that same region.
+- [ ] Show weekly average weight change rather than weekly body weight; prevent automatic goal-weight input focus.
