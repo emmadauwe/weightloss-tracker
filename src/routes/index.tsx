@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useEntries, useSettings, type Entry } from "@/lib/weight-store";
 import { useGoal } from "@/lib/goal-store";
+import { weeklyWeightChanges } from "@/lib/weekly-weight";
 import { AppHeader } from "@/components/app-header";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { DateField } from "@/components/date-field";
@@ -120,20 +121,7 @@ function Index() {
     [sorted],
   );
 
-  const weeklyData = useMemo(() => {
-    const weeks = new Map<string, { total: number; count: number }>();
-    for (const entry of sorted) {
-      const week = format(startOfWeek(parseISO(entry.date), { weekStartsOn: 1 }), "yyyy-MM-dd");
-      const current = weeks.get(week) ?? { total: 0, count: 0 };
-      weeks.set(week, { total: current.total + entry.weight, count: current.count + 1 });
-    }
-    return Array.from(weeks.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, week]) => ({
-      date,
-      label: format(parseISO(date), "d MMM", { locale: nl }),
-      weight: Math.round((week.total / week.count) * 10) / 10,
-      count: week.count,
-    }));
-  }, [sorted]);
+  const weeklyData = useMemo(() => weeklyWeightChanges(sorted), [sorted]);
 
   return (
     <div className="min-h-screen bg-background pb-36">
@@ -347,8 +335,11 @@ function Index() {
       <AddEntryDialog onAdd={addEntry} unit={unit} latest={latest?.weight} />
 
       <GDialog open={goalPopup !== null} onOpenChange={(o) => !o && setGoalPopup(null)}>
-        <GDialogContent className="max-h-[85vh] overflow-y-auto">
-          <GDialogHeader><GDialogTitle>{goalPopup === "kg" ? "Nog te gaan" : "Dagen over"}</GDialogTitle></GDialogHeader>
+        <GDialogContent className="max-h-[85vh] overflow-y-auto" onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          document.getElementById("goal-progress-title")?.focus();
+        }}>
+          <GDialogHeader><GDialogTitle id="goal-progress-title" tabIndex={-1}>{goalPopup === "kg" ? "Nog te gaan" : "Dagen over"}</GDialogTitle></GDialogHeader>
           {goalPopup === "kg" ? (() => {
             const pct = start && goal && latest && start !== goal ? Math.max(0, Math.min(100, ((start - latest.weight) / (start - goal)) * 100)) : 0;
             return (
@@ -525,33 +516,35 @@ function WeeklyProgress({
   diffIsGood,
   onBack,
 }: {
-  data: { date: string; label: string; weight: number; count: number }[];
+  data: ReturnType<typeof weeklyWeightChanges>;
   unit: string;
   diffIsGood: (diff: number) => boolean;
   onBack: () => void;
 }) {
   const latest = data[data.length - 1];
-  const previous = data[data.length - 2];
-  const difference = latest && previous ? Math.round((latest.weight - previous.weight) * 10) / 10 : null;
+  const difference = latest?.change ?? null;
+  const totalWeeks = data.reduce((sum, point) => sum + point.elapsedWeeks, 0);
+  const averageChange = totalWeeks ? data.reduce((sum, point) => sum + point.change * point.elapsedWeeks, 0) / totalWeeks : null;
+  const signed = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
   return (
     <div className="space-y-3">
       <Button variant="ghost" size="sm" onClick={onBack}>
         <ChevronLeft className="h-4 w-4 text-primary" /> Terug naar overzicht
       </Button>
       <div className="grid grid-cols-2 gap-3">
-        <MiniStat label="Gemiddelde deze week" value={latest ? latest.weight.toFixed(1) : "—"} unit={latest ? unit : undefined} />
+        <MiniStat label="Gemiddelde verandering per week" value={averageChange === null ? "—" : signed(averageChange)} unit={averageChange === null ? undefined : `${unit}/week`}
+          valueColor={averageChange === null || averageChange === 0 ? undefined : diffIsGood(averageChange) ? "var(--success)" : "var(--destructive)"} />
         <MiniStat
-          label="Verschil met vorige week"
-          value={difference === null ? "—" : `${difference > 0 ? "+" : ""}${difference.toFixed(1)}`}
-          unit={difference === null ? undefined : unit}
+          label="Laatste weekverandering"
+          value={difference === null ? "—" : signed(difference)}
+          unit={difference === null ? undefined : `${unit}/week`}
           valueColor={difference === null || difference === 0 ? undefined : diffIsGood(difference) ? "var(--success)" : "var(--destructive)"}
         />
       </div>
       <Card>
         <CardContent className="px-5 py-4">
-          <div className="text-sm font-medium">Wekelijks gemiddelde</div>
-          <p className="mt-0.5 text-xs text-muted-foreground">Elk punt is het gemiddelde van je metingen in die week.</p>
-          {data.length < 2 ? (
+          <div className="text-sm font-medium">Wekelijkse gewichtsverandering</div>
+          {data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <TrendingDown className="mb-2 h-7 w-7 text-primary" />
               <p className="text-sm text-muted-foreground">Meet in minstens twee weken om je wekelijkse vooruitgang te zien.</p>
@@ -562,16 +555,17 @@ function WeeklyProgress({
                 <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} domain={["dataMin - 1", "dataMax + 1"]} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} domain={[(min: number) => Math.min(0, min) - 0.1, (max: number) => Math.max(0, max) + 0.1]} />
+                  <ReferenceLine y={0} stroke="var(--border)" />
                   <Tooltip
                     contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 13 }}
-                    formatter={(v: number) => [`${v} ${unit}`, "Weekgemiddelde"]}
+                    formatter={(v: number) => [`${signed(v)} ${unit}/week`, v < 0 ? "Afgevallen" : v > 0 ? "Bijgekomen" : "Geen verandering"]}
                     labelFormatter={(_label, payload) => {
                       const point = payload[0]?.payload as { label: string; count: number } | undefined;
                       return point ? `Week van ${point.label} · ${point.count} ${point.count === 1 ? "meting" : "metingen"}` : "";
                     }}
                   />
-                  <Line type="monotone" dataKey="weight" stroke="var(--primary)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="change" stroke="var(--primary)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

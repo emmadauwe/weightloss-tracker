@@ -10,4 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Friend-profile summaries are derived from existing privacy-filtered stats, workouts, and plans; do not duplicate social data in another store, because the database policies remain the source of visibility.
-- Muscle analyses use a versioned cloud document keyed by normalized exercise name; wait for hydration and share in-flight requests. Upgrade outdated coarse results once, persist detailed results, and never propagate a group intensity to anatomical subregions.
+- Muscle analyses use a versioned cloud document keyed by normalized exercise name; wait for hydration and share in-flight requests. Upgrade outdated anatomy or scoring versions once and persist the result so obsolete scoring is not reused.
+- Weekly weight progress uses changes between weekly measurement averages divided by elapsed calendar weeks; keep the calculation in a tested browser-safe helper to avoid displaying body weight as progress.

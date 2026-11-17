@@ -34,12 +34,6 @@ export function MuscleMap({ exerciseName }: { exerciseName: string }) {
         <BodyFigure side="front" analysis={analysis} />
         <BodyFigure side="back" analysis={analysis} />
       </div>
-      <div className="mt-2 flex flex-wrap justify-center gap-3 text-[10px] text-muted-foreground" aria-label="Belastingsintensiteit">
-        {([1, 2, 3] as const).map((intensity) => <span key={intensity} className="flex items-center gap-1">
-          <svg width="8" height="8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill={intensity === 3 ? "var(--success-strong)" : intensity === 2 ? "var(--primary)" : "var(--secondary)"} /></svg>
-          {intensity === 3 ? "Hoofdspier" : intensity === 2 ? "Hulpspier" : "Licht"}
-        </span>)}
-      </div>
       {error && <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground" role="status">
         <span className="min-w-0 flex-1">{error}</span>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Spieranalyse opnieuw proberen" onClick={() => setAttempt((n) => n + 1)}><RotateCcw className="h-3.5 w-3.5" /></Button>

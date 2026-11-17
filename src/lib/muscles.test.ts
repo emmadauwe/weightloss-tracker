@@ -22,6 +22,7 @@ describe("exercise muscle mapping", () => {
     }
   });
   test("coarse caches are upgraded once, current detailed results are reusable", () => {
+    assert.equal(hasDetailedMuscleAnalysis({ anatomyVersion: 2, muscles: [{ id: "gluteus_maximus", intensity: 3 }] }), false);
     assert.equal(hasDetailedMuscleAnalysis({ muscles: [{ id: "billen", intensity: 3 }] }), false);
     assert.equal(hasDetailedMuscleAnalysis({ anatomyVersion: ANATOMY_VERSION, muscles: [{ id: "gluteus_maximus", intensity: 3 }] }), true);
     assert.equal(hasDetailedMuscleAnalysis({ anatomyVersion: ANATOMY_VERSION, muscles: [{ id: "quadriceps", intensity: 3 }] }), false);

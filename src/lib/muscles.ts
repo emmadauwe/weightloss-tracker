@@ -22,7 +22,7 @@ export const MUSCLE_IDS = [
 export type MuscleId = (typeof MUSCLE_IDS)[number];
 export type MuscleTarget = { id: MuscleId; intensity: number };
 export type MuscleAnalysis = { muscles: MuscleTarget[]; summary?: string; anatomyVersion?: number };
-export const ANATOMY_VERSION = 2;
+export const ANATOMY_VERSION = 3;
 export const GENERAL_MUSCLE_IDS: MuscleId[] = ["borst", "schouders", "quadriceps", "hamstrings", "billen", "kuiten"];
 export function hasDetailedMuscleAnalysis(analysis: MuscleAnalysis | undefined) {
   return Boolean(analysis && analysis.anatomyVersion === ANATOMY_VERSION && !analysis.muscles.some((m) => GENERAL_MUSCLE_IDS.includes(m.id)));
