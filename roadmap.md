@@ -66,3 +66,4 @@
 - [x] Remove exercise summary tiles and muscle-name text; replace coarse cached muscle targeting with independently classified anatomical regions.
 - [x] Remove the muscle legend and compare each region's stimulus against effective exercises for that same region.
 - [x] Show weekly average weight change rather than weekly body weight; prevent automatic goal-weight input focus.
+- [ ] Allow editing the title and macros of quick-added planning items after adding them.
