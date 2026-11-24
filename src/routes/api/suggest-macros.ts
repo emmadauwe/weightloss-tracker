@@ -55,9 +55,11 @@ export const Route = createFileRoute("/api/suggest-macros")({
         if (res.status === 429)
           return Response.json({ error: "Even te druk. Probeer het zo opnieuw." }, { status: 429 });
         if (res.status === 402)
-          return Response.json({ error: "Geen AI-tegoed meer beschikbaar." }, { status: 402 });
+          return Response.json({ error: "Geen AI-tegoed meer beschikbaar. Vul de macro's zelf in." }, { status: 402 });
+        if (res.status === 403)
+          return Response.json({ error: "AI is tijdelijk geblokkeerd voor deze app. Vul de macro's zelf in." }, { status: 403 });
         if (!res.ok)
-          return Response.json({ error: "De AI-schatting is niet gelukt." }, { status: 502 });
+          return Response.json({ error: "De AI-schatting is niet gelukt. Vul de macro's zelf in." }, { status: 502 });
 
         const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
         const content = json.choices?.[0]?.message?.content ?? "{}";
