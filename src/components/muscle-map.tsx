@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useExerciseMuscles } from "@/hooks/use-exercise-muscles";
-import { exerciseMuscleKey, hasDetailedMuscleAnalysis, muscleIntensity, MUSCLE_LABELS, type MuscleAnalysis, type MuscleId } from "@/lib/muscles";
+import { detailedFallbackAnalysis, exerciseMuscleKey, hasDetailedMuscleAnalysis, muscleIntensity, MUSCLE_LABELS, type MuscleAnalysis, type MuscleId } from "@/lib/muscles";
 
 function muscleFill(analysis: MuscleAnalysis, id: MuscleId) {
   const intensity = muscleIntensity(analysis, id);
@@ -27,7 +27,7 @@ export function MuscleMap({ exerciseName }: { exerciseName: string }) {
     }
     return () => { active = false; };
   }, [key, loaded, cached, ensure, attempt]);
-  const analysis = cached ?? result ?? { muscles: [] };
+  const analysis = cached ?? result ?? (error ? detailedFallbackAnalysis(exerciseName) : { muscles: [] });
   return (
     <div className="mt-4" aria-busy={!cached && !result && !error}>
       <div className="grid grid-cols-2 gap-5">
@@ -35,7 +35,7 @@ export function MuscleMap({ exerciseName }: { exerciseName: string }) {
         <BodyFigure side="back" analysis={analysis} />
       </div>
       {error && <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground" role="status">
-        <span className="min-w-0 flex-1">{error}</span>
+        <span className="min-w-0 flex-1 break-words">Voorlopige schatting · {error}</span>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Spieranalyse opnieuw proberen" onClick={() => setAttempt((n) => n + 1)}><RotateCcw className="h-3.5 w-3.5" /></Button>
       </div>}
     </div>

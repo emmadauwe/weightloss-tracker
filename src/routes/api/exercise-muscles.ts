@@ -55,7 +55,14 @@ export const Route = createFileRoute("/api/exercise-muscles")({
           if (NoObjectGeneratedError.isInstance(error)) {
             return Response.json({ error: "De spieranalyse was onduidelijk. Probeer het opnieuw." }, { status: 502 });
           }
-          const status = typeof error === "object" && error && "statusCode" in error ? Number(error.statusCode) : 502;
+          const findStatus = (e: unknown): number | undefined => {
+            if (!e || typeof e !== "object") return undefined;
+            if ("statusCode" in e && Number(e.statusCode)) return Number(e.statusCode);
+            if ("lastError" in e) return findStatus(e.lastError);
+            if ("cause" in e) return findStatus(e.cause);
+            return undefined;
+          };
+          const status = findStatus(error) ?? 502;
           const message = status === 402 ? "Geen AI-tegoed meer beschikbaar." : status === 429 ? "Even te druk. Probeer het later opnieuw." : "De spieranalyse is nu niet beschikbaar.";
           return Response.json({ error: message }, { status: [400, 401, 402, 403, 404, 429].includes(status) ? status : 502 });
         }

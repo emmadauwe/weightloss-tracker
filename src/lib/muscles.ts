@@ -121,3 +121,15 @@ export async function analyseExerciseMuscles(name: string): Promise<MuscleAnalys
     anatomyVersion: json.anatomyVersion,
   };
 }
+
+/** Lokale schatting omgezet naar gedetailleerde spieronderdelen (wordt niet bewaard). */
+export function detailedFallbackAnalysis(exerciseName: string): MuscleAnalysis {
+  const base = fallbackMuscleAnalysis(exerciseName);
+  const muscles: MuscleTarget[] = [];
+  for (const m of base.muscles) {
+    const children = (Object.keys(MUSCLE_PARENTS) as MuscleId[]).filter((c) => MUSCLE_PARENTS[c] === m.id);
+    if (children.length) children.forEach((c) => muscles.push({ id: c, intensity: Math.max(1, m.intensity - 1) }));
+    else muscles.push(m);
+  }
+  return { muscles, summary: base.summary };
+}
